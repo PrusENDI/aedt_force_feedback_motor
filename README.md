@@ -67,6 +67,9 @@ Additional reference files:
 
 - `HOSTING_GUIDE.md`
 - `CURRENT_SIM_REQUIREMENTS.md`
+- `reports/sector3d_playbook.md`
+- `reports/sector3d_agent_prompt.md`
+- `reports/sector3d_agent_journal.md`
 
 ## External Launch Workflow
 
