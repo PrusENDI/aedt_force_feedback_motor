@@ -68,3 +68,19 @@ This file is the running journal for independent `Sector3D` iterations.
   - the geometry is still a helper scaffold; the actual sector cut, winding legality, and demag/inductance report binding still need Maxwell-side implementation
 - next step:
   - reserve or build the first explicit sector-cut and motion-band objects, then bind the new inductance and demag report paths
+
+## Iteration 4
+
+- goal: make the 3D validation entrypoint fail early when the model is not actually solve-ready
+- changes made:
+  - added 3D case precheck in `scripts/run_sector_3d_validate.py` so invalid geometry rows are excluded before Maxwell solve
+  - added `sector3d_validation_preflight.json` and `3d_validation_invalid_cases.csv`
+  - added template preflight checks for transient solution type, required report presence, and unresolved blocking issues recorded by the latest 3D scaffold build
+  - made the validation runner fail if required report exports are missing or if exported CSV files do not contain usable waveform data
+- validation target:
+  - `py_compile` on the touched scripts
+  - confirm the 3D runner now stops before `Analyze` when the template is not solve-ready
+- expected limitation:
+  - this still does not prove the Maxwell model converges physically; it proves the repo will stop early instead of silently treating a non-ready template as valid
+- next step:
+  - implement the actual sector cut, motion band objects, and report binding so the new preflight can pass on a real solve-ready template
