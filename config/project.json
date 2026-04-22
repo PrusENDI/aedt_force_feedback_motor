@@ -1,0 +1,152 @@
+{
+  "project_prefix": "ffb_axial_flux",
+  "template_mode": true,
+  "python": {
+    "preferred_interpreter": "C:/Users/fjcy/AppData/Roaming/.pyaedt_env/3_10/Scripts/python.exe",
+    "preferred_cli": "C:/Users/fjcy/AppData/Roaming/.pyaedt_env/3_10/Scripts/pyaedt.exe"
+  },
+  "agent_runtime": {
+    "poll_interval_s": 5,
+    "heartbeat_interval_s": 10,
+    "idle_log_interval_s": 60,
+    "paths": {
+      "session_json": "runtime/session.json",
+      "heartbeat_json": "runtime/heartbeat.json",
+      "last_result_json": "runtime/last_result.json",
+      "pending_dir": "runtime/pending",
+      "running_dir": "runtime/running",
+      "done_dir": "runtime/done",
+      "failed_dir": "runtime/failed"
+    }
+  },
+  "paths": {
+    "linear_2d_template": "templates/linear2d_template.aedt",
+    "linear_2d_working": "aedt_projects/linear2d_working.aedt",
+    "sector_3d_template": "templates/sector3d_template.aedt",
+    "sector_3d_working": "aedt_projects/sector3d_working.aedt",
+    "screening_cases_csv": "cases/screening_2d.csv",
+    "validation_cases_csv": "cases/validation_3d.csv",
+    "screening_summary_csv": "reports/2d_screening_summary.csv",
+    "screening_ranked_csv": "reports/2d_screening_ranked.csv",
+    "screening_failures_csv": "reports/2d_screening_failures.csv",
+    "validation_summary_csv": "reports/3d_validation_summary.csv",
+    "validation_ranked_csv": "reports/3d_validation_ranked.csv",
+    "validation_failures_csv": "reports/3d_validation_failures.csv",
+    "recommendation_md": "reports/recommended_design.md"
+  },
+  "machine_fixed": {
+    "outer_diameter_mm": 98.0,
+    "inner_diameter_mm": 60.0,
+    "pole_count": 24,
+    "stator_slot_count": 0,
+    "stator_count": 3,
+    "rotor_count": 2,
+    "active_gap_faces": 4,
+    "dc_bus_v": 48.0,
+    "max_speed_rpm": 250.0,
+    "target_torque_nm": 4.0,
+    "peak_torque_nm": 5.2,
+    "continuous_phase_current_arms": 3.0,
+    "peak_phase_current_arms": 4.0,
+    "target_torque_constant_nm_per_arms": 1.35,
+    "target_airgap_flux_density_t": 0.55
+  },
+  "fabrication": {
+    "selected_route": "rigid_pcb_flat_copper_hybrid",
+    "notes": "Use the rigid PCB primarily as carrier and interconnect, with flat copper as the main current-carrying winding."
+  },
+  "hybrid_winding": {
+    "carrier_pcb_layer_count": 6,
+    "carrier_pcb_outer_layer_count": 2,
+    "carrier_pcb_inner_layer_count": 4,
+    "carrier_pcb_board_thickness_mm": 1.6,
+    "carrier_pcb_outer_copper_thickness_mm": 0.035,
+    "carrier_pcb_inner_copper_thickness_mm": 0.0175,
+    "stator_support_thickness_mm": 1.6,
+    "flat_copper_interlayer_insulation_mm": 0.05,
+    "flat_copper_bondline_axial_build_mm": 0.08,
+    "flat_copper_utilization_factor": 0.92
+  },
+  "linear_2d": {
+    "design_name": "Linearized2D",
+    "analysis_setup_name": "Setup_2D",
+    "design_type": "Maxwell 2D",
+    "solution_type": "TransientXY",
+    "analysis_setup_type": "Transient",
+    "preferred_report_types": [
+      "Transient",
+      "Fields",
+      "Magnetostatic"
+    ],
+    "winding": {
+      "phase_a_winding_name": "PhaseA_Winding",
+      "coil_positive_name": "PhaseA_Coil_Pos",
+      "coil_negative_name": "PhaseA_Coil_Neg",
+      "current_expression": "phase_current_rms",
+      "current_waveform_expression": "phase_current_rms*cos(2*pi*electrical_frequency_hz*time)"
+    },
+    "transient": {
+      "time_step_expression": "electrical_period_s/48",
+      "stop_time_expression": "electrical_period_s",
+      "save_fields_type": "None",
+      "samples_per_electrical_period_for_reports": 48
+    },
+    "motion": {
+      "enabled": true,
+      "band_object_name": "Auto2D_MotionBand",
+      "motion_name": "Motion_LinearRotor",
+      "axis": "X",
+      "positive_movement": true,
+      "start_position_mm": 0.0,
+      "periodic_translate": true,
+      "negative_limit_expression": "0mm",
+      "positive_limit_expression": "period_length_mm",
+      "mechanical_transient": true,
+      "mass_kg": 1.0,
+      "damping": 0.0,
+      "load_force_newton": 0.0
+    },
+    "radial_slices": {
+      "enabled": true,
+      "radius_scope": "coil_window",
+      "relative_positions": [0.2, 0.5, 0.8],
+      "aggregation": "radius_weighted",
+      "weight_power": 1.0
+    },
+    "sample_positions_per_electrical_period": 12,
+    "promote_top_n_to_3d": 5,
+    "save_fields": false,
+    "save_mesh_link": false
+  },
+  "sector_3d": {
+    "design_name": "Sector3D",
+    "analysis_setup_name": "Setup_3D",
+    "validate_top_n": 3,
+    "sector_model_pole_count": 2,
+    "save_fields": false,
+    "save_mesh_link": false
+  },
+  "proxy_models": {
+    "copper_resistivity_20c_ohm_m": 1.724e-8,
+    "copper_tempco_per_c": 0.00393,
+    "hot_temperature_c": 100.0,
+    "turn_length_factor_vs_mean_radius": 5.8,
+    "end_turn_length_factor_vs_pole_pitch": 2.2,
+    "copper_fill_factor": 0.72,
+    "line_voltage_rms_limit_from_dc_bus_factor": 0.5773502692
+  },
+  "reports": {
+    "torque_loaded": "Torque_Loaded",
+    "torque_cogging": "Torque_Cogging",
+    "flux_linkage_a": "FluxLinkage_PhaseA",
+    "back_emf_ll": "BackEMF_LL",
+    "bmax_backiron": "Bmax_BackIron"
+  },
+  "run_policy": {
+    "autosave_every_n_cases": 5,
+    "write_case_json_cache": true,
+    "resume_batches": true,
+    "continue_on_case_error": true,
+    "stop_on_first_error": false
+  }
+}

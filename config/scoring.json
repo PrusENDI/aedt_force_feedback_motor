@@ -1,0 +1,22 @@
+{
+  "hard_constraints": {
+    "torque_avg_nm_min": 4.0,
+    "peak_torque_goal_nm_min": 5.0,
+    "torque_ripple_pct_max": 8.0,
+    "cogging_peak_nm_max": 0.05,
+    "phase_resistance_ohm_min": 0.8,
+    "phase_resistance_ohm_max": 0.9,
+    "hot_copper_loss_w_max": 35.0,
+    "backiron_bmax_t_max": 1.6,
+    "back_emf_margin_v_min": 2.0
+  },
+  "weights": {
+    "torque_margin": 4.0,
+    "torque_ripple_pct": -3.0,
+    "cogging_peak_nm": -4.0,
+    "hot_copper_loss_w": -2.0,
+    "back_emf_margin_v": 1.5,
+    "backiron_bmax_t": -1.5,
+    "complexity_penalty": -1.0
+  }
+}

@@ -1,0 +1,9 @@
+*.aedt binary
+*.asol binary
+*.profile binary
+
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
+*.ps1 text eol=crlf

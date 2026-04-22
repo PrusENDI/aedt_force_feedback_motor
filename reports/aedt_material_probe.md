@@ -1,0 +1,2926 @@
+# AEDT Material Probe Summary
+
+- timestamp: `2026-04-21T10-05-52Z`
+- project_name: `linear2d_template`
+- design_name: `Linearized2D`
+- total_aedt_materials: `5705`
+- total_project_materials: `4`
+
+## Matching Materials
+
+- ABM Magnetics - N30SH
+- ABM Magnetics - N38M
+- ABM Magnetics - N42H
+- ABM Magnetics - N48
+- Advance Magnetics - AD-MU-80
+- Advance Magnetics - AD-MU-80, B-H at 60Hz
+- AIC Magnetics - N33EH
+- AIC Magnetics - N33UH
+- AIC Magnetics - N35
+- AIC Magnetics - N40H
+- AIC Magnetics - N45
+- AIC Magnetics - N50
+- Ankey Magnets - N30EH
+- Ankey Magnets - N30H
+- Ankey Magnets - N30SH
+- Ankey Magnets - N30UH
+- Ankey Magnets - N33H
+- Ankey Magnets - N33M
+- Ankey Magnets - N33SH
+- Ankey Magnets - N33UH
+- Ankey Magnets - N35
+- Ankey Magnets - N35EH
+- Ankey Magnets - N35H
+- Ankey Magnets - N35M
+- Ankey Magnets - N35SH
+- Ankey Magnets - N35UH
+- Ankey Magnets - N38
+- Ankey Magnets - N38EH
+- Ankey Magnets - N38H
+- Ankey Magnets - N38M
+- Ankey Magnets - N38SH
+- Ankey Magnets - N38UH
+- Ankey Magnets - N40
+- Ankey Magnets - N40EH
+- Ankey Magnets - N40H
+- Ankey Magnets - N40M
+- Ankey Magnets - N40SH
+- Ankey Magnets - N40UH
+- Ankey Magnets - N42
+- Ankey Magnets - N42EH
+- Ankey Magnets - N42H
+- Ankey Magnets - N42M
+- Ankey Magnets - N42SH
+- Ankey Magnets - N42UH
+- Ankey Magnets - N45
+- Ankey Magnets - N45H
+- Ankey Magnets - N45M
+- Ankey Magnets - N45SH
+- Ankey Magnets - N45UH
+- Ankey Magnets - N48
+- Ankey Magnets - N48H
+- Ankey Magnets - N48M
+- Ankey Magnets - N48SH
+- Ankey Magnets - N48UH
+- Ankey Magnets - N50
+- Ankey Magnets - N50H
+- Ankey Magnets - N50M
+- Ankey Magnets - N50SH
+- Ankey Magnets - N52
+- Ankey Magnets - N52H
+- Ankey Magnets - N52M
+- Ankey Magnets - N54
+- Armstrong Magnetics - Grade 16
+- Armstrong Magnetics - Grade 18
+- Armstrong Magnetics - Grade 20
+- Armstrong Magnetics - Grade 20S
+- Armstrong Magnetics - Grade 22
+- Armstrong Magnetics - Grade 24
+- Armstrong Magnetics - Grade 24H
+- Armstrong Magnetics - Grade 26H
+- Armstrong Magnetics - Grade 28H
+- Armstrong Magnetics - Grade 30H
+- Armstrong Magnetics - Grade 32H
+- Armstrong Magnetics - Grade 32L
+- Arnold_Magnetics_Alnico 2, Cast_20C
+- Arnold_Magnetics_Alnico 2, Sintered_20C
+- Arnold_Magnetics_Alnico 3, Cast_20C
+- Arnold_Magnetics_Alnico 4, Cast_20C
+- Arnold_Magnetics_Alnico 5, Cast_20C
+- Arnold_Magnetics_Alnico 5, Sintered_20C
+- Arnold_Magnetics_Alnico 5cc, Cast_20C
+- Arnold_Magnetics_Alnico 6, Cast_20C
+- Arnold_Magnetics_Alnico 6, Sintered_20C
+- Arnold_Magnetics_Alnico 8, Sintered_20C
+- Arnold_Magnetics_Alnico 8B, Cast_20C
+- Arnold_Magnetics_Alnico 8B, Sintered_20C
+- Arnold_Magnetics_Alnico 8H, Cast_20C
+- Arnold_Magnetics_Alnico 8H, Sintered_20C
+- Arnold_Magnetics_Alnico 8HE, Cast_20C
+- Arnold_Magnetics_Alnico 9, Cast_20C
+- Arnold_Magnetics_Arkomax 800_20C
+- Arnold_Magnetics_Arkomax 800Hi-Hc_20C
+- Arnold_Magnetics_N28AH_-40C
+- Arnold_Magnetics_N28AH_100C
+- Arnold_Magnetics_N28AH_120C
+- Arnold_Magnetics_N28AH_150C
+- Arnold_Magnetics_N28AH_180C
+- Arnold_Magnetics_N28AH_200C
+- Arnold_Magnetics_N28AH_20C
+- Arnold_Magnetics_N28AH_220C
+- Arnold_Magnetics_N28AH_60C
+- Arnold_Magnetics_N28AH_80C
+- Arnold_Magnetics_N28EH_-40C
+- Arnold_Magnetics_N28EH_100C
+- Arnold_Magnetics_N28EH_120C
+- Arnold_Magnetics_N28EH_150C
+- Arnold_Magnetics_N28EH_180C
+- Arnold_Magnetics_N28EH_200C
+- Arnold_Magnetics_N28EH_20C
+- Arnold_Magnetics_N28EH_220C
+- Arnold_Magnetics_N28EH_60C
+- Arnold_Magnetics_N28EH_80C
+- Arnold_Magnetics_N28UH_-40C
+- Arnold_Magnetics_N28UH_100C
+- Arnold_Magnetics_N28UH_120C
+- Arnold_Magnetics_N28UH_150C
+- Arnold_Magnetics_N28UH_180C
+- Arnold_Magnetics_N28UH_200C
+- Arnold_Magnetics_N28UH_20C
+- Arnold_Magnetics_N28UH_220C
+- Arnold_Magnetics_N28UH_60C
+- Arnold_Magnetics_N28UH_80C
+- Arnold_Magnetics_N30_-40C
+- Arnold_Magnetics_N30_100C
+- Arnold_Magnetics_N30_120C
+- Arnold_Magnetics_N30_150C
+- Arnold_Magnetics_N30_180C
+- Arnold_Magnetics_N30_200C
+- Arnold_Magnetics_N30_20C
+- Arnold_Magnetics_N30_220C
+- Arnold_Magnetics_N30_60C
+- Arnold_Magnetics_N30_80C
+- Arnold_Magnetics_N30AH_-40C
+- Arnold_Magnetics_N30AH_100C
+- Arnold_Magnetics_N30AH_120C
+- Arnold_Magnetics_N30AH_150C
+- Arnold_Magnetics_N30AH_180C
+- Arnold_Magnetics_N30AH_200C
+- Arnold_Magnetics_N30AH_20C
+- Arnold_Magnetics_N30AH_220C
+- Arnold_Magnetics_N30AH_60C
+- Arnold_Magnetics_N30AH_80C
+- Arnold_Magnetics_N30AHZ_-40C
+- Arnold_Magnetics_N30AHZ_100C
+- Arnold_Magnetics_N30AHZ_120C
+- Arnold_Magnetics_N30AHZ_150C
+- Arnold_Magnetics_N30AHZ_180C
+- Arnold_Magnetics_N30AHZ_200C
+- Arnold_Magnetics_N30AHZ_20C
+- Arnold_Magnetics_N30AHZ_220C
+- Arnold_Magnetics_N30AHZ_60C
+- Arnold_Magnetics_N30AHZ_80C
+- Arnold_Magnetics_N30EH_-40C
+- Arnold_Magnetics_N30EH_100C
+- Arnold_Magnetics_N30EH_120C
+- Arnold_Magnetics_N30EH_150C
+- Arnold_Magnetics_N30EH_180C
+- Arnold_Magnetics_N30EH_200C
+- Arnold_Magnetics_N30EH_20C
+- Arnold_Magnetics_N30EH_220C
+- Arnold_Magnetics_N30EH_60C
+- Arnold_Magnetics_N30EH_80C
+- Arnold_Magnetics_N30EHZ_-40C
+- Arnold_Magnetics_N30EHZ_100C
+- Arnold_Magnetics_N30EHZ_120C
+- Arnold_Magnetics_N30EHZ_150C
+- Arnold_Magnetics_N30EHZ_180C
+- Arnold_Magnetics_N30EHZ_200C
+- Arnold_Magnetics_N30EHZ_20C
+- Arnold_Magnetics_N30EHZ_220C
+- Arnold_Magnetics_N30EHZ_60C
+- Arnold_Magnetics_N30EHZ_80C
+- Arnold_Magnetics_N30H_-40C
+- Arnold_Magnetics_N30H_100C
+- Arnold_Magnetics_N30H_120C
+- Arnold_Magnetics_N30H_150C
+- Arnold_Magnetics_N30H_180C
+- Arnold_Magnetics_N30H_200C
+- Arnold_Magnetics_N30H_20C
+- Arnold_Magnetics_N30H_220C
+- Arnold_Magnetics_N30H_60C
+- Arnold_Magnetics_N30H_80C
+- Arnold_Magnetics_N30SH_-40C
+- Arnold_Magnetics_N30SH_100C
+- Arnold_Magnetics_N30SH_120C
+- Arnold_Magnetics_N30SH_150C
+- Arnold_Magnetics_N30SH_180C
+- Arnold_Magnetics_N30SH_200C
+- Arnold_Magnetics_N30SH_20C
+- Arnold_Magnetics_N30SH_220C
+- Arnold_Magnetics_N30SH_60C
+- Arnold_Magnetics_N30SH_80C
+- Arnold_Magnetics_N30SHZ_-40C
+- Arnold_Magnetics_N30SHZ_100C
+- Arnold_Magnetics_N30SHZ_120C
+- Arnold_Magnetics_N30SHZ_150C
+- Arnold_Magnetics_N30SHZ_180C
+- Arnold_Magnetics_N30SHZ_200C
+- Arnold_Magnetics_N30SHZ_20C
+- Arnold_Magnetics_N30SHZ_220C
+- Arnold_Magnetics_N30SHZ_60C
+- Arnold_Magnetics_N30SHZ_80C
+- Arnold_Magnetics_N30UH_-40C
+- Arnold_Magnetics_N30UH_100C
+- Arnold_Magnetics_N30UH_120C
+- Arnold_Magnetics_N30UH_150C
+- Arnold_Magnetics_N30UH_180C
+- Arnold_Magnetics_N30UH_200C
+- Arnold_Magnetics_N30UH_20C
+- Arnold_Magnetics_N30UH_220C
+- Arnold_Magnetics_N30UH_60C
+- Arnold_Magnetics_N30UH_80C
+- Arnold_Magnetics_N30UHZ_-40C
+- Arnold_Magnetics_N30UHZ_100C
+- Arnold_Magnetics_N30UHZ_120C
+- Arnold_Magnetics_N30UHZ_150C
+- Arnold_Magnetics_N30UHZ_180C
+- Arnold_Magnetics_N30UHZ_200C
+- Arnold_Magnetics_N30UHZ_20C
+- Arnold_Magnetics_N30UHZ_220C
+- Arnold_Magnetics_N30UHZ_60C
+- Arnold_Magnetics_N30UHZ_80C
+- Arnold_Magnetics_N33_-40C
+- Arnold_Magnetics_N33_100C
+- Arnold_Magnetics_N33_120C
+- Arnold_Magnetics_N33_150C
+- Arnold_Magnetics_N33_180C
+- Arnold_Magnetics_N33_200C
+- Arnold_Magnetics_N33_20C
+- Arnold_Magnetics_N33_220C
+- Arnold_Magnetics_N33_60C
+- Arnold_Magnetics_N33_80C
+- Arnold_Magnetics_N33AH_-40C
+- Arnold_Magnetics_N33AH_100C
+- Arnold_Magnetics_N33AH_120C
+- Arnold_Magnetics_N33AH_150C
+- Arnold_Magnetics_N33AH_180C
+- Arnold_Magnetics_N33AH_200C
+- Arnold_Magnetics_N33AH_20C
+- Arnold_Magnetics_N33AH_220C
+- Arnold_Magnetics_N33AH_60C
+- Arnold_Magnetics_N33AH_80C
+- Arnold_Magnetics_N33EH_-40C
+- Arnold_Magnetics_N33EH_100C
+- Arnold_Magnetics_N33EH_120C
+- Arnold_Magnetics_N33EH_150C
+- Arnold_Magnetics_N33EH_180C
+- Arnold_Magnetics_N33EH_200C
+- Arnold_Magnetics_N33EH_20C
+- Arnold_Magnetics_N33EH_220C
+- Arnold_Magnetics_N33EH_60C
+- Arnold_Magnetics_N33EH_80C
+- Arnold_Magnetics_N33H_-40C
+- Arnold_Magnetics_N33H_100C
+- Arnold_Magnetics_N33H_120C
+- Arnold_Magnetics_N33H_150C
+- Arnold_Magnetics_N33H_180C
+- Arnold_Magnetics_N33H_200C
+- Arnold_Magnetics_N33H_20C
+- Arnold_Magnetics_N33H_220C
+- Arnold_Magnetics_N33H_60C
+- Arnold_Magnetics_N33H_80C
+- Arnold_Magnetics_N33M_-40C
+- Arnold_Magnetics_N33M_100C
+- Arnold_Magnetics_N33M_120C
+- Arnold_Magnetics_N33M_150C
+- Arnold_Magnetics_N33M_180C
+- Arnold_Magnetics_N33M_200C
+- Arnold_Magnetics_N33M_20C
+- Arnold_Magnetics_N33M_220C
+- Arnold_Magnetics_N33M_60C
+- Arnold_Magnetics_N33M_80C
+- Arnold_Magnetics_N33SH_-40C
+- Arnold_Magnetics_N33SH_100C
+- Arnold_Magnetics_N33SH_120C
+- Arnold_Magnetics_N33SH_150C
+- Arnold_Magnetics_N33SH_180C
+- Arnold_Magnetics_N33SH_200C
+- Arnold_Magnetics_N33SH_20C
+- Arnold_Magnetics_N33SH_220C
+- Arnold_Magnetics_N33SH_60C
+- Arnold_Magnetics_N33SH_80C
+- Arnold_Magnetics_N33SHX_-40C
+- Arnold_Magnetics_N33SHX_100C
+- Arnold_Magnetics_N33SHX_120C
+- Arnold_Magnetics_N33SHX_150C
+- Arnold_Magnetics_N33SHX_180C
+- Arnold_Magnetics_N33SHX_200C
+- Arnold_Magnetics_N33SHX_20C
+- Arnold_Magnetics_N33SHX_220C
+- Arnold_Magnetics_N33SHX_60C
+- Arnold_Magnetics_N33SHX_80C
+- Arnold_Magnetics_N33SHZ_-40C
+- Arnold_Magnetics_N33SHZ_100C
+- Arnold_Magnetics_N33SHZ_120C
+- Arnold_Magnetics_N33SHZ_150C
+- Arnold_Magnetics_N33SHZ_180C
+- Arnold_Magnetics_N33SHZ_200C
+- Arnold_Magnetics_N33SHZ_20C
+- Arnold_Magnetics_N33SHZ_220C
+- Arnold_Magnetics_N33SHZ_60C
+- Arnold_Magnetics_N33SHZ_80C
+- Arnold_Magnetics_N33UH_-40C
+- Arnold_Magnetics_N33UH_100C
+- Arnold_Magnetics_N33UH_120C
+- Arnold_Magnetics_N33UH_150C
+- Arnold_Magnetics_N33UH_180C
+- Arnold_Magnetics_N33UH_200C
+- Arnold_Magnetics_N33UH_20C
+- Arnold_Magnetics_N33UH_220C
+- Arnold_Magnetics_N33UH_60C
+- Arnold_Magnetics_N33UH_80C
+- Arnold_Magnetics_N33UHZ_-40C
+- Arnold_Magnetics_N33UHZ_100C
+- Arnold_Magnetics_N33UHZ_120C
+- Arnold_Magnetics_N33UHZ_150C
+- Arnold_Magnetics_N33UHZ_180C
+- Arnold_Magnetics_N33UHZ_200C
+- Arnold_Magnetics_N33UHZ_20C
+- Arnold_Magnetics_N33UHZ_220C
+- Arnold_Magnetics_N33UHZ_60C
+- Arnold_Magnetics_N33UHZ_80C
+- Arnold_Magnetics_N35_-40C
+- Arnold_Magnetics_N35_100C
+- Arnold_Magnetics_N35_120C
+- Arnold_Magnetics_N35_150C
+- Arnold_Magnetics_N35_180C
+- Arnold_Magnetics_N35_200C
+- Arnold_Magnetics_N35_20C
+- Arnold_Magnetics_N35_220C
+- Arnold_Magnetics_N35_60C
+- Arnold_Magnetics_N35_80C
+- Arnold_Magnetics_N35AH_-40C
+- Arnold_Magnetics_N35AH_100C
+- Arnold_Magnetics_N35AH_120C
+- Arnold_Magnetics_N35AH_150C
+- Arnold_Magnetics_N35AH_180C
+- Arnold_Magnetics_N35AH_200C
+- Arnold_Magnetics_N35AH_20C
+- Arnold_Magnetics_N35AH_220C
+- Arnold_Magnetics_N35AH_60C
+- Arnold_Magnetics_N35AH_80C
+- Arnold_Magnetics_N35EH_-40C
+- Arnold_Magnetics_N35EH_100C
+- Arnold_Magnetics_N35EH_120C
+- Arnold_Magnetics_N35EH_150C
+- Arnold_Magnetics_N35EH_180C
+- Arnold_Magnetics_N35EH_200C
+- Arnold_Magnetics_N35EH_20C
+- Arnold_Magnetics_N35EH_220C
+- Arnold_Magnetics_N35EH_60C
+- Arnold_Magnetics_N35EH_80C
+- Arnold_Magnetics_N35H_-40C
+- Arnold_Magnetics_N35H_100C
+- Arnold_Magnetics_N35H_120C
+- Arnold_Magnetics_N35H_150C
+- Arnold_Magnetics_N35H_180C
+- Arnold_Magnetics_N35H_200C
+- Arnold_Magnetics_N35H_20C
+- Arnold_Magnetics_N35H_220C
+- Arnold_Magnetics_N35H_60C
+- Arnold_Magnetics_N35H_80C
+- Arnold_Magnetics_N35M_-40C
+- Arnold_Magnetics_N35M_100C
+- Arnold_Magnetics_N35M_120C
+- Arnold_Magnetics_N35M_150C
+- Arnold_Magnetics_N35M_180C
+- Arnold_Magnetics_N35M_200C
+- Arnold_Magnetics_N35M_20C
+- Arnold_Magnetics_N35M_220C
+- Arnold_Magnetics_N35M_60C
+- Arnold_Magnetics_N35M_80C
+- Arnold_Magnetics_N35MX_-40C
+- Arnold_Magnetics_N35MX_100C
+- Arnold_Magnetics_N35MX_120C
+- Arnold_Magnetics_N35MX_150C
+- Arnold_Magnetics_N35MX_180C
+- Arnold_Magnetics_N35MX_200C
+- Arnold_Magnetics_N35MX_20C
+- Arnold_Magnetics_N35MX_220C
+- Arnold_Magnetics_N35MX_60C
+- Arnold_Magnetics_N35MX_80C
+- Arnold_Magnetics_N35SH_-40C
+- Arnold_Magnetics_N35SH_100C
+- Arnold_Magnetics_N35SH_120C
+- Arnold_Magnetics_N35SH_150C
+- Arnold_Magnetics_N35SH_180C
+- Arnold_Magnetics_N35SH_200C
+- Arnold_Magnetics_N35SH_20C
+- Arnold_Magnetics_N35SH_220C
+- Arnold_Magnetics_N35SH_60C
+- Arnold_Magnetics_N35SH_80C
+- Arnold_Magnetics_N35SHX_-40C
+- Arnold_Magnetics_N35SHX_100C
+- Arnold_Magnetics_N35SHX_120C
+- Arnold_Magnetics_N35SHX_150C
+- Arnold_Magnetics_N35SHX_180C
+- Arnold_Magnetics_N35SHX_200C
+- Arnold_Magnetics_N35SHX_20C
+- Arnold_Magnetics_N35SHX_220C
+- Arnold_Magnetics_N35SHX_60C
+- Arnold_Magnetics_N35SHX_80C
+- Arnold_Magnetics_N35SHZ_-40C
+- Arnold_Magnetics_N35SHZ_100C
+- Arnold_Magnetics_N35SHZ_120C
+- Arnold_Magnetics_N35SHZ_150C
+- Arnold_Magnetics_N35SHZ_180C
+- Arnold_Magnetics_N35SHZ_200C
+- Arnold_Magnetics_N35SHZ_20C
+- Arnold_Magnetics_N35SHZ_220C
+- Arnold_Magnetics_N35SHZ_60C
+- Arnold_Magnetics_N35SHZ_80C
+- Arnold_Magnetics_N35UH_-40C
+- Arnold_Magnetics_N35UH_100C
+- Arnold_Magnetics_N35UH_120C
+- Arnold_Magnetics_N35UH_150C
+- Arnold_Magnetics_N35UH_180C
+- Arnold_Magnetics_N35UH_200C
+- Arnold_Magnetics_N35UH_20C
+- Arnold_Magnetics_N35UH_220C
+- Arnold_Magnetics_N35UH_60C
+- Arnold_Magnetics_N35UH_80C
+- Arnold_Magnetics_N35X_-40C
+- Arnold_Magnetics_N35X_100C
+- Arnold_Magnetics_N35X_120C
+- Arnold_Magnetics_N35X_150C
+- Arnold_Magnetics_N35X_180C
+- Arnold_Magnetics_N35X_200C
+- Arnold_Magnetics_N35X_20C
+- Arnold_Magnetics_N35X_220C
+- Arnold_Magnetics_N35X_60C
+- Arnold_Magnetics_N35X_80C
+- Arnold_Magnetics_N38_-40C
+- Arnold_Magnetics_N38_100C
+- Arnold_Magnetics_N38_120C
+- Arnold_Magnetics_N38_150C
+- Arnold_Magnetics_N38_180C
+- Arnold_Magnetics_N38_200C
+- Arnold_Magnetics_N38_20C
+- Arnold_Magnetics_N38_220C
+- Arnold_Magnetics_N38_60C
+- Arnold_Magnetics_N38_80C
+- Arnold_Magnetics_N38AH_-40C
+- Arnold_Magnetics_N38AH_100C
+- Arnold_Magnetics_N38AH_120C
+- Arnold_Magnetics_N38AH_150C
+- Arnold_Magnetics_N38AH_180C
+- Arnold_Magnetics_N38AH_200C
+- Arnold_Magnetics_N38AH_20C
+- Arnold_Magnetics_N38AH_220C
+- Arnold_Magnetics_N38AH_60C
+- Arnold_Magnetics_N38AH_80C
+- Arnold_Magnetics_N38EH_-40C
+- Arnold_Magnetics_N38EH_100C
+- Arnold_Magnetics_N38EH_120C
+- Arnold_Magnetics_N38EH_150C
+- Arnold_Magnetics_N38EH_180C
+- Arnold_Magnetics_N38EH_200C
+- Arnold_Magnetics_N38EH_20C
+- Arnold_Magnetics_N38EH_220C
+- Arnold_Magnetics_N38EH_60C
+- Arnold_Magnetics_N38EH_80C
+- Arnold_Magnetics_N38EHZ_-40C
+- Arnold_Magnetics_N38EHZ_100C
+- Arnold_Magnetics_N38EHZ_120C
+- Arnold_Magnetics_N38EHZ_150C
+- Arnold_Magnetics_N38EHZ_180C
+- Arnold_Magnetics_N38EHZ_200C
+- Arnold_Magnetics_N38EHZ_20C
+- Arnold_Magnetics_N38EHZ_220C
+- Arnold_Magnetics_N38EHZ_60C
+- Arnold_Magnetics_N38EHZ_80C
+- Arnold_Magnetics_N38H_-40C
+- Arnold_Magnetics_N38H_100C
+- Arnold_Magnetics_N38H_120C
+- Arnold_Magnetics_N38H_150C
+- Arnold_Magnetics_N38H_180C
+- Arnold_Magnetics_N38H_200C
+- Arnold_Magnetics_N38H_20C
+- Arnold_Magnetics_N38H_220C
+- Arnold_Magnetics_N38H_60C
+- Arnold_Magnetics_N38H_80C
+- Arnold_Magnetics_N38HX_-40C
+- Arnold_Magnetics_N38HX_100C
+- Arnold_Magnetics_N38HX_120C
+- Arnold_Magnetics_N38HX_150C
+- Arnold_Magnetics_N38HX_180C
+- Arnold_Magnetics_N38HX_200C
+- Arnold_Magnetics_N38HX_20C
+- Arnold_Magnetics_N38HX_220C
+- Arnold_Magnetics_N38HX_60C
+- Arnold_Magnetics_N38HX_80C
+- Arnold_Magnetics_N38SHZ_-40C
+- Arnold_Magnetics_N38SHZ_100C
+- Arnold_Magnetics_N38SHZ_120C
+- Arnold_Magnetics_N38SHZ_150C
+- Arnold_Magnetics_N38SHZ_180C
+- Arnold_Magnetics_N38SHZ_200C
+- Arnold_Magnetics_N38SHZ_20C
+- Arnold_Magnetics_N38SHZ_220C
+- Arnold_Magnetics_N38SHZ_60C
+- Arnold_Magnetics_N38SHZ_80C
+- Arnold_Magnetics_N38UH_-40C
+- Arnold_Magnetics_N38UH_100C
+- Arnold_Magnetics_N38UH_120C
+- Arnold_Magnetics_N38UH_150C
+- Arnold_Magnetics_N38UH_180C
+- Arnold_Magnetics_N38UH_200C
+- Arnold_Magnetics_N38UH_20C
+- Arnold_Magnetics_N38UH_220C
+- Arnold_Magnetics_N38UH_60C
+- Arnold_Magnetics_N38UH_80C
+- Arnold_Magnetics_N38UHZ_-40C
+- Arnold_Magnetics_N38UHZ_100C
+- Arnold_Magnetics_N38UHZ_120C
+- Arnold_Magnetics_N38UHZ_150C
+- Arnold_Magnetics_N38UHZ_180C
+- Arnold_Magnetics_N38UHZ_200C
+- Arnold_Magnetics_N38UHZ_20C
+- Arnold_Magnetics_N38UHZ_220C
+- Arnold_Magnetics_N38UHZ_60C
+- Arnold_Magnetics_N38UHZ_80C
+- Arnold_Magnetics_N40_-40C
+- Arnold_Magnetics_N40_100C
+- Arnold_Magnetics_N40_120C
+- Arnold_Magnetics_N40_150C
+- Arnold_Magnetics_N40_180C
+- Arnold_Magnetics_N40_200C
+- Arnold_Magnetics_N40_20C
+- Arnold_Magnetics_N40_220C
+- Arnold_Magnetics_N40_60C
+- Arnold_Magnetics_N40_80C
+- Arnold_Magnetics_N40EH_-40C
+- Arnold_Magnetics_N40EH_100C
+- Arnold_Magnetics_N40EH_120C
+- Arnold_Magnetics_N40EH_150C
+- Arnold_Magnetics_N40EH_180C
+- Arnold_Magnetics_N40EH_200C
+- Arnold_Magnetics_N40EH_20C
+- Arnold_Magnetics_N40EH_220C
+- Arnold_Magnetics_N40EH_60C
+- Arnold_Magnetics_N40EH_80C
+- Arnold_Magnetics_N40H_-40C
+- Arnold_Magnetics_N40H_100C
+- Arnold_Magnetics_N40H_120C
+- Arnold_Magnetics_N40H_150C
+- Arnold_Magnetics_N40H_180C
+- Arnold_Magnetics_N40H_200C
+- Arnold_Magnetics_N40H_20C
+- Arnold_Magnetics_N40H_220C
+- Arnold_Magnetics_N40H_60C
+- Arnold_Magnetics_N40H_80C
+- Arnold_Magnetics_N40HX_-40C
+- Arnold_Magnetics_N40HX_100C
+- Arnold_Magnetics_N40HX_120C
+- Arnold_Magnetics_N40HX_150C
+- Arnold_Magnetics_N40HX_180C
+- Arnold_Magnetics_N40HX_200C
+- Arnold_Magnetics_N40HX_20C
+- Arnold_Magnetics_N40HX_220C
+- Arnold_Magnetics_N40HX_60C
+- Arnold_Magnetics_N40HX_80C
+- Arnold_Magnetics_N40M_-40C
+- Arnold_Magnetics_N40M_100C
+- Arnold_Magnetics_N40M_120C
+- Arnold_Magnetics_N40M_150C
+- Arnold_Magnetics_N40M_180C
+- Arnold_Magnetics_N40M_200C
+- Arnold_Magnetics_N40M_20C
+- Arnold_Magnetics_N40M_220C
+- Arnold_Magnetics_N40M_60C
+- Arnold_Magnetics_N40M_80C
+- Arnold_Magnetics_N40SH_-40C
+- Arnold_Magnetics_N40SH_100C
+- Arnold_Magnetics_N40SH_120C
+- Arnold_Magnetics_N40SH_150C
+- Arnold_Magnetics_N40SH_180C
+- Arnold_Magnetics_N40SH_200C
+- Arnold_Magnetics_N40SH_20C
+- Arnold_Magnetics_N40SH_220C
+- Arnold_Magnetics_N40SH_60C
+- Arnold_Magnetics_N40SH_80C
+- Arnold_Magnetics_N40UH_-40C
+- Arnold_Magnetics_N40UH_100C
+- Arnold_Magnetics_N40UH_120C
+- Arnold_Magnetics_N40UH_150C
+- Arnold_Magnetics_N40UH_180C
+- Arnold_Magnetics_N40UH_200C
+- Arnold_Magnetics_N40UH_20C
+- Arnold_Magnetics_N40UH_220C
+- Arnold_Magnetics_N40UH_60C
+- Arnold_Magnetics_N40UH_80C
+- Arnold_Magnetics_N40UHZ_-40C
+- Arnold_Magnetics_N40UHZ_100C
+- Arnold_Magnetics_N40UHZ_120C
+- Arnold_Magnetics_N40UHZ_150C
+- Arnold_Magnetics_N40UHZ_180C
+- Arnold_Magnetics_N40UHZ_200C
+- Arnold_Magnetics_N40UHZ_20C
+- Arnold_Magnetics_N40UHZ_220C
+- Arnold_Magnetics_N40UHZ_60C
+- Arnold_Magnetics_N40UHZ_80C
+- Arnold_Magnetics_N42_-40C
+- Arnold_Magnetics_N42_100C
+- Arnold_Magnetics_N42_120C
+- Arnold_Magnetics_N42_150C
+- Arnold_Magnetics_N42_180C
+- Arnold_Magnetics_N42_200C
+- Arnold_Magnetics_N42_20C
+- Arnold_Magnetics_N42_220C
+- Arnold_Magnetics_N42_60C
+- Arnold_Magnetics_N42_80C
+- Arnold_Magnetics_N42EH_-40C
+- Arnold_Magnetics_N42EH_100C
+- Arnold_Magnetics_N42EH_120C
+- Arnold_Magnetics_N42EH_150C
+- Arnold_Magnetics_N42EH_180C
+- Arnold_Magnetics_N42EH_200C
+- Arnold_Magnetics_N42EH_20C
+- Arnold_Magnetics_N42EH_220C
+- Arnold_Magnetics_N42EH_60C
+- Arnold_Magnetics_N42EH_80C
+- Arnold_Magnetics_N42H_-40C
+- Arnold_Magnetics_N42H_100C
+- Arnold_Magnetics_N42H_120C
+- Arnold_Magnetics_N42H_150C
+- Arnold_Magnetics_N42H_180C
+- Arnold_Magnetics_N42H_200C
+- Arnold_Magnetics_N42H_20C
+- Arnold_Magnetics_N42H_220C
+- Arnold_Magnetics_N42H_60C
+- Arnold_Magnetics_N42H_80C
+- Arnold_Magnetics_N42M_-40C
+- Arnold_Magnetics_N42M_100C
+- Arnold_Magnetics_N42M_120C
+- Arnold_Magnetics_N42M_150C
+- Arnold_Magnetics_N42M_180C
+- Arnold_Magnetics_N42M_200C
+- Arnold_Magnetics_N42M_20C
+- Arnold_Magnetics_N42M_220C
+- Arnold_Magnetics_N42M_60C
+- Arnold_Magnetics_N42M_80C
+- Arnold_Magnetics_N42SH_-40C
+- Arnold_Magnetics_N42SH_100C
+- Arnold_Magnetics_N42SH_120C
+- Arnold_Magnetics_N42SH_150C
+- Arnold_Magnetics_N42SH_180C
+- Arnold_Magnetics_N42SH_200C
+- Arnold_Magnetics_N42SH_20C
+- Arnold_Magnetics_N42SH_220C
+- Arnold_Magnetics_N42SH_60C
+- Arnold_Magnetics_N42SH_80C
+- Arnold_Magnetics_N42SHX_-40C
+- Arnold_Magnetics_N42SHX_100C
+- Arnold_Magnetics_N42SHX_120C
+- Arnold_Magnetics_N42SHX_150C
+- Arnold_Magnetics_N42SHX_180C
+- Arnold_Magnetics_N42SHX_200C
+- Arnold_Magnetics_N42SHX_20C
+- Arnold_Magnetics_N42SHX_220C
+- Arnold_Magnetics_N42SHX_60C
+- Arnold_Magnetics_N42SHX_80C
+- Arnold_Magnetics_N42UH_-40C
+- Arnold_Magnetics_N42UH_100C
+- Arnold_Magnetics_N42UH_120C
+- Arnold_Magnetics_N42UH_150C
+- Arnold_Magnetics_N42UH_180C
+- Arnold_Magnetics_N42UH_200C
+- Arnold_Magnetics_N42UH_20C
+- Arnold_Magnetics_N42UH_220C
+- Arnold_Magnetics_N42UH_60C
+- Arnold_Magnetics_N42UH_80C
+- Arnold_Magnetics_N45_-40C
+- Arnold_Magnetics_N45_100C
+- Arnold_Magnetics_N45_120C
+- Arnold_Magnetics_N45_150C
+- Arnold_Magnetics_N45_180C
+- Arnold_Magnetics_N45_200C
+- Arnold_Magnetics_N45_20C
+- Arnold_Magnetics_N45_220C
+- Arnold_Magnetics_N45_60C
+- Arnold_Magnetics_N45_80C
+- Arnold_Magnetics_N45H_-40C
+- Arnold_Magnetics_N45H_100C
+- Arnold_Magnetics_N45H_120C
+- Arnold_Magnetics_N45H_150C
+- Arnold_Magnetics_N45H_180C
+- Arnold_Magnetics_N45H_200C
+- Arnold_Magnetics_N45H_20C
+- Arnold_Magnetics_N45H_220C
+- Arnold_Magnetics_N45H_60C
+- Arnold_Magnetics_N45H_80C
+- Arnold_Magnetics_N45HX_-40C
+- Arnold_Magnetics_N45HX_100C
+- Arnold_Magnetics_N45HX_120C
+- Arnold_Magnetics_N45HX_150C
+- Arnold_Magnetics_N45HX_180C
+- Arnold_Magnetics_N45HX_200C
+- Arnold_Magnetics_N45HX_20C
+- Arnold_Magnetics_N45HX_220C
+- Arnold_Magnetics_N45HX_60C
+- Arnold_Magnetics_N45HX_80C
+- Arnold_Magnetics_N45M_-40C
+- Arnold_Magnetics_N45M_100C
+- Arnold_Magnetics_N45M_120C
+- Arnold_Magnetics_N45M_150C
+- Arnold_Magnetics_N45M_180C
+- Arnold_Magnetics_N45M_200C
+- Arnold_Magnetics_N45M_20C
+- Arnold_Magnetics_N45M_220C
+- Arnold_Magnetics_N45M_60C
+- Arnold_Magnetics_N45M_80C
+- Arnold_Magnetics_N45MX_-40C
+- Arnold_Magnetics_N45MX_100C
+- Arnold_Magnetics_N45MX_120C
+- Arnold_Magnetics_N45MX_150C
+- Arnold_Magnetics_N45MX_180C
+- Arnold_Magnetics_N45MX_200C
+- Arnold_Magnetics_N45MX_20C
+- Arnold_Magnetics_N45MX_220C
+- Arnold_Magnetics_N45MX_60C
+- Arnold_Magnetics_N45MX_80C
+- Arnold_Magnetics_N45SH_-40C
+- Arnold_Magnetics_N45SH_100C
+- Arnold_Magnetics_N45SH_120C
+- Arnold_Magnetics_N45SH_150C
+- Arnold_Magnetics_N45SH_180C
+- Arnold_Magnetics_N45SH_200C
+- Arnold_Magnetics_N45SH_20C
+- Arnold_Magnetics_N45SH_220C
+- Arnold_Magnetics_N45SH_60C
+- Arnold_Magnetics_N45SH_80C
+- Arnold_Magnetics_N45SHZ_-40C
+- Arnold_Magnetics_N45SHZ_100C
+- Arnold_Magnetics_N45SHZ_120C
+- Arnold_Magnetics_N45SHZ_150C
+- Arnold_Magnetics_N45SHZ_180C
+- Arnold_Magnetics_N45SHZ_200C
+- Arnold_Magnetics_N45SHZ_20C
+- Arnold_Magnetics_N45SHZ_220C
+- Arnold_Magnetics_N45SHZ_60C
+- Arnold_Magnetics_N45SHZ_80C
+- Arnold_Magnetics_N45UH_-40C
+- Arnold_Magnetics_N45UH_100C
+- Arnold_Magnetics_N45UH_120C
+- Arnold_Magnetics_N45UH_150C
+- Arnold_Magnetics_N45UH_180C
+- Arnold_Magnetics_N45UH_200C
+- Arnold_Magnetics_N45UH_20C
+- Arnold_Magnetics_N45UH_220C
+- Arnold_Magnetics_N45UH_60C
+- Arnold_Magnetics_N45UH_80C
+- Arnold_Magnetics_N48_-40C
+- Arnold_Magnetics_N48_100C
+- Arnold_Magnetics_N48_120C
+- Arnold_Magnetics_N48_150C
+- Arnold_Magnetics_N48_180C
+- Arnold_Magnetics_N48_200C
+- Arnold_Magnetics_N48_20C
+- Arnold_Magnetics_N48_220C
+- Arnold_Magnetics_N48_60C
+- Arnold_Magnetics_N48_80C
+- Arnold_Magnetics_N48H_-40C
+- Arnold_Magnetics_N48H_100C
+- Arnold_Magnetics_N48H_120C
+- Arnold_Magnetics_N48H_150C
+- Arnold_Magnetics_N48H_180C
+- Arnold_Magnetics_N48H_200C
+- Arnold_Magnetics_N48H_20C
+- Arnold_Magnetics_N48H_220C
+- Arnold_Magnetics_N48H_60C
+- Arnold_Magnetics_N48H_80C
+- Arnold_Magnetics_N48M_-40C
+- Arnold_Magnetics_N48M_100C
+- Arnold_Magnetics_N48M_120C
+- Arnold_Magnetics_N48M_150C
+- Arnold_Magnetics_N48M_180C
+- Arnold_Magnetics_N48M_200C
+- Arnold_Magnetics_N48M_20C
+- Arnold_Magnetics_N48M_220C
+- Arnold_Magnetics_N48M_60C
+- Arnold_Magnetics_N48M_80C
+- Arnold_Magnetics_N48SH_-40C
+- Arnold_Magnetics_N48SH_100C
+- Arnold_Magnetics_N48SH_120C
+- Arnold_Magnetics_N48SH_150C
+- Arnold_Magnetics_N48SH_180C
+- Arnold_Magnetics_N48SH_200C
+- Arnold_Magnetics_N48SH_20C
+- Arnold_Magnetics_N48SH_220C
+- Arnold_Magnetics_N48SH_60C
+- Arnold_Magnetics_N48SH_80C
+- Arnold_Magnetics_N50_-40C
+- Arnold_Magnetics_N50_100C
+- Arnold_Magnetics_N50_120C
+- Arnold_Magnetics_N50_150C
+- Arnold_Magnetics_N50_180C
+- Arnold_Magnetics_N50_200C
+- Arnold_Magnetics_N50_20C
+- Arnold_Magnetics_N50_220C
+- Arnold_Magnetics_N50_60C
+- Arnold_Magnetics_N50_80C
+- Arnold_Magnetics_N50H_-40C
+- Arnold_Magnetics_N50H_100C
+- Arnold_Magnetics_N50H_120C
+- Arnold_Magnetics_N50H_150C
+- Arnold_Magnetics_N50H_180C
+- Arnold_Magnetics_N50H_200C
+- Arnold_Magnetics_N50H_20C
+- Arnold_Magnetics_N50H_220C
+- Arnold_Magnetics_N50H_60C
+- Arnold_Magnetics_N50H_80C
+- Arnold_Magnetics_N50M_-40C
+- Arnold_Magnetics_N50M_100C
+- Arnold_Magnetics_N50M_120C
+- Arnold_Magnetics_N50M_150C
+- Arnold_Magnetics_N50M_180C
+- Arnold_Magnetics_N50M_200C
+- Arnold_Magnetics_N50M_20C
+- Arnold_Magnetics_N50M_220C
+- Arnold_Magnetics_N50M_60C
+- Arnold_Magnetics_N50M_80C
+- Arnold_Magnetics_N52_-40C
+- Arnold_Magnetics_N52_100C
+- Arnold_Magnetics_N52_120C
+- Arnold_Magnetics_N52_150C
+- Arnold_Magnetics_N52_180C
+- Arnold_Magnetics_N52_200C
+- Arnold_Magnetics_N52_20C
+- Arnold_Magnetics_N52_220C
+- Arnold_Magnetics_N52_60C
+- Arnold_Magnetics_N52_80C
+- Arnold_Magnetics_N52M_-40C
+- Arnold_Magnetics_N52M_100C
+- Arnold_Magnetics_N52M_120C
+- Arnold_Magnetics_N52M_150C
+- Arnold_Magnetics_N52M_180C
+- Arnold_Magnetics_N52M_200C
+- Arnold_Magnetics_N52M_20C
+- Arnold_Magnetics_N52M_220C
+- Arnold_Magnetics_N52M_60C
+- Arnold_Magnetics_N52M_80C
+- Arnold_Magnetics_N55_-40C
+- Arnold_Magnetics_N55_100C
+- Arnold_Magnetics_N55_120C
+- Arnold_Magnetics_N55_150C
+- Arnold_Magnetics_N55_180C
+- Arnold_Magnetics_N55_200C
+- Arnold_Magnetics_N55_20C
+- Arnold_Magnetics_N55_220C
+- Arnold_Magnetics_N55_60C
+- Arnold_Magnetics_N55_80C
+- Arnold_Magnetics_Recoma 18_-40C
+- Arnold_Magnetics_Recoma 18_100C
+- Arnold_Magnetics_Recoma 18_150C
+- Arnold_Magnetics_Recoma 18_200C
+- Arnold_Magnetics_Recoma 18_20C
+- Arnold_Magnetics_Recoma 18_250C
+- Arnold_Magnetics_Recoma 18_300C
+- Arnold_Magnetics_Recoma 18_350C
+- Arnold_Magnetics_Recoma 20_-40C
+- Arnold_Magnetics_Recoma 20_100C
+- Arnold_Magnetics_Recoma 20_150C
+- Arnold_Magnetics_Recoma 20_200C
+- Arnold_Magnetics_Recoma 20_20C
+- Arnold_Magnetics_Recoma 20_250C
+- Arnold_Magnetics_Recoma 20_300C
+- Arnold_Magnetics_Recoma 20_350C
+- Arnold_Magnetics_Recoma 22_-40C
+- Arnold_Magnetics_Recoma 22_100C
+- Arnold_Magnetics_Recoma 22_150C
+- Arnold_Magnetics_Recoma 22_200C
+- Arnold_Magnetics_Recoma 22_20C
+- Arnold_Magnetics_Recoma 22_250C
+- Arnold_Magnetics_Recoma 22_300C
+- Arnold_Magnetics_Recoma 22_350C
+- Arnold_Magnetics_Recoma 24HE_-40C
+- Arnold_Magnetics_Recoma 24HE_100C
+- Arnold_Magnetics_Recoma 24HE_150C
+- Arnold_Magnetics_Recoma 24HE_200C
+- Arnold_Magnetics_Recoma 24HE_20C
+- Arnold_Magnetics_Recoma 24HE_250C
+- Arnold_Magnetics_Recoma 24HE_300C
+- Arnold_Magnetics_Recoma 24HE_350C
+- Arnold_Magnetics_Recoma 25_-40C
+- Arnold_Magnetics_Recoma 25_100C
+- Arnold_Magnetics_Recoma 25_150C
+- Arnold_Magnetics_Recoma 25_200C
+- Arnold_Magnetics_Recoma 25_20C
+- Arnold_Magnetics_Recoma 25_250C
+- Arnold_Magnetics_Recoma 25_300C
+- Arnold_Magnetics_Recoma 25_350C
+- Arnold_Magnetics_Recoma 26_-40C
+- Arnold_Magnetics_Recoma 26_100C
+- Arnold_Magnetics_Recoma 26_150C
+- Arnold_Magnetics_Recoma 26_200C
+- Arnold_Magnetics_Recoma 26_20C
+- Arnold_Magnetics_Recoma 26_250C
+- Arnold_Magnetics_Recoma 26_300C
+- Arnold_Magnetics_Recoma 26_350C
+- Arnold_Magnetics_Recoma 26HE_-40C
+- Arnold_Magnetics_Recoma 26HE_100C
+- Arnold_Magnetics_Recoma 26HE_150C
+- Arnold_Magnetics_Recoma 26HE_200C
+- Arnold_Magnetics_Recoma 26HE_20C
+- Arnold_Magnetics_Recoma 26HE_250C
+- Arnold_Magnetics_Recoma 26HE_300C
+- Arnold_Magnetics_Recoma 26HE_350C
+- Arnold_Magnetics_Recoma 28_-40C
+- Arnold_Magnetics_Recoma 28_100C
+- Arnold_Magnetics_Recoma 28_150C
+- Arnold_Magnetics_Recoma 28_200C
+- Arnold_Magnetics_Recoma 28_20C
+- Arnold_Magnetics_Recoma 28_250C
+- Arnold_Magnetics_Recoma 28_300C
+- Arnold_Magnetics_Recoma 28_350C
+- Arnold_Magnetics_Recoma 28HE_-40C
+- Arnold_Magnetics_Recoma 28HE_100C
+- Arnold_Magnetics_Recoma 28HE_150C
+- Arnold_Magnetics_Recoma 28HE_200C
+- Arnold_Magnetics_Recoma 28HE_20C
+- Arnold_Magnetics_Recoma 28HE_250C
+- Arnold_Magnetics_Recoma 28HE_300C
+- Arnold_Magnetics_Recoma 28HE_350C
+- Arnold_Magnetics_Recoma 30_-40C
+- Arnold_Magnetics_Recoma 30_100C
+- Arnold_Magnetics_Recoma 30_150C
+- Arnold_Magnetics_Recoma 30_200C
+- Arnold_Magnetics_Recoma 30_20C
+- Arnold_Magnetics_Recoma 30_250C
+- Arnold_Magnetics_Recoma 30_300C
+- Arnold_Magnetics_Recoma 30_350C
+- Arnold_Magnetics_Recoma 30HE_-40C
+- Arnold_Magnetics_Recoma 30HE_100C
+- Arnold_Magnetics_Recoma 30HE_150C
+- Arnold_Magnetics_Recoma 30HE_200C
+- Arnold_Magnetics_Recoma 30HE_20C
+- Arnold_Magnetics_Recoma 30HE_250C
+- Arnold_Magnetics_Recoma 30HE_300C
+- Arnold_Magnetics_Recoma 30HE_350C
+- Arnold_Magnetics_Recoma 30S_-40C
+- Arnold_Magnetics_Recoma 30S_100C
+- Arnold_Magnetics_Recoma 30S_150C
+- Arnold_Magnetics_Recoma 30S_200C
+- Arnold_Magnetics_Recoma 30S_20C
+- Arnold_Magnetics_Recoma 30S_250C
+- Arnold_Magnetics_Recoma 30S_300C
+- Arnold_Magnetics_Recoma 30S_350C
+- Arnold_Magnetics_Recoma 32_-40C
+- Arnold_Magnetics_Recoma 32_100C
+- Arnold_Magnetics_Recoma 32_150C
+- Arnold_Magnetics_Recoma 32_200C
+- Arnold_Magnetics_Recoma 32_20C
+- Arnold_Magnetics_Recoma 32_250C
+- Arnold_Magnetics_Recoma 32_300C
+- Arnold_Magnetics_Recoma 32_350C
+- Arnold_Magnetics_Recoma 32S_-40C
+- Arnold_Magnetics_Recoma 32S_100C
+- Arnold_Magnetics_Recoma 32S_150C
+- Arnold_Magnetics_Recoma 32S_200C
+- Arnold_Magnetics_Recoma 32S_20C
+- Arnold_Magnetics_Recoma 32S_250C
+- Arnold_Magnetics_Recoma 32S_300C
+- Arnold_Magnetics_Recoma 32S_350C
+- Arnold_Magnetics_Recoma 33E_-40C
+- Arnold_Magnetics_Recoma 33E_100C
+- Arnold_Magnetics_Recoma 33E_150C
+- Arnold_Magnetics_Recoma 33E_200C
+- Arnold_Magnetics_Recoma 33E_20C
+- Arnold_Magnetics_Recoma 33E_250C
+- Arnold_Magnetics_Recoma 33E_300C
+- Arnold_Magnetics_Recoma 33E_350C
+- Arnold_Magnetics_Recoma 35E_-40C
+- Arnold_Magnetics_Recoma 35E_100C
+- Arnold_Magnetics_Recoma 35E_150C
+- Arnold_Magnetics_Recoma 35E_200C
+- Arnold_Magnetics_Recoma 35E_20C
+- Arnold_Magnetics_Recoma 35E_250C
+- Arnold_Magnetics_Recoma 35E_300C
+- Arnold_Magnetics_Recoma 35E_350C
+- Arnold_Magnetics_Recoma HT 360_-40C
+- Arnold_Magnetics_Recoma HT 360_100C
+- Arnold_Magnetics_Recoma HT 360_150C
+- Arnold_Magnetics_Recoma HT 360_200C
+- Arnold_Magnetics_Recoma HT 360_20C
+- Arnold_Magnetics_Recoma HT 360_250C
+- Arnold_Magnetics_Recoma HT 360_300C
+- Arnold_Magnetics_Recoma HT 360_350C
+- Arnold_Magnetics_Recoma HT 420_-40C
+- Arnold_Magnetics_Recoma HT 420_100C
+- Arnold_Magnetics_Recoma HT 420_150C
+- Arnold_Magnetics_Recoma HT 420_200C
+- Arnold_Magnetics_Recoma HT 420_20C
+- Arnold_Magnetics_Recoma HT 420_250C
+- Arnold_Magnetics_Recoma HT 420_300C
+- Arnold_Magnetics_Recoma HT 420_350C
+- Arnold_Magnetics_Recoma HT 470_-40C
+- Arnold_Magnetics_Recoma HT 470_100C
+- Arnold_Magnetics_Recoma HT 470_150C
+- Arnold_Magnetics_Recoma HT 470_200C
+- Arnold_Magnetics_Recoma HT 470_20C
+- Arnold_Magnetics_Recoma HT 470_250C
+- Arnold_Magnetics_Recoma HT 470_300C
+- Arnold_Magnetics_Recoma HT 470_350C
+- Arnold_Magnetics_Recoma HT 520_-40C
+- Arnold_Magnetics_Recoma HT 520_100C
+- Arnold_Magnetics_Recoma HT 520_150C
+- Arnold_Magnetics_Recoma HT 520_200C
+- Arnold_Magnetics_Recoma HT 520_20C
+- Arnold_Magnetics_Recoma HT 520_250C
+- Arnold_Magnetics_Recoma HT 520_300C
+- Arnold_Magnetics_Recoma HT 520_350C
+- Arnold_Magnetics_Recoma STAB 02_-40C
+- Arnold_Magnetics_Recoma STAB 02_100C
+- Arnold_Magnetics_Recoma STAB 02_150C
+- Arnold_Magnetics_Recoma STAB 02_200C
+- Arnold_Magnetics_Recoma STAB 02_20C
+- Arnold_Magnetics_Recoma STAB 02_250C
+- Arnold_Magnetics_Recoma STAB 02_300C
+- Arnold_Magnetics_Recoma STAB 02_350C
+- Bestway Magnet - NB-12
+- Bestway Magnet - Y25
+- Bestway Magnet - Y28
+- Bestway Magnet - Y30H-1
+- Bestway Magnet - Y32
+- Bestway Magnet - YX18T
+- Bestway Magnet - YX27C
+- Dexing Magnet - YX-18T
+- Dexing Magnet - YX-27C
+- Eclipse Magnetics - N25AH
+- Eclipse Magnetics - N25BH
+- Eclipse Magnetics - N28AH
+- Eclipse Magnetics - N28EH
+- Eclipse Magnetics - N28UH
+- Eclipse Magnetics - N30AH
+- Eclipse Magnetics - N30EH
+- Eclipse Magnetics - N30H
+- Eclipse Magnetics - N30SH
+- Eclipse Magnetics - N30UH
+- Eclipse Magnetics - N33EH
+- Eclipse Magnetics - N33H
+- Eclipse Magnetics - N33M
+- Eclipse Magnetics - N33SH
+- Eclipse Magnetics - N33UH
+- Eclipse Magnetics - N35
+- Eclipse Magnetics - N35EH
+- Eclipse Magnetics - N35H
+- Eclipse Magnetics - N35M
+- Eclipse Magnetics - N35SH
+- Eclipse Magnetics - N35UH
+- Eclipse Magnetics - N38
+- Eclipse Magnetics - N38EH
+- Eclipse Magnetics - N38H
+- Eclipse Magnetics - N38M
+- Eclipse Magnetics - N38SH
+- Eclipse Magnetics - N38UH
+- Eclipse Magnetics - N40
+- Eclipse Magnetics - N40H
+- Eclipse Magnetics - N40M
+- Eclipse Magnetics - N40SH
+- Eclipse Magnetics - N40UH
+- Eclipse Magnetics - N42
+- Eclipse Magnetics - N42H
+- Eclipse Magnetics - N42M
+- Eclipse Magnetics - N42SH
+- Eclipse Magnetics - N44H
+- Eclipse Magnetics - N44SH
+- Eclipse Magnetics - N45
+- Eclipse Magnetics - N45M
+- Eclipse Magnetics - N46H
+- Eclipse Magnetics - N46SH
+- Eclipse Magnetics - N48
+- Eclipse Magnetics - N48H
+- Eclipse Magnetics - N48M
+- Eclipse Magnetics - N50
+- Eclipse Magnetics - N50M
+- Eclipse Magnetics - N52
+- Eclipse Magnetics - SmCo 26H
+- Feller Magnets - 33EH
+- Feller Magnets - 38UH
+- Feller Magnets - 45M
+- Feller Magnets - N50
+- Feller Magnets - YX-20
+- Feller Magnets - YXG-24H
+- Feller Magnets - YXG-28H
+- Feller Magnets - YXG-30H
+- Feller Magnets - YXG-32
+- Galaxy Magnets - GPM-12
+- Galaxy Magnets - GPM-12L
+- Galaxy Magnets - GPM-6
+- Galaxy Magnets - GPM-8
+- Galaxy Magnets - GPM-8H
+- Galaxy Magnets - GPM-8SR
+- HJ Magnet - BNP6
+- HJ Magnet - XG18-18
+- HJ Magnet - XG22-25
+- HJ Magnet - XG32-12
+- Integrated Magnetics - N3330
+- Integrated Magnetics - N3335
+- Integrated Magnetics - N3530
+- Integrated Magnetics - N3621
+- Integrated Magnetics - N3725
+- Integrated Magnetics - N3730
+- Integrated Magnetics - N3917
+- Integrated Magnetics - N4021
+- Integrated Magnetics - N4025
+- Integrated Magnetics - N4316
+- Integrated Magnetics - N4321
+- Integrated Magnetics - N4518
+- Integrated Magnetics - N4614
+- Integrated Magnetics - N4616
+- Integrated Magnetics - N4914
+- Integrated Magnetics - N4916
+- Integrated Magnetics - N5011
+- Integrated Magnetics - N5014
+- Integrated Magnetics - N5311
+- Integrated Magnetics - S2809
+- Integrated Magnetics - S2909
+- Integrated Magnetics - S3007
+- Integrated Magnetics - S3018
+- Integrated Magnetics - S3120
+- Integrated Magnetics - S3310
+- Integrated Magnetics - S3320
+- Integrated Magnetics - S3410
+- K&J Magnetics - N28UH
+- K&J Magnetics - N30EH
+- K&J Magnetics - N30SH
+- K&J Magnetics - N30UH
+- K&J Magnetics - N33EH
+- K&J Magnetics - N33H
+- K&J Magnetics - N33SH
+- K&J Magnetics - N33UH
+- K&J Magnetics - N35
+- K&J Magnetics - N35EH
+- K&J Magnetics - N35H
+- K&J Magnetics - N35M
+- K&J Magnetics - N35SH
+- K&J Magnetics - N35UH
+- K&J Magnetics - N38
+- K&J Magnetics - N38EH
+- K&J Magnetics - N38H
+- K&J Magnetics - N38M
+- K&J Magnetics - N38SH
+- K&J Magnetics - N38UH
+- K&J Magnetics - N40
+- K&J Magnetics - N40H
+- K&J Magnetics - N40M
+- K&J Magnetics - N40SH
+- K&J Magnetics - N40UH
+- K&J Magnetics - N42
+- K&J Magnetics - N42H
+- K&J Magnetics - N42M
+- K&J Magnetics - N42SH
+- K&J Magnetics - N45
+- K&J Magnetics - N45H
+- K&J Magnetics - N45M
+- K&J Magnetics - N45SH
+- K&J Magnetics - N48
+- K&J Magnetics - N48H
+- K&J Magnetics - N48M
+- K&J Magnetics - N50
+- K&J Magnetics - N50M
+- K&J Magnetics - N52
+- Magfine - NdFeB 28AH
+- Magfine - NdFeB 28EH
+- Magfine - NdFeB 28UH
+- Magfine - NdFeB 30
+- Magfine - NdFeB 30AH
+- Magfine - NdFeB 30EH
+- Magfine - NdFeB 30H
+- Magfine - NdFeB 30M
+- Magfine - NdFeB 30SH
+- Magfine - NdFeB 30UH
+- Magfine - NdFeB 33AH
+- Magfine - NdFeB 33EH
+- Magfine - NdFeB 33H
+- Magfine - NdFeB 33M
+- Magfine - NdFeB 33SH
+- Magfine - NdFeB 33UH
+- Magfine - NdFeB 35
+- Magfine - NdFeB 35EH
+- Magfine - NdFeB 35H
+- Magfine - NdFeB 35M
+- Magfine - NdFeB 35SH
+- Magfine - NdFeB 35UH
+- Magfine - NdFeB 38
+- Magfine - NdFeB 38EH
+- Magfine - NdFeB 38H
+- Magfine - NdFeB 38M
+- Magfine - NdFeB 38SH
+- Magfine - NdFeB 38UH
+- Magfine - NdFeB 40
+- Magfine - NdFeB 40H
+- Magfine - NdFeB 40M
+- Magfine - NdFeB 40SH
+- Magfine - NdFeB 40UH
+- Magfine - NdFeB 42
+- Magfine - NdFeB 42H
+- Magfine - NdFeB 42M
+- Magfine - NdFeB 42SH
+- Magfine - NdFeB 45
+- Magfine - NdFeB 45H
+- Magfine - NdFeB 45M
+- Magfine - NdFeB 45SH
+- Magfine - NdFeB 48
+- Magfine - NdFeB 48H
+- Magfine - NdFeB 50
+- Magfine - NdFeB 50M
+- Magfine - NdFeB 52
+- Magnet, permanent, Alnico 1 (cast)
+- Magnet, permanent, Alnico 2 (cast)
+- Magnet, permanent, Alnico 2 (sintered)
+- Magnet, permanent, Alnico 3 (cast)
+- Magnet, permanent, Alnico 5 (cast)
+- Magnet, permanent, Alnico 5 (sintered)
+- Magnet, permanent, Alnico 8 (cast)
+- Magnet, permanent, Alnico 8 (sintered)
+- Magnet, permanent, Alnico 9 (cast)
+- Magnet, permanent, Ferrite Y30BH (YBM-2B)
+- Magnet, permanent, Ferrite Y32H-2 (YBM-5BB)
+- Magnet, permanent, Ferrite Y33H (YBM-6BB)
+- Magnet, permanent, Ferrite Y8T (YBM-3)
+- Magnet, permanent, Neodymium N30EH
+- Magnet, permanent, Neodymium N30H
+- Magnet, permanent, Neodymium N35
+- Magnet, permanent, Neodymium N35H
+- Magnet, permanent, Neodymium N35UH
+- Magnet, permanent, Neodymium N42
+- Magnet, permanent, Neodymium N42H
+- Magnet, permanent, Neodymium N42SH
+- Magnet, permanent, Neodymium N52
+- Magnet, permanent, Neodymium N54
+- Magnet, permanent, SmCo20 (2 17)
+- Magnet, permanent, SmCo22 (1 5)
+- Magnet, soft, Ferrite B (Mn-Zn)
+- Magnet, soft, Ferrite G (Ni-Zn)
+- Magnetfabrik Bonn - Alnico 500
+- Magnetfabrik Bonn - Neofer 25-60p
+- Magnetfabrik Bonn - Neofer 31-100p
+- Magnetfabrik Bonn - Neofer 37-60p
+- Magnetfabrik Bonn - Neofer 39-60p
+- Magnetfabrik Bonn - Neofer 41-100p
+- Magnetfabrik Bonn - Neofer 44-60p
+- Magnetfabrik Bonn - Neofer 48-60p
+- Magnetfabrik Bonn - Neofer 55-100p
+- Magnetfabrik Bonn - Neofer 55-50p
+- Magnetfabrik Bonn - Neofer 62-60p
+- Magnetfabrik Bonn - Neofer 65-70p
+- Magnetfabrik Bonn - Seco 170-120
+- Magnetfabrik Bonn - Sprox 10-20p
+- Magnetfabrik Bonn - Sprox 11-21p
+- Magnetfabrik Bonn - Sprox 11-22p
+- Magnetfabrik Bonn - Sprox 13-21
+- Magnetfabrik Bonn - Sprox 14-21
+- Magnetfabrik Bonn - Sprox 15-21p
+- Magnetfabrik Bonn - Sprox 15-22p
+- Magnetfabrik Bonn - Sprox 3-20p
+- Magnetfabrik Bonn - Sprox 5F
+- Magnetfabrik Bonn - Sprox-100
+- Magnetfabrik Bonn - Sprox-400
+- Magnetic alloy, core iron
+- Magnetic alloy, Hiperco 27
+- Magnetic alloy, Hiperco 50
+- Magnetic alloy, Metglas 2714A
+- Magnetic alloy, MuMetal
+- Magnetic alloy, Permalloy 45
+- Magnetic alloy, silicon core iron A
+- Magnetic alloy, silicon core iron B
+- Magnetic alloy, silicon core iron C
+- Magnetic Metals - Microsil, 4mil
+- Magnetic Metals - Silectron rolling, 4mil
+- Magnetic Metals - Silectron, 12mil
+- Magnetic Metals - Silectron, 4mil
+- Magnetic Metals - Silectron, 6mil
+- Magnetic Metals - Supermalloy, 2mil
+- Magnetic Shield - Conetic
+- Magnetic Shield - Mumetal (77%Ni)
+- Magnetic Shield - Mumetal (80%Ni)
+- Magnetic Shield - Mumetal, 2mil
+- Magnetic Shield - Netic
+- Magnetics - 75-Series 40mu
+- Magnetics - Amoflux
+- Magnetics - Edge 60mu
+- Magnetics - High DC Bias Edge 60mu
+- Magnetics - High DC Bias XFlux 40mu
+- Magnetics - High Flux 125mu
+- Magnetics - High Flux 147mu
+- Magnetics - High Flux 14mu
+- Magnetics - High Flux 160mu
+- Magnetics - High Flux 26mu
+- Magnetics - High Flux 60mu
+- Magnetics - Kool Mu 125mu
+- Magnetics - Kool Mu 26mu
+- Magnetics - Kool Mu 40mu
+- Magnetics - Kool Mu 60mu
+- Magnetics - Kool Mu 75mu
+- Magnetics - Kool Mu 90mu
+- Magnetics - Kool Mu Hf 26mu
+- Magnetics - Kool Mu MAX 26mu
+- Magnetics - MPP 125mu
+- Magnetics - MPP 147mu
+- Magnetics - MPP 14mu
+- Magnetics - MPP 160mu
+- Magnetics - MPP 173mu
+- Magnetics - MPP 200mu
+- Magnetics - MPP 26mu
+- Magnetics - MPP 300mu
+- Magnetics - MPP 550mu
+- Magnetics - MPP 60mu
+- Magnetics - Permalloy, 2mil
+- Magnetics - Permalloy, Nonoriented
+- Magnetics - Permalloy, Oriented
+- Magnetics - XFlux 40mu
+- MS-Schramberg - NdFeB 27-80p
+- MS-Schramberg - NdFeB 30-60p
+- MS-Schramberg - NdFeB 32-80p
+- MS-Schramberg - NdFeB 37-60p
+- MS-Schramberg - NdFeB 38-80p
+- MS-Schramberg - NdFeB 42-60p
+- MS-Schramberg - NdFeB 43-80p
+- MS-Schramberg - NdFeB 46-80p
+- MS-Schramberg - NdFeB 48-60p
+- MS-Schramberg - NdFeB 49-80p
+- MS-Schramberg - NdFeB 55-60p
+- MS-Schramberg - NdFeB 76-110p
+- Neorem Magnets - Neorem 512a
+- Neorem Magnets - Neorem 512t
+- Neorem Magnets - Neorem 537a
+- Neorem Magnets - Neorem 537t
+- Neorem Magnets - Neorem 553a
+- Neorem Magnets - Neorem 553t
+- Neorem Magnets - Neorem 576a
+- Neorem Magnets - Neorem 576t
+- Neorem Magnets - Neorem 591a
+- Neorem Magnets - Neorem 591t
+- Neorem Magnets - Neorem 593a
+- Neorem Magnets - Neorem 593t
+- Neorem Magnets - Neorem 595a
+- Neorem Magnets - Neorem 595t
+- Neorem Magnets - Neorem 597a
+- Neorem Magnets - Neorem 597t
+- Neorem Magnets - Neorem 599a
+- Neorem Magnets - Neorem 599t
+- Neorem Magnets - Neorem 712a
+- Neorem Magnets - Neorem 712t
+- Neorem Magnets - Neorem 737a
+- Neorem Magnets - Neorem 737t
+- Neorem Magnets - Neorem 737t mod
+- Neorem Magnets - Neorem 753a
+- Neorem Magnets - Neorem 753t
+- Neorem Magnets - Neorem 776a
+- Neorem Magnets - Neorem 776t
+- Neorem Magnets - Neorem 776t mod
+- Neorem Magnets - Neorem 791a
+- Neorem Magnets - Neorem 791t
+- Neorem Magnets - Neorem 793a
+- Neorem Magnets - Neorem 793a mod
+- Neorem Magnets - Neorem 793t
+- Neorem Magnets - Neorem 795a
+- Neorem Magnets - Neorem 795t
+- Neorem Magnets - Neorem 797a
+- Neorem Magnets - Neorem 797t
+- Neorem Magnets - Neorem 799a
+- Neorem Magnets - Neorem 799t
+- Neorem Magnets - Neorem 830a
+- Neorem Magnets - Neorem 830t
+- Neorem Magnets - Neorem 870a
+- Neorem Magnets - Neorem 870t
+- Neorem Magnets - Neorem 880a
+- Neorem Magnets - Neorem 880t
+- Neorem Magnets - Neorem 890a
+- Neorem Magnets - Neorem 890t
+- Neorem Magnets - Neorem tmod
+- Risheng Magnets - 35AH
+- Risheng Magnets - 38EH
+- Smart Magnets - Y30
+- Smart Magnets - Y30H-1
+- Smart Magnets - Y33
+- Spacemagnets - HT-N10
+- Spacemagnets - HT-N10H
+- Spacemagnets - HT-N10S
+- Spacemagnets - HT-N12
+- Spacemagnets - HT-N12S
+- Spacemagnets - HT-N8L
+- Spacemagnets - HTY38H
+- Spacemagnets - HTY40
+- Spacemagnets - HTY40-1
+- Spacemagnets - HTY40N
+- Spacemagnets - HTY45E
+- Sun Magnetic - Alnico 5
+- Sun Magnetic - Alnico 8
+- Sun Magnetic - Y10T
+- Sun Magnetic - Y30
+- Sun Magnetic - Y30BK
+- Sun Magnetic - Y30K
+- Sun Magnetic - Y35
+- Sura Magnets - N25BH
+- Sura Magnets - N28AH
+- Sura Magnets - N28EH
+- Sura Magnets - N28UH
+- Sura Magnets - N30AH
+- Sura Magnets - N30EH
+- Sura Magnets - N30H
+- Sura Magnets - N30SH
+- Sura Magnets - N30UH
+- Sura Magnets - N33AH
+- Sura Magnets - N33EH
+- Sura Magnets - N33H
+- Sura Magnets - N33M
+- Sura Magnets - N33SH
+- Sura Magnets - N33UH
+- Sura Magnets - N35
+- Sura Magnets - N35EH
+- Sura Magnets - N35H
+- Sura Magnets - N35M
+- Sura Magnets - N35SH
+- Sura Magnets - N35UH
+- Sura Magnets - N38
+- Sura Magnets - N38EH
+- Sura Magnets - N38H
+- Sura Magnets - N38M
+- Sura Magnets - N38SH
+- Sura Magnets - N38UH
+- Sura Magnets - N40
+- Sura Magnets - N40H
+- Sura Magnets - N40M
+- Sura Magnets - N40SH
+- Sura Magnets - N40UH
+- Sura Magnets - N42
+- Sura Magnets - N42H
+- Sura Magnets - N42M
+- Sura Magnets - N42SH
+- Sura Magnets - N42UH
+- Sura Magnets - N44H
+- Sura Magnets - N44SH
+- Sura Magnets - N45
+- Sura Magnets - N45M
+- Sura Magnets - N46H
+- Sura Magnets - N46SH
+- Sura Magnets - N48
+- Sura Magnets - N48H
+- Sura Magnets - N48M
+- Sura Magnets - N50
+- Sura Magnets - N50H
+- Sura Magnets - N50M
+- Sura Magnets - N52
+- Sura Magnets - N52M
+- TC Magnets - 35AH
+- TC Magnets - 35EH
+- TC Magnets - 38UH
+- TC Magnets - 45SH
+- TC Magnets - 48H
+- TC Magnets - 48M
+
+## Project Materials
+
+- air
+- copper
+- steel_1010
+- vacuum
+
+## Suggested Magnet Candidates
+
+- Magfine - NdFeB 28AH
+- Magfine - NdFeB 28EH
+- Magfine - NdFeB 28UH
+- Magfine - NdFeB 30
+- Magfine - NdFeB 30AH
+- Magfine - NdFeB 30EH
+- Magfine - NdFeB 30H
+- Magfine - NdFeB 30M
+- Magfine - NdFeB 30SH
+- Magfine - NdFeB 30UH
+- Magfine - NdFeB 33AH
+- Magfine - NdFeB 33EH
+- Magfine - NdFeB 33H
+- Magfine - NdFeB 33M
+- Magfine - NdFeB 33SH
+- Magfine - NdFeB 33UH
+- Magfine - NdFeB 35
+- Magfine - NdFeB 35EH
+- Magfine - NdFeB 35H
+- Magfine - NdFeB 35M
+- Magfine - NdFeB 35SH
+- Magfine - NdFeB 35UH
+- Magfine - NdFeB 38
+- Magfine - NdFeB 38EH
+- Magfine - NdFeB 38H
+- Magfine - NdFeB 38M
+- Magfine - NdFeB 38SH
+- Magfine - NdFeB 38UH
+- Magfine - NdFeB 40
+- Magfine - NdFeB 40H
+- Magfine - NdFeB 40M
+- Magfine - NdFeB 40SH
+- Magfine - NdFeB 40UH
+- Magfine - NdFeB 42
+- Magfine - NdFeB 42H
+- Magfine - NdFeB 42M
+- Magfine - NdFeB 42SH
+- Magfine - NdFeB 45
+- Magfine - NdFeB 45H
+- Magfine - NdFeB 45M
+- Magfine - NdFeB 45SH
+- Magfine - NdFeB 48
+- Magfine - NdFeB 48H
+- Magfine - NdFeB 50
+- Magfine - NdFeB 50M
+- Magfine - NdFeB 52
+- MS-Schramberg - NdFeB 27-80p
+- MS-Schramberg - NdFeB 30-60p
+- MS-Schramberg - NdFeB 32-80p
+- MS-Schramberg - NdFeB 37-60p
+- MS-Schramberg - NdFeB 38-80p
+- MS-Schramberg - NdFeB 42-60p
+- MS-Schramberg - NdFeB 43-80p
+- MS-Schramberg - NdFeB 46-80p
+- MS-Schramberg - NdFeB 48-60p
+- MS-Schramberg - NdFeB 49-80p
+- MS-Schramberg - NdFeB 55-60p
+- MS-Schramberg - NdFeB 76-110p
+- ABM Magnetics - N30SH
+- ABM Magnetics - N38M
+- ABM Magnetics - N42H
+- ABM Magnetics - N48
+- Advance Magnetics - AD-MU-80
+- Advance Magnetics - AD-MU-80, B-H at 60Hz
+- AIC Magnetics - N33EH
+- AIC Magnetics - N33UH
+- AIC Magnetics - N35
+- AIC Magnetics - N40H
+- AIC Magnetics - N45
+- AIC Magnetics - N50
+- Ankey Magnets - N30EH
+- Ankey Magnets - N30H
+- Ankey Magnets - N30SH
+- Ankey Magnets - N30UH
+- Ankey Magnets - N33H
+- Ankey Magnets - N33M
+- Ankey Magnets - N33SH
+- Ankey Magnets - N33UH
+- Ankey Magnets - N35
+- Ankey Magnets - N35EH
+- Ankey Magnets - N35H
+- Ankey Magnets - N35M
+- Ankey Magnets - N35SH
+- Ankey Magnets - N35UH
+- Ankey Magnets - N38
+- Ankey Magnets - N38EH
+- Ankey Magnets - N38H
+- Ankey Magnets - N38M
+- Ankey Magnets - N38SH
+- Ankey Magnets - N38UH
+- Ankey Magnets - N40
+- Ankey Magnets - N40EH
+- Ankey Magnets - N40H
+- Ankey Magnets - N40M
+- Ankey Magnets - N40SH
+- Ankey Magnets - N40UH
+- Ankey Magnets - N42
+- Ankey Magnets - N42EH
+- Ankey Magnets - N42H
+- Ankey Magnets - N42M
+- Ankey Magnets - N42SH
+- Ankey Magnets - N42UH
+- Ankey Magnets - N45
+- Ankey Magnets - N45H
+- Ankey Magnets - N45M
+- Ankey Magnets - N45SH
+- Ankey Magnets - N45UH
+- Ankey Magnets - N48
+- Ankey Magnets - N48H
+- Ankey Magnets - N48M
+- Ankey Magnets - N48SH
+- Ankey Magnets - N48UH
+- Ankey Magnets - N50
+- Ankey Magnets - N50H
+- Ankey Magnets - N50M
+- Ankey Magnets - N50SH
+- Ankey Magnets - N52
+- Ankey Magnets - N52H
+- Ankey Magnets - N52M
+- Ankey Magnets - N54
+- Armstrong Magnetics - Grade 16
+- Armstrong Magnetics - Grade 18
+- Armstrong Magnetics - Grade 20
+- Armstrong Magnetics - Grade 20S
+- Armstrong Magnetics - Grade 22
+- Armstrong Magnetics - Grade 24
+- Armstrong Magnetics - Grade 24H
+- Armstrong Magnetics - Grade 26H
+- Armstrong Magnetics - Grade 28H
+- Armstrong Magnetics - Grade 30H
+- Armstrong Magnetics - Grade 32H
+- Armstrong Magnetics - Grade 32L
+- Arnold_Magnetics_Alnico 2, Cast_20C
+- Arnold_Magnetics_Alnico 2, Sintered_20C
+- Arnold_Magnetics_Alnico 3, Cast_20C
+- Arnold_Magnetics_Alnico 4, Cast_20C
+- Arnold_Magnetics_Alnico 5, Cast_20C
+- Arnold_Magnetics_Alnico 5, Sintered_20C
+- Arnold_Magnetics_Alnico 5cc, Cast_20C
+- Arnold_Magnetics_Alnico 6, Cast_20C
+- Arnold_Magnetics_Alnico 6, Sintered_20C
+- Arnold_Magnetics_Alnico 8, Sintered_20C
+- Arnold_Magnetics_Alnico 8B, Cast_20C
+- Arnold_Magnetics_Alnico 8B, Sintered_20C
+- Arnold_Magnetics_Alnico 8H, Cast_20C
+- Arnold_Magnetics_Alnico 8H, Sintered_20C
+- Arnold_Magnetics_Alnico 8HE, Cast_20C
+- Arnold_Magnetics_Alnico 9, Cast_20C
+- Arnold_Magnetics_Arkomax 800_20C
+- Arnold_Magnetics_Arkomax 800Hi-Hc_20C
+- Arnold_Magnetics_N28AH_-40C
+- Arnold_Magnetics_N28AH_100C
+- Arnold_Magnetics_N28AH_120C
+- Arnold_Magnetics_N28AH_150C
+- Arnold_Magnetics_N28AH_180C
+- Arnold_Magnetics_N28AH_200C
+- Arnold_Magnetics_N28AH_20C
+- Arnold_Magnetics_N28AH_220C
+- Arnold_Magnetics_N28AH_60C
+- Arnold_Magnetics_N28AH_80C
+- Arnold_Magnetics_N28EH_-40C
+- Arnold_Magnetics_N28EH_100C
+- Arnold_Magnetics_N28EH_120C
+- Arnold_Magnetics_N28EH_150C
+- Arnold_Magnetics_N28EH_180C
+- Arnold_Magnetics_N28EH_200C
+- Arnold_Magnetics_N28EH_20C
+- Arnold_Magnetics_N28EH_220C
+- Arnold_Magnetics_N28EH_60C
+- Arnold_Magnetics_N28EH_80C
+- Arnold_Magnetics_N28UH_-40C
+- Arnold_Magnetics_N28UH_100C
+- Arnold_Magnetics_N28UH_120C
+- Arnold_Magnetics_N28UH_150C
+- Arnold_Magnetics_N28UH_180C
+- Arnold_Magnetics_N28UH_200C
+- Arnold_Magnetics_N28UH_20C
+- Arnold_Magnetics_N28UH_220C
+- Arnold_Magnetics_N28UH_60C
+- Arnold_Magnetics_N28UH_80C
+- Arnold_Magnetics_N30_-40C
+- Arnold_Magnetics_N30_100C
+- Arnold_Magnetics_N30_120C
+- Arnold_Magnetics_N30_150C
+- Arnold_Magnetics_N30_180C
+- Arnold_Magnetics_N30_200C
+- Arnold_Magnetics_N30_20C
+- Arnold_Magnetics_N30_220C
+- Arnold_Magnetics_N30_60C
+- Arnold_Magnetics_N30_80C
+- Arnold_Magnetics_N30AH_-40C
+- Arnold_Magnetics_N30AH_100C
+- Arnold_Magnetics_N30AH_120C
+- Arnold_Magnetics_N30AH_150C
+- Arnold_Magnetics_N30AH_180C
+- Arnold_Magnetics_N30AH_200C
+- Arnold_Magnetics_N30AH_20C
+- Arnold_Magnetics_N30AH_220C
+- Arnold_Magnetics_N30AH_60C
+- Arnold_Magnetics_N30AH_80C
+- Arnold_Magnetics_N30AHZ_-40C
+- Arnold_Magnetics_N30AHZ_100C
+- Arnold_Magnetics_N30AHZ_120C
+- Arnold_Magnetics_N30AHZ_150C
+- Arnold_Magnetics_N30AHZ_180C
+- Arnold_Magnetics_N30AHZ_200C
+- Arnold_Magnetics_N30AHZ_20C
+- Arnold_Magnetics_N30AHZ_220C
+- Arnold_Magnetics_N30AHZ_60C
+- Arnold_Magnetics_N30AHZ_80C
+- Arnold_Magnetics_N30EH_-40C
+- Arnold_Magnetics_N30EH_100C
+- Arnold_Magnetics_N30EH_120C
+- Arnold_Magnetics_N30EH_150C
+- Arnold_Magnetics_N30EH_180C
+- Arnold_Magnetics_N30EH_200C
+- Arnold_Magnetics_N30EH_20C
+- Arnold_Magnetics_N30EH_220C
+- Arnold_Magnetics_N30EH_60C
+- Arnold_Magnetics_N30EH_80C
+- Arnold_Magnetics_N30EHZ_-40C
+- Arnold_Magnetics_N30EHZ_100C
+- Arnold_Magnetics_N30EHZ_120C
+- Arnold_Magnetics_N30EHZ_150C
+- Arnold_Magnetics_N30EHZ_180C
+- Arnold_Magnetics_N30EHZ_200C
+- Arnold_Magnetics_N30EHZ_20C
+- Arnold_Magnetics_N30EHZ_220C
+- Arnold_Magnetics_N30EHZ_60C
+- Arnold_Magnetics_N30EHZ_80C
+- Arnold_Magnetics_N30H_-40C
+- Arnold_Magnetics_N30H_100C
+- Arnold_Magnetics_N30H_120C
+- Arnold_Magnetics_N30H_150C
+- Arnold_Magnetics_N30H_180C
+- Arnold_Magnetics_N30H_200C
+- Arnold_Magnetics_N30H_20C
+- Arnold_Magnetics_N30H_220C
+- Arnold_Magnetics_N30H_60C
+- Arnold_Magnetics_N30H_80C
+- Arnold_Magnetics_N30SH_-40C
+- Arnold_Magnetics_N30SH_100C
+- Arnold_Magnetics_N30SH_120C
+- Arnold_Magnetics_N30SH_150C
+- Arnold_Magnetics_N30SH_180C
+- Arnold_Magnetics_N30SH_200C
+- Arnold_Magnetics_N30SH_20C
+- Arnold_Magnetics_N30SH_220C
+- Arnold_Magnetics_N30SH_60C
+- Arnold_Magnetics_N30SH_80C
+- Arnold_Magnetics_N30SHZ_-40C
+- Arnold_Magnetics_N30SHZ_100C
+- Arnold_Magnetics_N30SHZ_120C
+- Arnold_Magnetics_N30SHZ_150C
+- Arnold_Magnetics_N30SHZ_180C
+- Arnold_Magnetics_N30SHZ_200C
+- Arnold_Magnetics_N30SHZ_20C
+- Arnold_Magnetics_N30SHZ_220C
+- Arnold_Magnetics_N30SHZ_60C
+- Arnold_Magnetics_N30SHZ_80C
+- Arnold_Magnetics_N30UH_-40C
+- Arnold_Magnetics_N30UH_100C
+- Arnold_Magnetics_N30UH_120C
+- Arnold_Magnetics_N30UH_150C
+- Arnold_Magnetics_N30UH_180C
+- Arnold_Magnetics_N30UH_200C
+- Arnold_Magnetics_N30UH_20C
+- Arnold_Magnetics_N30UH_220C
+- Arnold_Magnetics_N30UH_60C
+- Arnold_Magnetics_N30UH_80C
+- Arnold_Magnetics_N30UHZ_-40C
+- Arnold_Magnetics_N30UHZ_100C
+- Arnold_Magnetics_N30UHZ_120C
+- Arnold_Magnetics_N30UHZ_150C
+- Arnold_Magnetics_N30UHZ_180C
+- Arnold_Magnetics_N30UHZ_200C
+- Arnold_Magnetics_N30UHZ_20C
+- Arnold_Magnetics_N30UHZ_220C
+- Arnold_Magnetics_N30UHZ_60C
+- Arnold_Magnetics_N30UHZ_80C
+- Arnold_Magnetics_N33_-40C
+- Arnold_Magnetics_N33_100C
+- Arnold_Magnetics_N33_120C
+- Arnold_Magnetics_N33_150C
+- Arnold_Magnetics_N33_180C
+- Arnold_Magnetics_N33_200C
+- Arnold_Magnetics_N33_20C
+- Arnold_Magnetics_N33_220C
+- Arnold_Magnetics_N33_60C
+- Arnold_Magnetics_N33_80C
+- Arnold_Magnetics_N33AH_-40C
+- Arnold_Magnetics_N33AH_100C
+- Arnold_Magnetics_N33AH_120C
+- Arnold_Magnetics_N33AH_150C
+- Arnold_Magnetics_N33AH_180C
+- Arnold_Magnetics_N33AH_200C
+- Arnold_Magnetics_N33AH_20C
+- Arnold_Magnetics_N33AH_220C
+- Arnold_Magnetics_N33AH_60C
+- Arnold_Magnetics_N33AH_80C
+- Arnold_Magnetics_N33EH_-40C
+- Arnold_Magnetics_N33EH_100C
+- Arnold_Magnetics_N33EH_120C
+- Arnold_Magnetics_N33EH_150C
+- Arnold_Magnetics_N33EH_180C
+- Arnold_Magnetics_N33EH_200C
+- Arnold_Magnetics_N33EH_20C
+- Arnold_Magnetics_N33EH_220C
+- Arnold_Magnetics_N33EH_60C
+- Arnold_Magnetics_N33EH_80C
+- Arnold_Magnetics_N33H_-40C
+- Arnold_Magnetics_N33H_100C
+- Arnold_Magnetics_N33H_120C
+- Arnold_Magnetics_N33H_150C
+- Arnold_Magnetics_N33H_180C
+- Arnold_Magnetics_N33H_200C
+- Arnold_Magnetics_N33H_20C
+- Arnold_Magnetics_N33H_220C
+- Arnold_Magnetics_N33H_60C
+- Arnold_Magnetics_N33H_80C
+- Arnold_Magnetics_N33M_-40C
+- Arnold_Magnetics_N33M_100C
+- Arnold_Magnetics_N33M_120C
+- Arnold_Magnetics_N33M_150C
+- Arnold_Magnetics_N33M_180C
+- Arnold_Magnetics_N33M_200C
+- Arnold_Magnetics_N33M_20C
+- Arnold_Magnetics_N33M_220C
+- Arnold_Magnetics_N33M_60C
+- Arnold_Magnetics_N33M_80C
+- Arnold_Magnetics_N33SH_-40C
+- Arnold_Magnetics_N33SH_100C
+- Arnold_Magnetics_N33SH_120C
+- Arnold_Magnetics_N33SH_150C
+- Arnold_Magnetics_N33SH_180C
+- Arnold_Magnetics_N33SH_200C
+- Arnold_Magnetics_N33SH_20C
+- Arnold_Magnetics_N33SH_220C
+- Arnold_Magnetics_N33SH_60C
+- Arnold_Magnetics_N33SH_80C
+- Arnold_Magnetics_N33SHX_-40C
+- Arnold_Magnetics_N33SHX_100C
+- Arnold_Magnetics_N33SHX_120C
+- Arnold_Magnetics_N33SHX_150C
+- Arnold_Magnetics_N33SHX_180C
+- Arnold_Magnetics_N33SHX_200C
+- Arnold_Magnetics_N33SHX_20C
+- Arnold_Magnetics_N33SHX_220C
+- Arnold_Magnetics_N33SHX_60C
+- Arnold_Magnetics_N33SHX_80C
+- Arnold_Magnetics_N33SHZ_-40C
+- Arnold_Magnetics_N33SHZ_100C
+- Arnold_Magnetics_N33SHZ_120C
+- Arnold_Magnetics_N33SHZ_150C
+- Arnold_Magnetics_N33SHZ_180C
+- Arnold_Magnetics_N33SHZ_200C
+- Arnold_Magnetics_N33SHZ_20C
+- Arnold_Magnetics_N33SHZ_220C
+- Arnold_Magnetics_N33SHZ_60C
+- Arnold_Magnetics_N33SHZ_80C
+- Arnold_Magnetics_N33UH_-40C
+- Arnold_Magnetics_N33UH_100C
+- Arnold_Magnetics_N33UH_120C
+- Arnold_Magnetics_N33UH_150C
+- Arnold_Magnetics_N33UH_180C
+- Arnold_Magnetics_N33UH_200C
+- Arnold_Magnetics_N33UH_20C
+- Arnold_Magnetics_N33UH_220C
+- Arnold_Magnetics_N33UH_60C
+- Arnold_Magnetics_N33UH_80C
+- Arnold_Magnetics_N33UHZ_-40C
+- Arnold_Magnetics_N33UHZ_100C
+- Arnold_Magnetics_N33UHZ_120C
+- Arnold_Magnetics_N33UHZ_150C
+- Arnold_Magnetics_N33UHZ_180C
+- Arnold_Magnetics_N33UHZ_200C
+- Arnold_Magnetics_N33UHZ_20C
+- Arnold_Magnetics_N33UHZ_220C
+- Arnold_Magnetics_N33UHZ_60C
+- Arnold_Magnetics_N33UHZ_80C
+- Arnold_Magnetics_N35_-40C
+- Arnold_Magnetics_N35_100C
+- Arnold_Magnetics_N35_120C
+- Arnold_Magnetics_N35_150C
+- Arnold_Magnetics_N35_180C
+- Arnold_Magnetics_N35_200C
+- Arnold_Magnetics_N35_20C
+- Arnold_Magnetics_N35_220C
+- Arnold_Magnetics_N35_60C
+- Arnold_Magnetics_N35_80C
+- Arnold_Magnetics_N35AH_-40C
+- Arnold_Magnetics_N35AH_100C
+- Arnold_Magnetics_N35AH_120C
+- Arnold_Magnetics_N35AH_150C
+- Arnold_Magnetics_N35AH_180C
+- Arnold_Magnetics_N35AH_200C
+- Arnold_Magnetics_N35AH_20C
+- Arnold_Magnetics_N35AH_220C
+- Arnold_Magnetics_N35AH_60C
+- Arnold_Magnetics_N35AH_80C
+- Arnold_Magnetics_N35EH_-40C
+- Arnold_Magnetics_N35EH_100C
+- Arnold_Magnetics_N35EH_120C
+- Arnold_Magnetics_N35EH_150C
+- Arnold_Magnetics_N35EH_180C
+- Arnold_Magnetics_N35EH_200C
+- Arnold_Magnetics_N35EH_20C
+- Arnold_Magnetics_N35EH_220C
+- Arnold_Magnetics_N35EH_60C
+- Arnold_Magnetics_N35EH_80C
+- Arnold_Magnetics_N35H_-40C
+- Arnold_Magnetics_N35H_100C
+- Arnold_Magnetics_N35H_120C
+- Arnold_Magnetics_N35H_150C
+- Arnold_Magnetics_N35H_180C
+- Arnold_Magnetics_N35H_200C
+- Arnold_Magnetics_N35H_20C
+- Arnold_Magnetics_N35H_220C
+- Arnold_Magnetics_N35H_60C
+- Arnold_Magnetics_N35H_80C
+- Arnold_Magnetics_N35M_-40C
+- Arnold_Magnetics_N35M_100C
+- Arnold_Magnetics_N35M_120C
+- Arnold_Magnetics_N35M_150C
+- Arnold_Magnetics_N35M_180C
+- Arnold_Magnetics_N35M_200C
+- Arnold_Magnetics_N35M_20C
+- Arnold_Magnetics_N35M_220C
+- Arnold_Magnetics_N35M_60C
+- Arnold_Magnetics_N35M_80C
+- Arnold_Magnetics_N35MX_-40C
+- Arnold_Magnetics_N35MX_100C
+- Arnold_Magnetics_N35MX_120C
+- Arnold_Magnetics_N35MX_150C
+- Arnold_Magnetics_N35MX_180C
+- Arnold_Magnetics_N35MX_200C
+- Arnold_Magnetics_N35MX_20C
+- Arnold_Magnetics_N35MX_220C
+- Arnold_Magnetics_N35MX_60C
+- Arnold_Magnetics_N35MX_80C
+- Arnold_Magnetics_N35SH_-40C
+- Arnold_Magnetics_N35SH_100C
+- Arnold_Magnetics_N35SH_120C
+- Arnold_Magnetics_N35SH_150C
+- Arnold_Magnetics_N35SH_180C
+- Arnold_Magnetics_N35SH_200C
+- Arnold_Magnetics_N35SH_20C
+- Arnold_Magnetics_N35SH_220C
+- Arnold_Magnetics_N35SH_60C
+- Arnold_Magnetics_N35SH_80C
+- Arnold_Magnetics_N35SHX_-40C
+- Arnold_Magnetics_N35SHX_100C
+- Arnold_Magnetics_N35SHX_120C
+- Arnold_Magnetics_N35SHX_150C
+- Arnold_Magnetics_N35SHX_180C
+- Arnold_Magnetics_N35SHX_200C
+- Arnold_Magnetics_N35SHX_20C
+- Arnold_Magnetics_N35SHX_220C
+- Arnold_Magnetics_N35SHX_60C
+- Arnold_Magnetics_N35SHX_80C
+- Arnold_Magnetics_N35SHZ_-40C
+- Arnold_Magnetics_N35SHZ_100C
+- Arnold_Magnetics_N35SHZ_120C
+- Arnold_Magnetics_N35SHZ_150C
+- Arnold_Magnetics_N35SHZ_180C
+- Arnold_Magnetics_N35SHZ_200C
+- Arnold_Magnetics_N35SHZ_20C
+- Arnold_Magnetics_N35SHZ_220C
+- Arnold_Magnetics_N35SHZ_60C
+- Arnold_Magnetics_N35SHZ_80C
+- Arnold_Magnetics_N35UH_-40C
+- Arnold_Magnetics_N35UH_100C
+- Arnold_Magnetics_N35UH_120C
+- Arnold_Magnetics_N35UH_150C
+- Arnold_Magnetics_N35UH_180C
+- Arnold_Magnetics_N35UH_200C
+- Arnold_Magnetics_N35UH_20C
+- Arnold_Magnetics_N35UH_220C
+- Arnold_Magnetics_N35UH_60C
+- Arnold_Magnetics_N35UH_80C
+- Arnold_Magnetics_N35X_-40C
+- Arnold_Magnetics_N35X_100C
+- Arnold_Magnetics_N35X_120C
+- Arnold_Magnetics_N35X_150C
+- Arnold_Magnetics_N35X_180C
+- Arnold_Magnetics_N35X_200C
+- Arnold_Magnetics_N35X_20C
+- Arnold_Magnetics_N35X_220C
+- Arnold_Magnetics_N35X_60C
+- Arnold_Magnetics_N35X_80C
+- Arnold_Magnetics_N38_-40C
+- Arnold_Magnetics_N38_100C
+- Arnold_Magnetics_N38_120C
+- Arnold_Magnetics_N38_150C
+- Arnold_Magnetics_N38_180C
+- Arnold_Magnetics_N38_200C
+- Arnold_Magnetics_N38_20C
+- Arnold_Magnetics_N38_220C
+- Arnold_Magnetics_N38_60C
+- Arnold_Magnetics_N38_80C
+- Arnold_Magnetics_N38AH_-40C
+- Arnold_Magnetics_N38AH_100C
+- Arnold_Magnetics_N38AH_120C
+- Arnold_Magnetics_N38AH_150C
+- Arnold_Magnetics_N38AH_180C
+- Arnold_Magnetics_N38AH_200C
+- Arnold_Magnetics_N38AH_20C
+- Arnold_Magnetics_N38AH_220C
+- Arnold_Magnetics_N38AH_60C
+- Arnold_Magnetics_N38AH_80C
+- Arnold_Magnetics_N38EH_-40C
+- Arnold_Magnetics_N38EH_100C
+- Arnold_Magnetics_N38EH_120C
+- Arnold_Magnetics_N38EH_150C
+- Arnold_Magnetics_N38EH_180C
+- Arnold_Magnetics_N38EH_200C
+- Arnold_Magnetics_N38EH_20C
+- Arnold_Magnetics_N38EH_220C
+- Arnold_Magnetics_N38EH_60C
+- Arnold_Magnetics_N38EH_80C
+- Arnold_Magnetics_N38EHZ_-40C
+- Arnold_Magnetics_N38EHZ_100C
+- Arnold_Magnetics_N38EHZ_120C
+- Arnold_Magnetics_N38EHZ_150C
+- Arnold_Magnetics_N38EHZ_180C
+- Arnold_Magnetics_N38EHZ_200C
+- Arnold_Magnetics_N38EHZ_20C
+- Arnold_Magnetics_N38EHZ_220C
+- Arnold_Magnetics_N38EHZ_60C
+- Arnold_Magnetics_N38EHZ_80C
+- Arnold_Magnetics_N38H_-40C
+- Arnold_Magnetics_N38H_100C
+- Arnold_Magnetics_N38H_120C
+- Arnold_Magnetics_N38H_150C
+- Arnold_Magnetics_N38H_180C
+- Arnold_Magnetics_N38H_200C
+- Arnold_Magnetics_N38H_20C
+- Arnold_Magnetics_N38H_220C
+- Arnold_Magnetics_N38H_60C
+- Arnold_Magnetics_N38H_80C
+- Arnold_Magnetics_N38HX_-40C
+- Arnold_Magnetics_N38HX_100C
+- Arnold_Magnetics_N38HX_120C
+- Arnold_Magnetics_N38HX_150C
+- Arnold_Magnetics_N38HX_180C
+- Arnold_Magnetics_N38HX_200C
+- Arnold_Magnetics_N38HX_20C
+- Arnold_Magnetics_N38HX_220C
+- Arnold_Magnetics_N38HX_60C
+- Arnold_Magnetics_N38HX_80C
+- Arnold_Magnetics_N38SHZ_-40C
+- Arnold_Magnetics_N38SHZ_100C
+- Arnold_Magnetics_N38SHZ_120C
+- Arnold_Magnetics_N38SHZ_150C
+- Arnold_Magnetics_N38SHZ_180C
+- Arnold_Magnetics_N38SHZ_200C
+- Arnold_Magnetics_N38SHZ_20C
+- Arnold_Magnetics_N38SHZ_220C
+- Arnold_Magnetics_N38SHZ_60C
+- Arnold_Magnetics_N38SHZ_80C
+- Arnold_Magnetics_N38UH_-40C
+- Arnold_Magnetics_N38UH_100C
+- Arnold_Magnetics_N38UH_120C
+- Arnold_Magnetics_N38UH_150C
+- Arnold_Magnetics_N38UH_180C
+- Arnold_Magnetics_N38UH_200C
+- Arnold_Magnetics_N38UH_20C
+- Arnold_Magnetics_N38UH_220C
+- Arnold_Magnetics_N38UH_60C
+- Arnold_Magnetics_N38UH_80C
+- Arnold_Magnetics_N38UHZ_-40C
+- Arnold_Magnetics_N38UHZ_100C
+- Arnold_Magnetics_N38UHZ_120C
+- Arnold_Magnetics_N38UHZ_150C
+- Arnold_Magnetics_N38UHZ_180C
+- Arnold_Magnetics_N38UHZ_200C
+- Arnold_Magnetics_N38UHZ_20C
+- Arnold_Magnetics_N38UHZ_220C
+- Arnold_Magnetics_N38UHZ_60C
+- Arnold_Magnetics_N38UHZ_80C
+- Arnold_Magnetics_N40_-40C
+- Arnold_Magnetics_N40_100C
+- Arnold_Magnetics_N40_120C
+- Arnold_Magnetics_N40_150C
+- Arnold_Magnetics_N40_180C
+- Arnold_Magnetics_N40_200C
+- Arnold_Magnetics_N40_20C
+- Arnold_Magnetics_N40_220C
+- Arnold_Magnetics_N40_60C
+- Arnold_Magnetics_N40_80C
+- Arnold_Magnetics_N40EH_-40C
+- Arnold_Magnetics_N40EH_100C
+- Arnold_Magnetics_N40EH_120C
+- Arnold_Magnetics_N40EH_150C
+- Arnold_Magnetics_N40EH_180C
+- Arnold_Magnetics_N40EH_200C
+- Arnold_Magnetics_N40EH_20C
+- Arnold_Magnetics_N40EH_220C
+- Arnold_Magnetics_N40EH_60C
+- Arnold_Magnetics_N40EH_80C
+- Arnold_Magnetics_N40H_-40C
+- Arnold_Magnetics_N40H_100C
+- Arnold_Magnetics_N40H_120C
+- Arnold_Magnetics_N40H_150C
+- Arnold_Magnetics_N40H_180C
+- Arnold_Magnetics_N40H_200C
+- Arnold_Magnetics_N40H_20C
+- Arnold_Magnetics_N40H_220C
+- Arnold_Magnetics_N40H_60C
+- Arnold_Magnetics_N40H_80C
+- Arnold_Magnetics_N40HX_-40C
+- Arnold_Magnetics_N40HX_100C
+- Arnold_Magnetics_N40HX_120C
+- Arnold_Magnetics_N40HX_150C
+- Arnold_Magnetics_N40HX_180C
+- Arnold_Magnetics_N40HX_200C
+- Arnold_Magnetics_N40HX_20C
+- Arnold_Magnetics_N40HX_220C
+- Arnold_Magnetics_N40HX_60C
+- Arnold_Magnetics_N40HX_80C
+- Arnold_Magnetics_N40M_-40C
+- Arnold_Magnetics_N40M_100C
+- Arnold_Magnetics_N40M_120C
+- Arnold_Magnetics_N40M_150C
+- Arnold_Magnetics_N40M_180C
+- Arnold_Magnetics_N40M_200C
+- Arnold_Magnetics_N40M_20C
+- Arnold_Magnetics_N40M_220C
+- Arnold_Magnetics_N40M_60C
+- Arnold_Magnetics_N40M_80C
+- Arnold_Magnetics_N40SH_-40C
+- Arnold_Magnetics_N40SH_100C
+- Arnold_Magnetics_N40SH_120C
+- Arnold_Magnetics_N40SH_150C
+- Arnold_Magnetics_N40SH_180C
+- Arnold_Magnetics_N40SH_200C
+- Arnold_Magnetics_N40SH_20C
+- Arnold_Magnetics_N40SH_220C
+- Arnold_Magnetics_N40SH_60C
+- Arnold_Magnetics_N40SH_80C
+- Arnold_Magnetics_N40UH_-40C
+- Arnold_Magnetics_N40UH_100C
+- Arnold_Magnetics_N40UH_120C
+- Arnold_Magnetics_N40UH_150C
+- Arnold_Magnetics_N40UH_180C
+- Arnold_Magnetics_N40UH_200C
+- Arnold_Magnetics_N40UH_20C
+- Arnold_Magnetics_N40UH_220C
+- Arnold_Magnetics_N40UH_60C
+- Arnold_Magnetics_N40UH_80C
+- Arnold_Magnetics_N40UHZ_-40C
+- Arnold_Magnetics_N40UHZ_100C
+- Arnold_Magnetics_N40UHZ_120C
+- Arnold_Magnetics_N40UHZ_150C
+- Arnold_Magnetics_N40UHZ_180C
+- Arnold_Magnetics_N40UHZ_200C
+- Arnold_Magnetics_N40UHZ_20C
+- Arnold_Magnetics_N40UHZ_220C
+- Arnold_Magnetics_N40UHZ_60C
+- Arnold_Magnetics_N40UHZ_80C
+- Arnold_Magnetics_N42_-40C
+- Arnold_Magnetics_N42_100C
+- Arnold_Magnetics_N42_120C
+- Arnold_Magnetics_N42_150C
+- Arnold_Magnetics_N42_180C
+- Arnold_Magnetics_N42_200C
+- Arnold_Magnetics_N42_20C
+- Arnold_Magnetics_N42_220C
+- Arnold_Magnetics_N42_60C
+- Arnold_Magnetics_N42_80C
+- Arnold_Magnetics_N42EH_-40C
+- Arnold_Magnetics_N42EH_100C
+- Arnold_Magnetics_N42EH_120C
+- Arnold_Magnetics_N42EH_150C
+- Arnold_Magnetics_N42EH_180C
+- Arnold_Magnetics_N42EH_200C
+- Arnold_Magnetics_N42EH_20C
+- Arnold_Magnetics_N42EH_220C
+- Arnold_Magnetics_N42EH_60C
+- Arnold_Magnetics_N42EH_80C
+- Arnold_Magnetics_N42H_-40C
+- Arnold_Magnetics_N42H_100C
+- Arnold_Magnetics_N42H_120C
+- Arnold_Magnetics_N42H_150C
+- Arnold_Magnetics_N42H_180C
+- Arnold_Magnetics_N42H_200C
+- Arnold_Magnetics_N42H_20C
+- Arnold_Magnetics_N42H_220C
+- Arnold_Magnetics_N42H_60C
+- Arnold_Magnetics_N42H_80C
+- Arnold_Magnetics_N42M_-40C
+- Arnold_Magnetics_N42M_100C
+- Arnold_Magnetics_N42M_120C
+- Arnold_Magnetics_N42M_150C
+- Arnold_Magnetics_N42M_180C
+- Arnold_Magnetics_N42M_200C
+- Arnold_Magnetics_N42M_20C
+- Arnold_Magnetics_N42M_220C
+- Arnold_Magnetics_N42M_60C
+- Arnold_Magnetics_N42M_80C
+- Arnold_Magnetics_N42SH_-40C
+- Arnold_Magnetics_N42SH_100C
+- Arnold_Magnetics_N42SH_120C
+- Arnold_Magnetics_N42SH_150C
+- Arnold_Magnetics_N42SH_180C
+- Arnold_Magnetics_N42SH_200C
+- Arnold_Magnetics_N42SH_20C
+- Arnold_Magnetics_N42SH_220C
+- Arnold_Magnetics_N42SH_60C
+- Arnold_Magnetics_N42SH_80C
+- Arnold_Magnetics_N42SHX_-40C
+- Arnold_Magnetics_N42SHX_100C
+- Arnold_Magnetics_N42SHX_120C
+- Arnold_Magnetics_N42SHX_150C
+- Arnold_Magnetics_N42SHX_180C
+- Arnold_Magnetics_N42SHX_200C
+- Arnold_Magnetics_N42SHX_20C
+- Arnold_Magnetics_N42SHX_220C
+- Arnold_Magnetics_N42SHX_60C
+- Arnold_Magnetics_N42SHX_80C
+- Arnold_Magnetics_N42UH_-40C
+- Arnold_Magnetics_N42UH_100C
+- Arnold_Magnetics_N42UH_120C
+- Arnold_Magnetics_N42UH_150C
+- Arnold_Magnetics_N42UH_180C
+- Arnold_Magnetics_N42UH_200C
+- Arnold_Magnetics_N42UH_20C
+- Arnold_Magnetics_N42UH_220C
+- Arnold_Magnetics_N42UH_60C
+- Arnold_Magnetics_N42UH_80C
+- Arnold_Magnetics_N45_-40C
+- Arnold_Magnetics_N45_100C
+- Arnold_Magnetics_N45_120C
+- Arnold_Magnetics_N45_150C
+- Arnold_Magnetics_N45_180C
+- Arnold_Magnetics_N45_200C
+- Arnold_Magnetics_N45_20C
+- Arnold_Magnetics_N45_220C
+- Arnold_Magnetics_N45_60C
+- Arnold_Magnetics_N45_80C
+- Arnold_Magnetics_N45H_-40C
+- Arnold_Magnetics_N45H_100C
+- Arnold_Magnetics_N45H_120C
+- Arnold_Magnetics_N45H_150C
+- Arnold_Magnetics_N45H_180C
+- Arnold_Magnetics_N45H_200C
+- Arnold_Magnetics_N45H_20C
+- Arnold_Magnetics_N45H_220C
+- Arnold_Magnetics_N45H_60C
+- Arnold_Magnetics_N45H_80C
+- Arnold_Magnetics_N45HX_-40C
+- Arnold_Magnetics_N45HX_100C
+- Arnold_Magnetics_N45HX_120C
+- Arnold_Magnetics_N45HX_150C
+- Arnold_Magnetics_N45HX_180C
+- Arnold_Magnetics_N45HX_200C
+- Arnold_Magnetics_N45HX_20C
+- Arnold_Magnetics_N45HX_220C
+- Arnold_Magnetics_N45HX_60C
+- Arnold_Magnetics_N45HX_80C
+- Arnold_Magnetics_N45M_-40C
+- Arnold_Magnetics_N45M_100C
+- Arnold_Magnetics_N45M_120C
+- Arnold_Magnetics_N45M_150C
+- Arnold_Magnetics_N45M_180C
+- Arnold_Magnetics_N45M_200C
+- Arnold_Magnetics_N45M_20C
+- Arnold_Magnetics_N45M_220C
+- Arnold_Magnetics_N45M_60C
+- Arnold_Magnetics_N45M_80C
+- Arnold_Magnetics_N45MX_-40C
+- Arnold_Magnetics_N45MX_100C
+- Arnold_Magnetics_N45MX_120C
+- Arnold_Magnetics_N45MX_150C
+- Arnold_Magnetics_N45MX_180C
+- Arnold_Magnetics_N45MX_200C
+- Arnold_Magnetics_N45MX_20C
+- Arnold_Magnetics_N45MX_220C
+- Arnold_Magnetics_N45MX_60C
+- Arnold_Magnetics_N45MX_80C
+- Arnold_Magnetics_N45SH_-40C
+- Arnold_Magnetics_N45SH_100C
+- Arnold_Magnetics_N45SH_120C
+- Arnold_Magnetics_N45SH_150C
+- Arnold_Magnetics_N45SH_180C
+- Arnold_Magnetics_N45SH_200C
+- Arnold_Magnetics_N45SH_20C
+- Arnold_Magnetics_N45SH_220C
+- Arnold_Magnetics_N45SH_60C
+- Arnold_Magnetics_N45SH_80C
+- Arnold_Magnetics_N45SHZ_-40C
+- Arnold_Magnetics_N45SHZ_100C
+- Arnold_Magnetics_N45SHZ_120C
+- Arnold_Magnetics_N45SHZ_150C
+- Arnold_Magnetics_N45SHZ_180C
+- Arnold_Magnetics_N45SHZ_200C
+- Arnold_Magnetics_N45SHZ_20C
+- Arnold_Magnetics_N45SHZ_220C
+- Arnold_Magnetics_N45SHZ_60C
+- Arnold_Magnetics_N45SHZ_80C
+- Arnold_Magnetics_N45UH_-40C
+- Arnold_Magnetics_N45UH_100C
+- Arnold_Magnetics_N45UH_120C
+- Arnold_Magnetics_N45UH_150C
+- Arnold_Magnetics_N45UH_180C
+- Arnold_Magnetics_N45UH_200C
+- Arnold_Magnetics_N45UH_20C
+- Arnold_Magnetics_N45UH_220C
+- Arnold_Magnetics_N45UH_60C
+- Arnold_Magnetics_N45UH_80C
+- Arnold_Magnetics_N48_-40C
+- Arnold_Magnetics_N48_100C
+- Arnold_Magnetics_N48_120C
+- Arnold_Magnetics_N48_150C
+- Arnold_Magnetics_N48_180C
+- Arnold_Magnetics_N48_200C
+- Arnold_Magnetics_N48_20C
+- Arnold_Magnetics_N48_220C
+- Arnold_Magnetics_N48_60C
+- Arnold_Magnetics_N48_80C
+- Arnold_Magnetics_N48H_-40C
+- Arnold_Magnetics_N48H_100C
+- Arnold_Magnetics_N48H_120C
+- Arnold_Magnetics_N48H_150C
+- Arnold_Magnetics_N48H_180C
+- Arnold_Magnetics_N48H_200C
+- Arnold_Magnetics_N48H_20C
+- Arnold_Magnetics_N48H_220C
+- Arnold_Magnetics_N48H_60C
+- Arnold_Magnetics_N48H_80C
+- Arnold_Magnetics_N48M_-40C
+- Arnold_Magnetics_N48M_100C
+- Arnold_Magnetics_N48M_120C
+- Arnold_Magnetics_N48M_150C
+- Arnold_Magnetics_N48M_180C
+- Arnold_Magnetics_N48M_200C
+- Arnold_Magnetics_N48M_20C
+- Arnold_Magnetics_N48M_220C
+- Arnold_Magnetics_N48M_60C
+- Arnold_Magnetics_N48M_80C
+- Arnold_Magnetics_N48SH_-40C
+- Arnold_Magnetics_N48SH_100C
+- Arnold_Magnetics_N48SH_120C
+- Arnold_Magnetics_N48SH_150C
+- Arnold_Magnetics_N48SH_180C
+- Arnold_Magnetics_N48SH_200C
+- Arnold_Magnetics_N48SH_20C
+- Arnold_Magnetics_N48SH_220C
+- Arnold_Magnetics_N48SH_60C
+- Arnold_Magnetics_N48SH_80C
+- Arnold_Magnetics_N50_-40C
+- Arnold_Magnetics_N50_100C
+- Arnold_Magnetics_N50_120C
+- Arnold_Magnetics_N50_150C
+- Arnold_Magnetics_N50_180C
+- Arnold_Magnetics_N50_200C
+- Arnold_Magnetics_N50_20C
+- Arnold_Magnetics_N50_220C
+- Arnold_Magnetics_N50_60C
+- Arnold_Magnetics_N50_80C
+- Arnold_Magnetics_N50H_-40C
+- Arnold_Magnetics_N50H_100C
+- Arnold_Magnetics_N50H_120C
+- Arnold_Magnetics_N50H_150C
+- Arnold_Magnetics_N50H_180C
+- Arnold_Magnetics_N50H_200C
+- Arnold_Magnetics_N50H_20C
+- Arnold_Magnetics_N50H_220C
+- Arnold_Magnetics_N50H_60C
+- Arnold_Magnetics_N50H_80C
+- Arnold_Magnetics_N50M_-40C
+- Arnold_Magnetics_N50M_100C
+- Arnold_Magnetics_N50M_120C
+- Arnold_Magnetics_N50M_150C
+- Arnold_Magnetics_N50M_180C
+- Arnold_Magnetics_N50M_200C
+- Arnold_Magnetics_N50M_20C
+- Arnold_Magnetics_N50M_220C
+- Arnold_Magnetics_N50M_60C
+- Arnold_Magnetics_N50M_80C
+- Arnold_Magnetics_N52_-40C
+- Arnold_Magnetics_N52_100C
+- Arnold_Magnetics_N52_120C
+- Arnold_Magnetics_N52_150C
+- Arnold_Magnetics_N52_180C
+- Arnold_Magnetics_N52_200C
+- Arnold_Magnetics_N52_20C
+- Arnold_Magnetics_N52_220C
+- Arnold_Magnetics_N52_60C
+- Arnold_Magnetics_N52_80C
+- Arnold_Magnetics_N52M_-40C
+- Arnold_Magnetics_N52M_100C
+- Arnold_Magnetics_N52M_120C
+- Arnold_Magnetics_N52M_150C
+- Arnold_Magnetics_N52M_180C
+- Arnold_Magnetics_N52M_200C
+- Arnold_Magnetics_N52M_20C
+- Arnold_Magnetics_N52M_220C
+- Arnold_Magnetics_N52M_60C
+- Arnold_Magnetics_N52M_80C
+- Arnold_Magnetics_N55_-40C
+- Arnold_Magnetics_N55_100C
+- Arnold_Magnetics_N55_120C
+- Arnold_Magnetics_N55_150C
+- Arnold_Magnetics_N55_180C
+- Arnold_Magnetics_N55_200C
+- Arnold_Magnetics_N55_20C
+- Arnold_Magnetics_N55_220C
+- Arnold_Magnetics_N55_60C
+- Arnold_Magnetics_N55_80C
+- Arnold_Magnetics_Recoma 18_-40C
+- Arnold_Magnetics_Recoma 18_100C
+- Arnold_Magnetics_Recoma 18_150C
+- Arnold_Magnetics_Recoma 18_200C
+- Arnold_Magnetics_Recoma 18_20C
+- Arnold_Magnetics_Recoma 18_250C
+- Arnold_Magnetics_Recoma 18_300C
+- Arnold_Magnetics_Recoma 18_350C
+- Arnold_Magnetics_Recoma 20_-40C
+- Arnold_Magnetics_Recoma 20_100C
+- Arnold_Magnetics_Recoma 20_150C
+- Arnold_Magnetics_Recoma 20_200C
+- Arnold_Magnetics_Recoma 20_20C
+- Arnold_Magnetics_Recoma 20_250C
+- Arnold_Magnetics_Recoma 20_300C
+- Arnold_Magnetics_Recoma 20_350C
+- Arnold_Magnetics_Recoma 22_-40C
+- Arnold_Magnetics_Recoma 22_100C
+- Arnold_Magnetics_Recoma 22_150C
+- Arnold_Magnetics_Recoma 22_200C
+- Arnold_Magnetics_Recoma 22_20C
+- Arnold_Magnetics_Recoma 22_250C
+- Arnold_Magnetics_Recoma 22_300C
+- Arnold_Magnetics_Recoma 22_350C
+- Arnold_Magnetics_Recoma 24HE_-40C
+- Arnold_Magnetics_Recoma 24HE_100C
+- Arnold_Magnetics_Recoma 24HE_150C
+- Arnold_Magnetics_Recoma 24HE_200C
+- Arnold_Magnetics_Recoma 24HE_20C
+- Arnold_Magnetics_Recoma 24HE_250C
+- Arnold_Magnetics_Recoma 24HE_300C
+- Arnold_Magnetics_Recoma 24HE_350C
+- Arnold_Magnetics_Recoma 25_-40C
+- Arnold_Magnetics_Recoma 25_100C
+- Arnold_Magnetics_Recoma 25_150C
+- Arnold_Magnetics_Recoma 25_200C
+- Arnold_Magnetics_Recoma 25_20C
+- Arnold_Magnetics_Recoma 25_250C
+- Arnold_Magnetics_Recoma 25_300C
+- Arnold_Magnetics_Recoma 25_350C
+- Arnold_Magnetics_Recoma 26_-40C
+- Arnold_Magnetics_Recoma 26_100C
+- Arnold_Magnetics_Recoma 26_150C
+- Arnold_Magnetics_Recoma 26_200C
+- Arnold_Magnetics_Recoma 26_20C
+- Arnold_Magnetics_Recoma 26_250C
+- Arnold_Magnetics_Recoma 26_300C
+- Arnold_Magnetics_Recoma 26_350C
+- Arnold_Magnetics_Recoma 26HE_-40C
+- Arnold_Magnetics_Recoma 26HE_100C
+- Arnold_Magnetics_Recoma 26HE_150C
+- Arnold_Magnetics_Recoma 26HE_200C
+- Arnold_Magnetics_Recoma 26HE_20C
+- Arnold_Magnetics_Recoma 26HE_250C
+- Arnold_Magnetics_Recoma 26HE_300C
+- Arnold_Magnetics_Recoma 26HE_350C
+- Arnold_Magnetics_Recoma 28_-40C
+- Arnold_Magnetics_Recoma 28_100C
+- Arnold_Magnetics_Recoma 28_150C
+- Arnold_Magnetics_Recoma 28_200C
+- Arnold_Magnetics_Recoma 28_20C
+- Arnold_Magnetics_Recoma 28_250C
+- Arnold_Magnetics_Recoma 28_300C
+- Arnold_Magnetics_Recoma 28_350C
+- Arnold_Magnetics_Recoma 28HE_-40C
+- Arnold_Magnetics_Recoma 28HE_100C
+- Arnold_Magnetics_Recoma 28HE_150C
+- Arnold_Magnetics_Recoma 28HE_200C
+- Arnold_Magnetics_Recoma 28HE_20C
+- Arnold_Magnetics_Recoma 28HE_250C
+- Arnold_Magnetics_Recoma 28HE_300C
+- Arnold_Magnetics_Recoma 28HE_350C
+- Arnold_Magnetics_Recoma 30_-40C
+- Arnold_Magnetics_Recoma 30_100C
+- Arnold_Magnetics_Recoma 30_150C
+- Arnold_Magnetics_Recoma 30_200C
+- Arnold_Magnetics_Recoma 30_20C
+- Arnold_Magnetics_Recoma 30_250C
+- Arnold_Magnetics_Recoma 30_300C
+- Arnold_Magnetics_Recoma 30_350C
+- Arnold_Magnetics_Recoma 30HE_-40C
+- Arnold_Magnetics_Recoma 30HE_100C
+- Arnold_Magnetics_Recoma 30HE_150C
+- Arnold_Magnetics_Recoma 30HE_200C
+- Arnold_Magnetics_Recoma 30HE_20C
+- Arnold_Magnetics_Recoma 30HE_250C
+- Arnold_Magnetics_Recoma 30HE_300C
+- Arnold_Magnetics_Recoma 30HE_350C
+- Arnold_Magnetics_Recoma 30S_-40C
+- Arnold_Magnetics_Recoma 30S_100C
+- Arnold_Magnetics_Recoma 30S_150C
+- Arnold_Magnetics_Recoma 30S_200C
+- Arnold_Magnetics_Recoma 30S_20C
+- Arnold_Magnetics_Recoma 30S_250C
+- Arnold_Magnetics_Recoma 30S_300C
+- Arnold_Magnetics_Recoma 30S_350C
+- Arnold_Magnetics_Recoma 32_-40C
+- Arnold_Magnetics_Recoma 32_100C
+- Arnold_Magnetics_Recoma 32_150C
+- Arnold_Magnetics_Recoma 32_200C
+- Arnold_Magnetics_Recoma 32_20C
+- Arnold_Magnetics_Recoma 32_250C
+- Arnold_Magnetics_Recoma 32_300C
+- Arnold_Magnetics_Recoma 32_350C
+- Arnold_Magnetics_Recoma 32S_-40C
+- Arnold_Magnetics_Recoma 32S_100C
+- Arnold_Magnetics_Recoma 32S_150C
+- Arnold_Magnetics_Recoma 32S_200C
+- Arnold_Magnetics_Recoma 32S_20C
+- Arnold_Magnetics_Recoma 32S_250C
+- Arnold_Magnetics_Recoma 32S_300C
+- Arnold_Magnetics_Recoma 32S_350C
+- Arnold_Magnetics_Recoma 33E_-40C
+- Arnold_Magnetics_Recoma 33E_100C
+- Arnold_Magnetics_Recoma 33E_150C
+- Arnold_Magnetics_Recoma 33E_200C
+- Arnold_Magnetics_Recoma 33E_20C
+- Arnold_Magnetics_Recoma 33E_250C
+- Arnold_Magnetics_Recoma 33E_300C
+- Arnold_Magnetics_Recoma 33E_350C
+- Arnold_Magnetics_Recoma 35E_-40C
+- Arnold_Magnetics_Recoma 35E_100C
+- Arnold_Magnetics_Recoma 35E_150C
+- Arnold_Magnetics_Recoma 35E_200C
+- Arnold_Magnetics_Recoma 35E_20C
+- Arnold_Magnetics_Recoma 35E_250C
+- Arnold_Magnetics_Recoma 35E_300C
+- Arnold_Magnetics_Recoma 35E_350C
+- Arnold_Magnetics_Recoma HT 360_-40C
+- Arnold_Magnetics_Recoma HT 360_100C
+- Arnold_Magnetics_Recoma HT 360_150C
+- Arnold_Magnetics_Recoma HT 360_200C
+- Arnold_Magnetics_Recoma HT 360_20C
+- Arnold_Magnetics_Recoma HT 360_250C
+- Arnold_Magnetics_Recoma HT 360_300C
+- Arnold_Magnetics_Recoma HT 360_350C
+- Arnold_Magnetics_Recoma HT 420_-40C
+- Arnold_Magnetics_Recoma HT 420_100C
+- Arnold_Magnetics_Recoma HT 420_150C
+- Arnold_Magnetics_Recoma HT 420_200C
+- Arnold_Magnetics_Recoma HT 420_20C
+- Arnold_Magnetics_Recoma HT 420_250C
+- Arnold_Magnetics_Recoma HT 420_300C
+- Arnold_Magnetics_Recoma HT 420_350C
+- Arnold_Magnetics_Recoma HT 470_-40C
+- Arnold_Magnetics_Recoma HT 470_100C
+- Arnold_Magnetics_Recoma HT 470_150C
+- Arnold_Magnetics_Recoma HT 470_200C
+- Arnold_Magnetics_Recoma HT 470_20C
+- Arnold_Magnetics_Recoma HT 470_250C
+- Arnold_Magnetics_Recoma HT 470_300C
+- Arnold_Magnetics_Recoma HT 470_350C
+- Arnold_Magnetics_Recoma HT 520_-40C
+- Arnold_Magnetics_Recoma HT 520_100C
+- Arnold_Magnetics_Recoma HT 520_150C
+- Arnold_Magnetics_Recoma HT 520_200C
+- Arnold_Magnetics_Recoma HT 520_20C
+- Arnold_Magnetics_Recoma HT 520_250C
+- Arnold_Magnetics_Recoma HT 520_300C
+- Arnold_Magnetics_Recoma HT 520_350C
+- Arnold_Magnetics_Recoma STAB 02_-40C
+- Arnold_Magnetics_Recoma STAB 02_100C
+- Arnold_Magnetics_Recoma STAB 02_150C
+- Arnold_Magnetics_Recoma STAB 02_200C
+- Arnold_Magnetics_Recoma STAB 02_20C
+- Arnold_Magnetics_Recoma STAB 02_250C
+- Arnold_Magnetics_Recoma STAB 02_300C
+- Arnold_Magnetics_Recoma STAB 02_350C
+- Bestway Magnet - NB-12
+- Bestway Magnet - Y25
+- Bestway Magnet - Y28
+- Bestway Magnet - Y30H-1
+- Bestway Magnet - Y32
+- Bestway Magnet - YX18T
+- Bestway Magnet - YX27C
+- Dexing Magnet - YX-18T
+- Dexing Magnet - YX-27C
+- Eclipse Magnetics - N25AH
+- Eclipse Magnetics - N25BH
+- Eclipse Magnetics - N28AH
+- Eclipse Magnetics - N28EH
+- Eclipse Magnetics - N28UH
+- Eclipse Magnetics - N30AH
+- Eclipse Magnetics - N30EH
+- Eclipse Magnetics - N30H
+- Eclipse Magnetics - N30SH
+- Eclipse Magnetics - N30UH
+- Eclipse Magnetics - N33EH
+- Eclipse Magnetics - N33H
+- Eclipse Magnetics - N33M
+- Eclipse Magnetics - N33SH
+- Eclipse Magnetics - N33UH
+- Eclipse Magnetics - N35
+- Eclipse Magnetics - N35EH
+- Eclipse Magnetics - N35H
+- Eclipse Magnetics - N35M
+- Eclipse Magnetics - N35SH
+- Eclipse Magnetics - N35UH
+- Eclipse Magnetics - N38
+- Eclipse Magnetics - N38EH
+- Eclipse Magnetics - N38H
+- Eclipse Magnetics - N38M
+- Eclipse Magnetics - N38SH
+- Eclipse Magnetics - N38UH
+- Eclipse Magnetics - N40
+- Eclipse Magnetics - N40H
+- Eclipse Magnetics - N40M
+- Eclipse Magnetics - N40SH
+- Eclipse Magnetics - N40UH
+- Eclipse Magnetics - N42
+- Eclipse Magnetics - N42H
+- Eclipse Magnetics - N42M
+- Eclipse Magnetics - N42SH
+- Eclipse Magnetics - N44H
+- Eclipse Magnetics - N44SH
+- Eclipse Magnetics - N45
+- Eclipse Magnetics - N45M
+- Eclipse Magnetics - N46H
+- Eclipse Magnetics - N46SH
+- Eclipse Magnetics - N48
+- Eclipse Magnetics - N48H
+- Eclipse Magnetics - N48M
+- Eclipse Magnetics - N50
+- Eclipse Magnetics - N50M
+- Eclipse Magnetics - N52
+- Eclipse Magnetics - SmCo 26H
+- Feller Magnets - 33EH
+- Feller Magnets - 38UH
+- Feller Magnets - 45M
+- Feller Magnets - N50
+- Feller Magnets - YX-20
+- Feller Magnets - YXG-24H
+- Feller Magnets - YXG-28H
+- Feller Magnets - YXG-30H
+- Feller Magnets - YXG-32
+- Galaxy Magnets - GPM-12
+- Galaxy Magnets - GPM-12L
+- Galaxy Magnets - GPM-6
+- Galaxy Magnets - GPM-8
+- Galaxy Magnets - GPM-8H
+- Galaxy Magnets - GPM-8SR
+- HJ Magnet - BNP6
+- HJ Magnet - XG18-18
+- HJ Magnet - XG22-25
+- HJ Magnet - XG32-12
+- Integrated Magnetics - N3330
+- Integrated Magnetics - N3335
+- Integrated Magnetics - N3530
+- Integrated Magnetics - N3621
+- Integrated Magnetics - N3725
+- Integrated Magnetics - N3730
+- Integrated Magnetics - N3917
+- Integrated Magnetics - N4021
+- Integrated Magnetics - N4025
+- Integrated Magnetics - N4316
+- Integrated Magnetics - N4321
+- Integrated Magnetics - N4518
+- Integrated Magnetics - N4614
+- Integrated Magnetics - N4616
+- Integrated Magnetics - N4914
+- Integrated Magnetics - N4916
+- Integrated Magnetics - N5011
+- Integrated Magnetics - N5014
+- Integrated Magnetics - N5311
+- Integrated Magnetics - S2809
+- Integrated Magnetics - S2909
+- Integrated Magnetics - S3007
+- Integrated Magnetics - S3018
+- Integrated Magnetics - S3120
+- Integrated Magnetics - S3310
+- Integrated Magnetics - S3320
+- Integrated Magnetics - S3410
+- K&J Magnetics - N28UH
+- K&J Magnetics - N30EH
+- K&J Magnetics - N30SH
+- K&J Magnetics - N30UH
+- K&J Magnetics - N33EH
+- K&J Magnetics - N33H
+- K&J Magnetics - N33SH
+- K&J Magnetics - N33UH
+- K&J Magnetics - N35
+- K&J Magnetics - N35EH
+- K&J Magnetics - N35H
+- K&J Magnetics - N35M
+- K&J Magnetics - N35SH
+- K&J Magnetics - N35UH
+- K&J Magnetics - N38
+- K&J Magnetics - N38EH
+- K&J Magnetics - N38H
+- K&J Magnetics - N38M
+- K&J Magnetics - N38SH
+- K&J Magnetics - N38UH
+- K&J Magnetics - N40
+- K&J Magnetics - N40H
+- K&J Magnetics - N40M
+- K&J Magnetics - N40SH
+- K&J Magnetics - N40UH
+- K&J Magnetics - N42
+- K&J Magnetics - N42H
+- K&J Magnetics - N42M
+- K&J Magnetics - N42SH
+- K&J Magnetics - N45
+- K&J Magnetics - N45H
+- K&J Magnetics - N45M
+- K&J Magnetics - N45SH
+- K&J Magnetics - N48
+- K&J Magnetics - N48H
+- K&J Magnetics - N48M
+- K&J Magnetics - N50
+- K&J Magnetics - N50M
+- K&J Magnetics - N52
+- Magnet, permanent, Alnico 1 (cast)
+- Magnet, permanent, Alnico 2 (cast)
+- Magnet, permanent, Alnico 2 (sintered)
+- Magnet, permanent, Alnico 3 (cast)
+- Magnet, permanent, Alnico 5 (cast)
+- Magnet, permanent, Alnico 5 (sintered)
+- Magnet, permanent, Alnico 8 (cast)
+- Magnet, permanent, Alnico 8 (sintered)
+- Magnet, permanent, Alnico 9 (cast)
+- Magnet, permanent, Ferrite Y30BH (YBM-2B)
+- Magnet, permanent, Ferrite Y32H-2 (YBM-5BB)
+- Magnet, permanent, Ferrite Y33H (YBM-6BB)
+- Magnet, permanent, Ferrite Y8T (YBM-3)
+- Magnet, permanent, Neodymium N30EH
+- Magnet, permanent, Neodymium N30H
+- Magnet, permanent, Neodymium N35
+- Magnet, permanent, Neodymium N35H
+- Magnet, permanent, Neodymium N35UH
+- Magnet, permanent, Neodymium N42
+- Magnet, permanent, Neodymium N42H
+- Magnet, permanent, Neodymium N42SH
+- Magnet, permanent, Neodymium N52
+- Magnet, permanent, Neodymium N54
+- Magnet, permanent, SmCo20 (2 17)
+- Magnet, permanent, SmCo22 (1 5)
+- Magnet, soft, Ferrite B (Mn-Zn)
+- Magnet, soft, Ferrite G (Ni-Zn)
+- Magnetfabrik Bonn - Alnico 500
+- Magnetfabrik Bonn - Neofer 25-60p
+- Magnetfabrik Bonn - Neofer 31-100p
+- Magnetfabrik Bonn - Neofer 37-60p
+- Magnetfabrik Bonn - Neofer 39-60p
+- Magnetfabrik Bonn - Neofer 41-100p
+- Magnetfabrik Bonn - Neofer 44-60p
+- Magnetfabrik Bonn - Neofer 48-60p
+- Magnetfabrik Bonn - Neofer 55-100p
+- Magnetfabrik Bonn - Neofer 55-50p
+- Magnetfabrik Bonn - Neofer 62-60p
+- Magnetfabrik Bonn - Neofer 65-70p
+- Magnetfabrik Bonn - Seco 170-120
+- Magnetfabrik Bonn - Sprox 10-20p
+- Magnetfabrik Bonn - Sprox 11-21p
+- Magnetfabrik Bonn - Sprox 11-22p
+- Magnetfabrik Bonn - Sprox 13-21
+- Magnetfabrik Bonn - Sprox 14-21
+- Magnetfabrik Bonn - Sprox 15-21p
+- Magnetfabrik Bonn - Sprox 15-22p
+- Magnetfabrik Bonn - Sprox 3-20p
+- Magnetfabrik Bonn - Sprox 5F
+- Magnetfabrik Bonn - Sprox-100
+- Magnetfabrik Bonn - Sprox-400
+- Magnetic alloy, core iron
+- Magnetic alloy, Hiperco 27
+- Magnetic alloy, Hiperco 50
+- Magnetic alloy, Metglas 2714A
+- Magnetic alloy, MuMetal
+- Magnetic alloy, Permalloy 45
+- Magnetic alloy, silicon core iron A
+- Magnetic alloy, silicon core iron B
+- Magnetic alloy, silicon core iron C
+- Magnetic Metals - Microsil, 4mil
+- Magnetic Metals - Silectron rolling, 4mil
+- Magnetic Metals - Silectron, 12mil
+- Magnetic Metals - Silectron, 4mil
+- Magnetic Metals - Silectron, 6mil
+- Magnetic Metals - Supermalloy, 2mil
+- Magnetic Shield - Conetic
+- Magnetic Shield - Mumetal (77%Ni)
+- Magnetic Shield - Mumetal (80%Ni)
+- Magnetic Shield - Mumetal, 2mil
+- Magnetic Shield - Netic
+- Magnetics - 75-Series 40mu
+- Magnetics - Amoflux
+- Magnetics - Edge 60mu
+- Magnetics - High DC Bias Edge 60mu
+- Magnetics - High DC Bias XFlux 40mu
+- Magnetics - High Flux 125mu
+- Magnetics - High Flux 147mu
+- Magnetics - High Flux 14mu
+- Magnetics - High Flux 160mu
+- Magnetics - High Flux 26mu
+- Magnetics - High Flux 60mu
+- Magnetics - Kool Mu 125mu
+- Magnetics - Kool Mu 26mu
+- Magnetics - Kool Mu 40mu
+- Magnetics - Kool Mu 60mu
+- Magnetics - Kool Mu 75mu
+- Magnetics - Kool Mu 90mu
+- Magnetics - Kool Mu Hf 26mu
+- Magnetics - Kool Mu MAX 26mu
+- Magnetics - MPP 125mu
+- Magnetics - MPP 147mu
+- Magnetics - MPP 14mu
+- Magnetics - MPP 160mu
+- Magnetics - MPP 173mu
+- Magnetics - MPP 200mu
+- Magnetics - MPP 26mu
+- Magnetics - MPP 300mu
+- Magnetics - MPP 550mu
+- Magnetics - MPP 60mu
+- Magnetics - Permalloy, 2mil
+- Magnetics - Permalloy, Nonoriented
+- Magnetics - Permalloy, Oriented
+- Magnetics - XFlux 40mu
+- Neorem Magnets - Neorem 512a
+- Neorem Magnets - Neorem 512t
+- Neorem Magnets - Neorem 537a
+- Neorem Magnets - Neorem 537t
+- Neorem Magnets - Neorem 553a
+- Neorem Magnets - Neorem 553t
+- Neorem Magnets - Neorem 576a
+- Neorem Magnets - Neorem 576t
+- Neorem Magnets - Neorem 591a
+- Neorem Magnets - Neorem 591t
+- Neorem Magnets - Neorem 593a
+- Neorem Magnets - Neorem 593t
+- Neorem Magnets - Neorem 595a
+- Neorem Magnets - Neorem 595t
+- Neorem Magnets - Neorem 597a
+- Neorem Magnets - Neorem 597t
+- Neorem Magnets - Neorem 599a
+- Neorem Magnets - Neorem 599t
+- Neorem Magnets - Neorem 712a
+- Neorem Magnets - Neorem 712t
+- Neorem Magnets - Neorem 737a
+- Neorem Magnets - Neorem 737t
+- Neorem Magnets - Neorem 737t mod
+- Neorem Magnets - Neorem 753a
+- Neorem Magnets - Neorem 753t
+- Neorem Magnets - Neorem 776a
+- Neorem Magnets - Neorem 776t
+- Neorem Magnets - Neorem 776t mod
+- Neorem Magnets - Neorem 791a
+- Neorem Magnets - Neorem 791t
+- Neorem Magnets - Neorem 793a
+- Neorem Magnets - Neorem 793a mod
+- Neorem Magnets - Neorem 793t
+- Neorem Magnets - Neorem 795a
+- Neorem Magnets - Neorem 795t
+- Neorem Magnets - Neorem 797a
+- Neorem Magnets - Neorem 797t
+- Neorem Magnets - Neorem 799a
+- Neorem Magnets - Neorem 799t
+- Neorem Magnets - Neorem 830a
+- Neorem Magnets - Neorem 830t
+- Neorem Magnets - Neorem 870a
+- Neorem Magnets - Neorem 870t
+- Neorem Magnets - Neorem 880a
+- Neorem Magnets - Neorem 880t
+- Neorem Magnets - Neorem 890a
+- Neorem Magnets - Neorem 890t
+- Neorem Magnets - Neorem tmod
+- Risheng Magnets - 35AH
+- Risheng Magnets - 38EH
+- Smart Magnets - Y30
+- Smart Magnets - Y30H-1
+- Smart Magnets - Y33
+- Spacemagnets - HT-N10
+- Spacemagnets - HT-N10H
+- Spacemagnets - HT-N10S
+- Spacemagnets - HT-N12
+- Spacemagnets - HT-N12S
+- Spacemagnets - HT-N8L
+- Spacemagnets - HTY38H
+- Spacemagnets - HTY40
+- Spacemagnets - HTY40-1
+- Spacemagnets - HTY40N
+- Spacemagnets - HTY45E
+- Sun Magnetic - Alnico 5
+- Sun Magnetic - Alnico 8
+- Sun Magnetic - Y10T
+- Sun Magnetic - Y30
+- Sun Magnetic - Y30BK
+- Sun Magnetic - Y30K
+- Sun Magnetic - Y35
+- Sura Magnets - N25BH
+- Sura Magnets - N28AH
+- Sura Magnets - N28EH
+- Sura Magnets - N28UH
+- Sura Magnets - N30AH
+- Sura Magnets - N30EH
+- Sura Magnets - N30H
+- Sura Magnets - N30SH
+- Sura Magnets - N30UH
+- Sura Magnets - N33AH
+- Sura Magnets - N33EH
+- Sura Magnets - N33H
+- Sura Magnets - N33M
+- Sura Magnets - N33SH
+- Sura Magnets - N33UH
+- Sura Magnets - N35
+- Sura Magnets - N35EH
+- Sura Magnets - N35H
+- Sura Magnets - N35M
+- Sura Magnets - N35SH
+- Sura Magnets - N35UH
+- Sura Magnets - N38
+- Sura Magnets - N38EH
+- Sura Magnets - N38H
+- Sura Magnets - N38M
+- Sura Magnets - N38SH
+- Sura Magnets - N38UH
+- Sura Magnets - N40
+- Sura Magnets - N40H
+- Sura Magnets - N40M
+- Sura Magnets - N40SH
+- Sura Magnets - N40UH
+- Sura Magnets - N42
+- Sura Magnets - N42H
+- Sura Magnets - N42M
+- Sura Magnets - N42SH
+- Sura Magnets - N42UH
+- Sura Magnets - N44H
+- Sura Magnets - N44SH
+- Sura Magnets - N45
+- Sura Magnets - N45M
+- Sura Magnets - N46H
+- Sura Magnets - N46SH
+- Sura Magnets - N48
+- Sura Magnets - N48H
+- Sura Magnets - N48M
+- Sura Magnets - N50
+- Sura Magnets - N50H
+- Sura Magnets - N50M
+- Sura Magnets - N52
+- Sura Magnets - N52M
+- TC Magnets - 35AH
+- TC Magnets - 35EH
+- TC Magnets - 38UH
+- TC Magnets - 45SH
+- TC Magnets - 48H
+- TC Magnets - 48M

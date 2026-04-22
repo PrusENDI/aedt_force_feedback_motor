@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# AEDT generated data
+*.aedt.lock
+*.aedtresults/
+*.aedb/
+*.asol
+*.profile
+
+# Working projects and exports
+/aedt_projects/
+/exports/
+/logs/
+/runtime/
+
+# Generated artifacts and reports
+/artifacts/
+/reports/2d_screening_summary.csv
+/reports/2d_screening_ranked.csv
+/reports/2d_screening_failures.csv
+/reports/3d_validation_summary.csv
+/reports/3d_validation_ranked.csv
+/reports/3d_validation_failures.csv
+/reports/recommended_design.md
+
+# Local scratch files
+batch.log
+*.tmp
+*.bak

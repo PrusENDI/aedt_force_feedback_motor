@@ -1,0 +1,2 @@
+case_id,magnet_thickness_mm,pole_arc_ratio,airgap_mm,backiron_thickness_mm,coil_radial_span_mm,coil_mean_radius_mm,turns_per_phase,conductor_width_mm,conductor_thickness_mm,parallel_strands,magnet_segments_per_pole
+baseline,3.4,0.72,0.7,4.5,12.5,39.5,66,2.6,0.6,2,1

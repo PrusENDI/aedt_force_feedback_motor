@@ -1,0 +1,90 @@
+{
+  "screening_case_count": 32,
+  "variables": [
+    {
+      "name": "magnet_thickness_mm",
+      "type": "float",
+      "min": 2.5,
+      "max": 4.5,
+      "baseline": 3.4,
+      "decimals": 3
+    },
+    {
+      "name": "pole_arc_ratio",
+      "type": "float",
+      "min": 0.65,
+      "max": 0.8,
+      "baseline": 0.72,
+      "decimals": 4
+    },
+    {
+      "name": "airgap_mm",
+      "type": "float",
+      "min": 0.5,
+      "max": 0.9,
+      "baseline": 0.7,
+      "decimals": 3
+    },
+    {
+      "name": "backiron_thickness_mm",
+      "type": "float",
+      "min": 3.5,
+      "max": 6.0,
+      "baseline": 4.5,
+      "decimals": 3
+    },
+    {
+      "name": "coil_radial_span_mm",
+      "type": "float",
+      "min": 10.0,
+      "max": 15.0,
+      "baseline": 12.5,
+      "decimals": 3
+    },
+    {
+      "name": "coil_mean_radius_mm",
+      "type": "float",
+      "min": 37.5,
+      "max": 41.5,
+      "baseline": 39.5,
+      "decimals": 3
+    },
+    {
+      "name": "turns_per_phase",
+      "type": "int",
+      "min": 42,
+      "max": 96,
+      "baseline": 66
+    },
+    {
+      "name": "conductor_width_mm",
+      "type": "float",
+      "min": 1.6,
+      "max": 4.0,
+      "baseline": 2.6,
+      "decimals": 3
+    },
+    {
+      "name": "conductor_thickness_mm",
+      "type": "float",
+      "min": 0.3,
+      "max": 1.1,
+      "baseline": 0.6,
+      "decimals": 3
+    },
+    {
+      "name": "parallel_strands",
+      "type": "int",
+      "min": 1,
+      "max": 4,
+      "baseline": 2
+    },
+    {
+      "name": "magnet_segments_per_pole",
+      "type": "int",
+      "min": 1,
+      "max": 3,
+      "baseline": 1
+    }
+  ]
+}
