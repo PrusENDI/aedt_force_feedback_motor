@@ -83,6 +83,7 @@ Additional reference files:
    - `launchers/Queue-BootstrapLinear2DTemplate.ps1`
    - `launchers/Queue-ValidateLinear2DTemplate.ps1`
    - `launchers/Queue-BuildLinear2DModel.ps1`
+   - `launchers/Queue-BuildSector3DModel.ps1`
    - `launchers/Queue-ApplyLinear2DPhysicsSetup.ps1`
    - `launchers/Queue-AssignLinear2DExcitation.ps1`
    - `launchers/Queue-CreateLinear2DReports.ps1`
