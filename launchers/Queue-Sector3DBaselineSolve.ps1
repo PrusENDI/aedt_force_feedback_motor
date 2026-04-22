@@ -1,0 +1,5 @@
+& (Join-Path $PSScriptRoot 'Queue-BuildSector3DModel.ps1')
+& (Join-Path $PSScriptRoot 'Queue-AssignSector3DExcitation.ps1')
+& (Join-Path $PSScriptRoot 'Queue-ApplySector3DTransientSetup.ps1')
+& (Join-Path $PSScriptRoot 'Queue-CreateSector3DReports.ps1')
+& (Join-Path $PSScriptRoot 'Queue-SolveSector3DSetup.ps1')

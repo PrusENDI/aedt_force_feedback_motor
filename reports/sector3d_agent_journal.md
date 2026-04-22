@@ -102,3 +102,22 @@ This file is the running journal for independent `Sector3D` iterations.
   - the model now has a baseline solve/report loop, but axial-flux rotating-band geometry is still conservative and may still require manual Maxwell refinement before back-EMF and torque waveforms are fully trustworthy
 - next step:
   - run the new 3D script chain inside AEDT, inspect the first real `sector3d_transient_setup`, `sector3d_excitation_assignment`, `sector3d_reports_creation`, and `sector3d_solve_status` artifacts, then tighten the motion-band and periodic-sector implementation from real solver feedback
+
+## Iteration 6
+
+- goal: make the queue-based host practical enough that the new 3D `.ps1` launchers can reliably drive AEDT without manual project/design re-selection
+- changes made:
+  - extended `scripts/agent_runtime.py` with stage-aware host target resolution and automatic working-project/design preparation
+  - updated `scripts/in_aedt_agent_host.py` so queued `run_script`, `run_2d_screen`, and `run_3d_validation` commands prepare the matching 2D or 3D AEDT context before script execution
+  - updated `scripts/agent_status.py` to report heartbeat freshness instead of only dumping raw queue JSON
+  - added `scripts/bootstrap_agent_host.py` and `launchers/Start-AEDTHost.ps1` to produce a host bootstrap summary for the external PowerShell side
+  - added `launchers/Queue-Sector3DBaselineSolve.ps1` as a FIFO queue wrapper around the full 3D baseline chain
+  - added `launchers/Run-Launcher.cmd` so launcher usage still works when Windows execution policy blocks direct `.ps1` invocation
+- validation target:
+  - source compile check for the touched host scripts
+  - direct runtime check for `bootstrap_agent_host.py`
+  - direct status check for the new heartbeat freshness output
+- expected limitation:
+  - this iteration removes the obvious host/session blocker, but real Maxwell solve robustness still depends on the first live AEDT run of the new 3D queue chain
+- next step:
+  - restart the in-AEDT host, queue `Queue-Sector3DBaselineSolve.ps1`, and use the resulting solve/report artifacts to refine motion-band and periodic-sector details from actual Maxwell feedback

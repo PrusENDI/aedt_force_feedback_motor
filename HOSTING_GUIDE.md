@@ -101,8 +101,18 @@ Expected behavior:
 - A console/log window shows the host starting.
 - `runtime/heartbeat.json` starts updating.
 - `runtime/session.json` is written.
+- queued scripts will now auto-open and activate the matching 2D or 3D working design before they run
 
 ## Send commands from outside AEDT
+
+If direct `.ps1` execution is blocked by Windows execution policy, use:
+
+```cmd
+launchers\Run-Launcher.cmd Start-AEDTHost.ps1
+launchers\Run-Launcher.cmd Queue-ProbeSession.ps1
+launchers\Run-Launcher.cmd Queue-Sector3DBaselineSolve.ps1
+launchers\Run-Launcher.cmd Get-AgentStatus.ps1
+```
 
 ### Probe the live session
 
@@ -126,6 +136,12 @@ Expected behavior:
 
 ```powershell
 .\launchers\Queue-Command.ps1 -Action run_script -ScriptPath scripts/host_session_probe.py
+```
+
+### Queue the 3D baseline solve loop
+
+```powershell
+.\launchers\Queue-Sector3DBaselineSolve.ps1
 ```
 
 ### Stop the host

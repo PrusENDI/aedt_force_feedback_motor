@@ -76,15 +76,21 @@ Additional reference files:
 
 1. Edit `config/project.json` if you want to change the default paths or screening limits.
 2. Run `launchers/Probe-Environment.ps1` to capture the current AEDT and PyAEDT status.
-3. Start AEDT manually from the desktop or Start menu.
-4. Inside AEDT, use `Run PyAEDT Script` and run `scripts/in_aedt_probe.py` once if you want a quick attachment check.
-5. Inside AEDT, use `Run PyAEDT Script` and run `scripts/in_aedt_agent_host.py` to start the persistent in-AEDT worker.
+3. Run `launchers/Start-AEDTHost.ps1` to prepare the runtime queue and write the host bootstrap summary.
+4. Start AEDT manually from the desktop or Start menu.
+5. Inside AEDT, use `Run PyAEDT Script` and run `scripts/in_aedt_probe.py` once if you want a quick attachment check.
+6. Inside AEDT, use `Run PyAEDT Script` and run `scripts/in_aedt_agent_host.py` to start the persistent in-AEDT worker.
 6. From outside AEDT, queue work with:
    - `launchers/Queue-ProbeSession.ps1`
    - `launchers/Queue-BootstrapLinear2DTemplate.ps1`
    - `launchers/Queue-ValidateLinear2DTemplate.ps1`
    - `launchers/Queue-BuildLinear2DModel.ps1`
    - `launchers/Queue-BuildSector3DModel.ps1`
+   - `launchers/Queue-AssignSector3DExcitation.ps1`
+   - `launchers/Queue-ApplySector3DTransientSetup.ps1`
+   - `launchers/Queue-CreateSector3DReports.ps1`
+   - `launchers/Queue-SolveSector3DSetup.ps1`
+   - `launchers/Queue-Sector3DBaselineSolve.ps1`
    - `launchers/Queue-ApplyLinear2DPhysicsSetup.ps1`
    - `launchers/Queue-AssignLinear2DExcitation.ps1`
    - `launchers/Queue-CreateLinear2DReports.ps1`
@@ -93,6 +99,12 @@ Additional reference files:
    - `launchers/Queue-Command.ps1 -Action run_script -ScriptPath scripts/your_script.py`
 7. Inspect state with `launchers/Get-AgentStatus.ps1`.
 8. Stop the worker with `launchers/Queue-StopAgent.ps1`.
+
+If Windows PowerShell execution policy blocks direct `.ps1` launches on this machine, use:
+
+- `launchers\Run-Launcher.cmd Start-AEDTHost.ps1`
+- `launchers\Run-Launcher.cmd Queue-Sector3DBaselineSolve.ps1`
+- `launchers\Run-Launcher.cmd Get-AgentStatus.ps1`
 
 ## What The Agent Controls
 

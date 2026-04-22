@@ -9,9 +9,12 @@ import sys
 import json
 
 from aedt_native_common import config_paths
+from aedt_native_common import copy_template_if_needed
+from aedt_native_common import ensure_design
 from aedt_native_common import ensure_dir
 from aedt_native_common import ensure_workspace_dirs
 from aedt_native_common import load_json
+from aedt_native_common import open_or_create_project
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
 from aedt_native_common import timestamp_string
@@ -229,4 +232,95 @@ def failure_payload(command, exc):
         "command": command,
         "error": str(exc),
         "traceback": traceback.format_exc()
+    }
+
+
+def _script_stage(script_path):
+    text = str(script_path or "").replace("\\", "/").lower()
+    if "linear2d" in text or "linear_2d" in text:
+        return "linear_2d"
+    if "sector3d" in text or "sector_3d" in text:
+        return "sector_3d"
+    return None
+
+
+def resolve_host_target(context, command):
+    project_cfg = context["project_cfg"]
+    paths = context["paths"]
+    action = str(command.get("action", "")).strip()
+    payload = command.get("payload", {}) or {}
+
+    stage_key = None
+    if action == "run_2d_screen":
+        stage_key = "linear_2d"
+    elif action == "run_3d_validation":
+        stage_key = "sector_3d"
+    elif action == "run_script":
+        stage_key = _script_stage(payload.get("script_path", ""))
+
+    if stage_key == "linear_2d":
+        stage_cfg = project_cfg.get("linear_2d", {})
+        return {
+            "stage_key": stage_key,
+            "design_name": stage_cfg.get("design_name", "Linearized2D"),
+            "design_type": stage_cfg.get("design_type", "Maxwell 2D"),
+            "solution_type": stage_cfg.get("solution_type", "TransientXY"),
+            "template_path": paths.get("linear_2d_template", ""),
+            "working_path": paths.get("linear_2d_working", "")
+        }
+    if stage_key == "sector_3d":
+        stage_cfg = project_cfg.get("sector_3d", {})
+        return {
+            "stage_key": stage_key,
+            "design_name": stage_cfg.get("design_name", "Sector3D"),
+            "design_type": "Maxwell 3D",
+            "solution_type": "Transient",
+            "template_path": paths.get("sector_3d_template", ""),
+            "working_path": paths.get("sector_3d_working", "")
+        }
+    return None
+
+
+def ensure_host_design_ready(oDesktop, context, command, logger):
+    target = resolve_host_target(context, command)
+    if not target:
+        logger.log("No stage-specific host preparation required for action %s" % command.get("action"))
+        return {
+            "prepared": False,
+            "stage_key": None,
+            "design_name": None,
+            "working_path": None,
+            "template_path": None
+        }
+
+    working_path = str(target.get("working_path", "") or "")
+    template_path = str(target.get("template_path", "") or "")
+    if working_path:
+        copy_template_if_needed(template_path, working_path, logger)
+        oProject = open_or_create_project(oDesktop, working_path, logger)
+    else:
+        oProject = oDesktop.GetActiveProject()
+    if not oProject:
+        raise RuntimeError("Could not open or create the host project for stage %s" % target["stage_key"])
+
+    oDesign = ensure_design(
+        oProject,
+        target["design_name"],
+        target["design_type"],
+        target["solution_type"],
+        logger
+    )
+    project_name = safe_call(lambda: oProject.GetName(), "")
+    design_name = safe_call(lambda: oDesign.GetName(), "")
+    logger.log(
+        "Prepared host context for %s: project=%s design=%s"
+        % (target["stage_key"], project_name or "unknown", design_name or "unknown")
+    )
+    return {
+        "prepared": True,
+        "stage_key": target["stage_key"],
+        "project_name": project_name,
+        "design_name": design_name,
+        "working_path": working_path,
+        "template_path": template_path
     }

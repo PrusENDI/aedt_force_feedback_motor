@@ -24,6 +24,7 @@ __pycache__/
 /reports/3d_validation_ranked.csv
 /reports/3d_validation_failures.csv
 /reports/recommended_design.md
+/reports/agent_host_bootstrap.md
 
 # Local scratch files
 batch.log
