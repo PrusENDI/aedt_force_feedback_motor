@@ -23,6 +23,25 @@ def write_json(path, data):
         handle.close()
 
 
+def release_desktop_compat(desktop, close_projects=False, keep_session=True):
+    close_flag = not bool(keep_session)
+    attempts = [
+        {"close_projects": close_projects, "close_on_exit": close_flag},
+        {"close_projects": close_projects, "close_desktop": close_flag},
+        {"close_projects": close_projects}
+    ]
+    last_error = None
+    for kwargs in attempts:
+        try:
+            return desktop.release_desktop(**kwargs)
+        except TypeError as exc:
+            last_error = exc
+            continue
+    if last_error:
+        raise last_error
+    return False
+
+
 def main():
     root = repo_root()
     artifacts = os.path.join(root, "artifacts")
@@ -56,7 +75,7 @@ def main():
             data["active_project"] = None
         write_json(os.path.join(artifacts, "inside_aedt_probe.json"), data)
     finally:
-        desktop.release_desktop(close_projects=False, close_desktop=False)
+        release_desktop_compat(desktop, close_projects=False, keep_session=True)
 
 
 if __name__ == "__main__":

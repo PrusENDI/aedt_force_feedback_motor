@@ -33,6 +33,25 @@ def write_text(path, text):
         handle.close()
 
 
+def release_desktop_compat(desktop, close_projects=True, keep_session=False):
+    close_flag = not bool(keep_session)
+    attempts = [
+        {"close_projects": close_projects, "close_on_exit": close_flag},
+        {"close_projects": close_projects, "close_desktop": close_flag},
+        {"close_projects": close_projects}
+    ]
+    last_error = None
+    for kwargs in attempts:
+        try:
+            return desktop.release_desktop(**kwargs)
+        except TypeError as exc:
+            last_error = exc
+            continue
+    if last_error:
+        raise last_error
+    return False
+
+
 def main():
     root = repo_root()
     ensure_dir(os.path.join(root, "artifacts"))
@@ -71,7 +90,7 @@ def main():
     finally:
         if desktop is not None:
             try:
-                desktop.release_desktop(close_projects=True, close_desktop=True)
+                release_desktop_compat(desktop, close_projects=True, keep_session=False)
                 with open(log_path, "a") as handle:
                     handle.write("desktop_released\n")
             except Exception:
