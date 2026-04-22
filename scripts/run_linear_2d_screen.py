@@ -25,10 +25,10 @@ from aedt_native_common import timestamp_string
 from aedt_native_common import waveform_stats
 from aedt_native_common import write_csv_rows
 from assign_linear2d_excitation import _attach_maxwell2d
-from build_hooks import ensure_linear_2d_design
 from doe_engine import load_or_generate_cases
 from doe_engine import write_validation_cases
 from linear2d_motion import assign_linear_translate_motion
+from linear2d_scaffold import ensure_linear_2d_design
 from ranking import rank_rows
 from winding_geometry import design_variables
 

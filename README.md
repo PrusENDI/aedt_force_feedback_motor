@@ -14,6 +14,9 @@ The workflow is intentionally disk-conscious and now aims for a more transient-f
 
 - `config/` holds the design targets, search space, and ranking rules.
 - `scripts/` holds AEDT-native Python scripts meant to run through `ansysedt.exe -RunScriptAndExit`.
+  - `scripts/linear2d_scaffold.py` owns the `Linearized2D` auto-generated scaffold.
+  - `scripts/sector3d_scaffold.py` owns the `Sector3D` scaffold and is intentionally separated from the 2D geometry logic.
+  - `scripts/build_hooks.py` remains only as a thin compatibility wrapper.
 - `launchers/` holds PowerShell helpers that detect `ansysedt.exe` and start the correct stage.
 - `cases/` holds the generated or edited case tables.
 - `templates/` documents the one-time AEDT template contract.

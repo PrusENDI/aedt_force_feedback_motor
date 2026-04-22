@@ -21,8 +21,8 @@ from bootstrap_linear2d_template import _helper_variables
 from bootstrap_linear2d_template import _rename_design_if_possible
 from bootstrap_linear2d_template import _save_template_copy
 from bootstrap_linear2d_template import _safe_call
-from build_hooks import build_linear_2d_scaffold
 from aedt_native_common import apply_variables
+from linear2d_scaffold import build_linear_2d_scaffold
 from winding_geometry import flat_copper_pack_height_mm
 from winding_geometry import stator_axial_build_mm
 

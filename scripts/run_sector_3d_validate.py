@@ -23,8 +23,8 @@ from aedt_native_common import save_project
 from aedt_native_common import timestamp_string
 from aedt_native_common import waveform_stats
 from aedt_native_common import write_csv_rows
-from build_hooks import ensure_sector_3d_design
 from ranking import rank_rows
+from sector3d_scaffold import ensure_sector_3d_design
 from winding_geometry import design_variables
 
 
