@@ -80,6 +80,7 @@ def _write_markdown(path, summary):
     lines.append("- solution_type: `%s`" % summary.get("solution_type", ""))
     lines.append("- saved_template_path: `%s`" % summary.get("saved_template_path", ""))
     lines.append("- backup_copy_path: `%s`" % summary.get("backup_copy_path", ""))
+    lines.append("- baseline_ready_for_solve: `%s`" % summary.get("baseline_ready_for_solve", False))
     lines.append("- physics_ready_for_validation: `%s`" % summary.get("physics_ready_for_validation", False))
     lines.append("")
     lines.append("## Geometry Sanity")
@@ -143,6 +144,17 @@ def _write_markdown(path, summary):
         lines.append("  link: `%s`" % item.get("link", ""))
     lines.append("")
     lines.append("## Blocking Issues")
+    lines.append("")
+    baseline_blocking = summary.get("baseline_blocking_issues", [])
+    lines.append("### Baseline Solve")
+    lines.append("")
+    if not baseline_blocking:
+        lines.append("- None")
+    else:
+        for item in baseline_blocking:
+            lines.append("- %s" % item)
+    lines.append("")
+    lines.append("### Validation Template")
     lines.append("")
     blocking_issues = summary.get("blocking_issues", [])
     if not blocking_issues:
@@ -224,8 +236,10 @@ def main():
         "scaffold_variables": build_result.get("scaffold_variables", {}),
         "physics_contract": build_result.get("physics_contract", physics_contract(project_cfg)),
         "literature_basis": build_result.get("literature_basis", literature_basis()),
+        "baseline_blocking_issues": build_result.get("baseline_blocking_issues", []),
         "blocking_issues": build_result.get("blocking_issues", []),
         "warnings": build_result.get("warnings", []),
+        "baseline_ready_for_solve": bool(build_result.get("baseline_ready_for_solve", False)),
         "physics_ready_for_validation": not bool(build_result.get("blocking_issues", [])),
         "manual_actions": build_result.get("manual_actions", []),
         "saved_template_path": save_result.get("saved_template_path", ""),

@@ -39,15 +39,26 @@ def scaffold_variables(project_cfg):
     sector_cfg = project_cfg.get("sector_3d", {})
     sector_pole_count = max(1, int(sector_cfg.get("sector_model_pole_count", 2)))
     coreless_cfg = sector_cfg.get("coreless_physics", {})
+    winding_cfg = sector_cfg.get("winding", {})
     padding_mm = float(coreless_cfg.get("minimum_region_padding_mm", 8.0))
     padding_airgap_multiplier = float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0))
+    current_angle_deg = float(winding_cfg.get("current_angle_deg", 0.0))
     return {
         "outer_radius_mm": "outer_diameter_mm/2",
         "inner_radius_mm": "inner_diameter_mm/2",
         "pole_pairs": "pole_count/2",
+        "mechanical_frequency_hz": "speed_rpm/60",
+        "electrical_frequency_hz": "mechanical_frequency_hz*pole_pairs",
+        "mechanical_period_s": "1/mechanical_frequency_hz",
+        "electrical_period_s": "1/electrical_frequency_hz",
+        "current_angle_deg": "%.6gdeg" % current_angle_deg,
         "sector_pole_count": str(sector_pole_count),
         "sector_angle_deg": "360deg*sector_pole_count/pole_count",
         "sector_start_angle_deg": "-sector_angle_deg/2",
+        "auto3d_phase_belt_count": "3*pole_count",
+        "auto3d_phase_belt_angle_deg": "360deg/auto3d_phase_belt_count",
+        "auto3d_phase_belt_gap_deg": "auto3d_phase_belt_angle_deg*0.01",
+        "auto3d_phase_segment_angle_deg": "auto3d_phase_belt_angle_deg-auto3d_phase_belt_gap_deg",
         "auto3d_region_padding_mm": "%.6gmm + %.6g*airgap_mm" % (padding_mm, padding_airgap_multiplier),
         "auto3d_flat_copper_pack_height_mm": "conductor_thickness_mm*parallel_strands + flat_copper_interlayer_insulation_mm*(parallel_strands-1) + flat_copper_bondline_axial_build_mm",
         "auto3d_stator_axial_build_mm": "stator_support_thickness_mm + auto3d_flat_copper_pack_height_mm",
@@ -469,6 +480,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     contract = physics_contract(project_cfg)
     blocking_issues = []
+    baseline_blocking_issues = []
     warnings = []
     contract_layers = contract["contract_layers"]
     coreless_cfg = contract["coreless_physics"]
@@ -519,9 +531,9 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     copper_material = created_by_name.get("%sFlatCopperPack" % AUTO3D_PREFIX, "")
 
     if bottom_magnet_material.lower() == "vacuum" or top_magnet_material.lower() == "vacuum":
-        blocking_issues.append(
-            "Permanent magnets fell back to vacuum. Replace Auto3D_Magnet_Bottom and Auto3D_Magnet_Top with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
-        )
+        item = "Permanent magnets fell back to vacuum. Replace Auto3D_Magnet_Bottom and Auto3D_Magnet_Top with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
     elif (not _looks_like_permanent_magnet(bottom_magnet_material)) or (not _looks_like_permanent_magnet(top_magnet_material)):
         warnings.append(
             "The magnet objects were created with non-NdFeB materials. Verify that the selected materials are really permanent magnets."
@@ -533,9 +545,9 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         )
 
     if copper_material.lower() == "vacuum":
-        blocking_issues.append(
-            "The flat-copper pack fell back to vacuum. Replace Auto3D_FlatCopperPack with copper before trying to define current-carrying conductors."
-        )
+        item = "The flat-copper pack fell back to vacuum. Replace Auto3D_FlatCopperPack with copper before trying to define current-carrying conductors."
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
 
     if coreless_cfg.get("stator_is_coreless", False):
         warnings.append(
@@ -592,7 +604,10 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "physics_contract": contract,
         "literature_basis": literature_basis(),
         "region_created_or_present": region_created,
+        "baseline_blocking_issues": baseline_blocking_issues,
+        "baseline_ready_for_solve": not bool(baseline_blocking_issues),
         "blocking_issues": blocking_issues,
+        "validation_ready_for_template": not bool(blocking_issues),
         "warnings": warnings,
         "manual_actions": manual_actions
     }
@@ -610,7 +625,10 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "physics_contract": physics_contract(project_cfg),
             "literature_basis": literature_basis(),
             "region_created_or_present": True,
+            "baseline_blocking_issues": [],
+            "baseline_ready_for_solve": True,
             "blocking_issues": [],
+            "validation_ready_for_template": False,
             "warnings": [
                 "Existing Sector3D geometry was reused. Re-run the dedicated 3D scaffold build if the coreless contract, sector periodicity, or conductor-envelope assumptions have changed."
             ],

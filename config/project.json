@@ -121,6 +121,12 @@
   "sector_3d": {
     "design_name": "Sector3D",
     "analysis_setup_name": "Setup_3D",
+    "preferred_report_types": [
+      "Transient",
+      "Fields",
+      "Matrix",
+      "Magnetostatic"
+    ],
     "validate_top_n": 3,
     "sector_model_pole_count": 2,
     "save_fields": false,

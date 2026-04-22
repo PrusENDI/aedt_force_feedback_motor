@@ -84,3 +84,21 @@ This file is the running journal for independent `Sector3D` iterations.
   - this still does not prove the Maxwell model converges physically; it proves the repo will stop early instead of silently treating a non-ready template as valid
 - next step:
   - implement the actual sector cut, motion band objects, and report binding so the new preflight can pass on a real solve-ready template
+
+## Iteration 5
+
+- goal: create a Maxwell-usable 3D baseline loop that can build geometry, assign a coarse three-phase macro-coil, configure `Setup_3D`, attempt a transient solve, and export named reports
+- changes made:
+  - extended `scripts/sector3d_scaffold.py` with transient timing variables, phase-belt helper variables, and separate `baseline_ready_for_solve` versus validation-template readiness
+  - updated `scripts/build_sector3d_model.py` so the build summary now distinguishes baseline-fatal blockers from stricter validation blockers
+  - added `scripts/sector3d_aedt.py` as a shared Maxwell 3D helper layer for PyAEDT attachment, design-variable parsing, object deletion, and macro phase-belt generation
+  - added `scripts/assign_sector3d_excitation.py` to replace the full-annulus copper envelope with repeated `A+ / C- / B+ / A- / C+ / B-` phase belts and then assign winding groups or fallback direct-current boundaries
+  - added `scripts/apply_sector3d_transient_setup.py`, `scripts/create_sector3d_reports.py`, and `scripts/solve_sector3d_setup.py`
+  - added the corresponding launchers for queue-driven AEDT host execution
+- validation target:
+  - `py_compile` on all new and touched 3D scripts
+  - direct import check for the new 3D script set inside the preferred PyAEDT interpreter
+- expected limitation:
+  - the model now has a baseline solve/report loop, but axial-flux rotating-band geometry is still conservative and may still require manual Maxwell refinement before back-EMF and torque waveforms are fully trustworthy
+- next step:
+  - run the new 3D script chain inside AEDT, inspect the first real `sector3d_transient_setup`, `sector3d_excitation_assignment`, `sector3d_reports_creation`, and `sector3d_solve_status` artifacts, then tighten the motion-band and periodic-sector implementation from real solver feedback
