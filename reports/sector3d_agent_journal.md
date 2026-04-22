@@ -121,3 +121,19 @@ This file is the running journal for independent `Sector3D` iterations.
   - this iteration removes the obvious host/session blocker, but real Maxwell solve robustness still depends on the first live AEDT run of the new 3D queue chain
 - next step:
   - restart the in-AEDT host, queue `Queue-Sector3DBaselineSolve.ps1`, and use the resulting solve/report artifacts to refine motion-band and periodic-sector details from actual Maxwell feedback
+
+## Iteration 7
+
+- goal: make local Windows PyAEDT attachment explicitly prefer COM over gRPC so the repo no longer depends on unstable gRPC startup for same-machine automation
+- changes made:
+  - added a shared AEDT connection policy to `config/project.json`
+  - implemented shared PyAEDT interface fallback logic in `scripts/aedt_native_common.py`
+  - updated the Maxwell 2D/3D attach helpers and probe scripts to use `COM -> gRPC` fallback instead of relying on PyAEDT defaults
+  - updated environment probing and docs so the active connection policy is visible from artifacts and README/hosting guidance
+- validation target:
+  - source compile/import checks for the touched scripts
+  - confirm environment probe now records `aedt_connection_policy` and PyAEDT runtime defaults
+- expected limitation:
+  - this improves local attachment stability, but the most stable path is still the in-AEDT host because it bypasses external transport entirely
+- next step:
+  - rerun `scripts/in_aedt_probe.py` and `launchers/Probe-Environment.ps1`, then continue the 3D baseline queue from the now COM-first host stack

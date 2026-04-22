@@ -3,6 +3,8 @@ from __future__ import print_function
 import json
 import os
 
+from aedt_native_common import pyaedt_attach
+
 
 def repo_root():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -64,7 +66,18 @@ def main():
         return
 
     from ansys.aedt.core import Desktop
-    desktop = Desktop(new_desktop=False, close_on_exit=False)
+    desktop = pyaedt_attach(
+        lambda **kwargs: Desktop(**kwargs),
+        [
+            {
+                "new_desktop": False,
+                "close_on_exit": False
+            }
+        ],
+        type("ProbeLogger", (), {"log": lambda self, message: None})(),
+        "Desktop",
+        new_session=False
+    )
     try:
         desk = desktop.odesktop
         data["desktop_version"] = desk.GetVersion()

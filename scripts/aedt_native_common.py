@@ -16,6 +16,7 @@ except NameError:
 
 
 _DESKTOP_SESSION_HOLD = None
+_AEDT_CONNECTION_POLICY_CACHE = None
 
 
 def repo_root():
@@ -139,6 +140,119 @@ def config_paths(root, project_cfg):
     return paths
 
 
+def aedt_connection_policy(root=None):
+    global _AEDT_CONNECTION_POLICY_CACHE
+    if _AEDT_CONNECTION_POLICY_CACHE:
+        return dict(_AEDT_CONNECTION_POLICY_CACHE)
+    policy = {
+        "preferred_host_mode": "in_process",
+        "external_attach_order": ["com", "grpc"],
+        "new_session_order": ["com", "grpc"],
+        "grpc_secure_mode": False
+    }
+    root = root or repo_root()
+    config_path = os.path.join(root, "config", "project.json")
+    if os.path.isfile(config_path):
+        try:
+            project_cfg = load_json(config_path)
+            config_policy = dict(project_cfg.get("aedt_connection", {}))
+            for key in ["preferred_host_mode", "grpc_secure_mode"]:
+                if key in config_policy:
+                    policy[key] = config_policy[key]
+            for key in ["external_attach_order", "new_session_order"]:
+                if config_policy.get(key):
+                    policy[key] = list(config_policy[key])
+        except Exception:
+            pass
+    _AEDT_CONNECTION_POLICY_CACHE = dict(policy)
+    return dict(policy)
+
+
+def _normalized_interface_order(order):
+    out = []
+    for item in order or []:
+        text = str(item).strip().lower()
+        if text not in ["com", "grpc"]:
+            continue
+        if text in out:
+            continue
+        out.append(text)
+    if not out:
+        out = ["com", "grpc"]
+    return out
+
+
+def _pyaedt_settings_snapshot():
+    from ansys.aedt.core.generic.settings import settings
+
+    return {
+        "use_grpc_api": getattr(settings, "use_grpc_api", None),
+        "grpc_secure_mode": getattr(settings, "grpc_secure_mode", None)
+    }
+
+
+def _restore_pyaedt_settings(snapshot):
+    from ansys.aedt.core.generic.settings import settings
+
+    try:
+        settings.use_grpc_api = snapshot.get("use_grpc_api")
+    except Exception:
+        pass
+    if hasattr(settings, "grpc_secure_mode"):
+        try:
+            settings.grpc_secure_mode = snapshot.get("grpc_secure_mode")
+        except Exception:
+            pass
+
+
+def _apply_pyaedt_interface(interface_name, policy, logger, label):
+    from ansys.aedt.core.generic.settings import settings
+
+    snapshot = _pyaedt_settings_snapshot()
+    interface_name = str(interface_name).strip().lower()
+    if interface_name == "com":
+        settings.use_grpc_api = False
+        logger.log("Using PyAEDT COM attach for %s" % label)
+    elif interface_name == "grpc":
+        settings.use_grpc_api = True
+        if hasattr(settings, "grpc_secure_mode"):
+            settings.grpc_secure_mode = bool(policy.get("grpc_secure_mode", False))
+        logger.log(
+            "Using PyAEDT gRPC attach for %s (secure=%s)"
+            % (label, getattr(settings, "grpc_secure_mode", None))
+        )
+    else:
+        logger.log("Unknown interface %s requested for %s; leaving PyAEDT defaults untouched" % (interface_name, label))
+    return snapshot
+
+
+def pyaedt_attach(factory, attempt_kwargs_list, logger, label, new_session=False):
+    policy = aedt_connection_policy()
+    order_key = "new_session_order" if new_session else "external_attach_order"
+    interfaces = _normalized_interface_order(policy.get(order_key, ["com", "grpc"]))
+    last_error = None
+    for interface_name in interfaces:
+        snapshot = _apply_pyaedt_interface(interface_name, policy, logger, label)
+        try:
+            for raw_kwargs in attempt_kwargs_list:
+                kwargs = {}
+                for key, value in (raw_kwargs or {}).items():
+                    if value not in [None, ""]:
+                        kwargs[key] = value
+                try:
+                    app = factory(**kwargs)
+                    logger.log("Attached %s with interface=%s kwargs=%s" % (label, interface_name, kwargs))
+                    return app
+                except Exception as exc:
+                    last_error = exc
+                    logger.log("Attach attempt failed for %s with interface=%s kwargs=%s" % (label, interface_name, kwargs))
+        finally:
+            _restore_pyaedt_settings(snapshot)
+    if last_error:
+        raise last_error
+    raise RuntimeError("Could not attach %s through PyAEDT" % label)
+
+
 def initialize_aedt(logger):
     global _DESKTOP_SESSION_HOLD
     try:
@@ -171,7 +285,18 @@ def initialize_aedt(logger):
 
     try:
         from ansys.aedt.core import Desktop
-        _DESKTOP_SESSION_HOLD = Desktop(new_desktop=False, close_on_exit=False)
+        _DESKTOP_SESSION_HOLD = pyaedt_attach(
+            lambda **kwargs: Desktop(**kwargs),
+            [
+                {
+                    "new_desktop": False,
+                    "close_on_exit": False
+                }
+            ],
+            logger,
+            "Desktop",
+            new_session=False
+        )
         logger.log("Attached to AEDT through PyAEDT Desktop")
         return _DESKTOP_SESSION_HOLD.odesktop
     except Exception:

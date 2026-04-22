@@ -30,3 +30,4 @@ __pycache__/
 batch.log
 *.tmp
 *.bak
+pyaedt_*.log

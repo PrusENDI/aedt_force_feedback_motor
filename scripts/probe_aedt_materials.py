@@ -5,6 +5,7 @@ import os
 from aedt_native_common import Logger
 from aedt_native_common import ensure_workspace_dirs
 from aedt_native_common import initialize_aedt
+from aedt_native_common import pyaedt_attach
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
 from aedt_native_common import timestamp_string
@@ -66,7 +67,9 @@ def _attach_maxwell2d(oDesktop, oProject, oDesign, logger):
     pid = _safe_call(lambda: int(oDesktop.GetProcessID()), 0)
     project_name = _safe_call(lambda: oProject.GetName(), None)
     design_name = _normalize_design_name(_safe_call(lambda: oDesign.GetName(), ""))
-    attempts = [
+    return pyaedt_attach(
+        lambda **kwargs: Maxwell2d(**kwargs),
+        [
         {
             "project": project_name,
             "design": design_name,
@@ -85,23 +88,11 @@ def _attach_maxwell2d(oDesktop, oProject, oDesign, logger):
             "new_desktop": False,
             "close_on_exit": False
         }
-    ]
-    last_error = None
-    for raw_kwargs in attempts:
-        kwargs = {}
-        for key, value in raw_kwargs.items():
-            if value not in [None, ""]:
-                kwargs[key] = value
-        try:
-            app = Maxwell2d(**kwargs)
-            logger.log("Attached Maxwell2d through PyAEDT with kwargs: %s" % kwargs)
-            return app
-        except Exception as exc:
-            last_error = exc
-            logger.log("PyAEDT Maxwell2d attachment attempt failed: %s" % kwargs)
-    if last_error:
-        raise last_error
-    raise RuntimeError("Could not attach Maxwell2d through PyAEDT")
+        ],
+        logger,
+        "Maxwell2d",
+        new_session=False
+    )
 
 
 def _clean_list(items):

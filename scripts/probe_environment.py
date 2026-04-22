@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+from aedt_native_common import aedt_connection_policy
+
 
 def repo_root():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -94,7 +96,8 @@ def main():
         "ansys_python": find_ansys_python(),
         "pyaedt_python": find_pyaedt_python(),
         "pyaedt_cli": find_pyaedt_cli(),
-        "python_executable": sys.executable
+        "python_executable": sys.executable,
+        "aedt_connection_policy": aedt_connection_policy(root)
     }
 
     if status["ansys_python"]:
@@ -117,6 +120,9 @@ def main():
             "import importlib.util,sys; "
             "print(importlib.util.find_spec('pyaedt')); "
             "print(importlib.util.find_spec('ansys.aedt.core')); "
+            "from ansys.aedt.core.generic.settings import settings; "
+            "print('use_grpc_api=' + str(getattr(settings,'use_grpc_api',None))); "
+            "print('grpc_secure_mode=' + str(getattr(settings,'grpc_secure_mode',None))); "
             "from ansys.aedt.core import Desktop; "
             "print('Desktop import ok'); "
             "print(sys.version)"

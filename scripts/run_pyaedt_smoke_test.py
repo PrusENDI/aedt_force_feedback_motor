@@ -5,6 +5,9 @@ import os
 import sys
 import traceback
 
+from aedt_native_common import Logger
+from aedt_native_common import pyaedt_attach
+
 
 def repo_root():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -67,14 +70,23 @@ def main():
     from ansys.aedt.core import Desktop
 
     desktop = None
+    logger = Logger(os.path.join(root, "logs", "run_pyaedt_smoke_test.log"))
     try:
         with open(log_path, "a") as handle:
             handle.write("desktop_import_ok\n")
-        desktop = Desktop(
-            version=version,
-            non_graphical=True,
-            new_desktop=True,
-            close_on_exit=False
+        desktop = pyaedt_attach(
+            lambda **kwargs: Desktop(**kwargs),
+            [
+                {
+                    "version": version,
+                    "non_graphical": True,
+                    "new_desktop": True,
+                    "close_on_exit": False
+                }
+            ],
+            logger,
+            "Desktop",
+            new_session=True
         )
         with open(log_path, "a") as handle:
             handle.write("desktop_started\n")

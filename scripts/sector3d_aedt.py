@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from bootstrap_linear2d_template import _normalize_design_name
 from bootstrap_linear2d_template import _safe_call
+from aedt_native_common import pyaedt_attach
 
 
 PHASE_BELT_SEQUENCE = [
@@ -33,7 +34,9 @@ def attach_maxwell3d(oDesktop, oProject, oDesign, logger):
     project_name = _safe_call(lambda: oProject.GetName(), None)
     design_name = _normalize_design_name(_safe_call(lambda: oDesign.GetName(), ""))
 
-    attempts = [
+    return pyaedt_attach(
+        lambda **kwargs: Maxwell3d(**kwargs),
+        [
         {
             "project": project_name,
             "design": design_name,
@@ -52,23 +55,11 @@ def attach_maxwell3d(oDesktop, oProject, oDesign, logger):
             "new_desktop": False,
             "close_on_exit": False
         }
-    ]
-    last_error = None
-    for raw_kwargs in attempts:
-        kwargs = {}
-        for key, value in raw_kwargs.items():
-            if value not in [None, ""]:
-                kwargs[key] = value
-        try:
-            app = Maxwell3d(**kwargs)
-            logger.log("Attached Maxwell3d through PyAEDT with kwargs: %s" % kwargs)
-            return app
-        except Exception as exc:
-            last_error = exc
-            logger.log("PyAEDT Maxwell3d attachment attempt failed: %s" % kwargs)
-    if last_error:
-        raise last_error
-    raise RuntimeError("Could not attach Maxwell3d through PyAEDT")
+        ],
+        logger,
+        "Maxwell3d",
+        new_session=False
+    )
 
 
 def preferred_solution_name(setup_name):

@@ -5,6 +5,19 @@
     "preferred_interpreter": "C:/Users/fjcy/AppData/Roaming/.pyaedt_env/3_10/Scripts/python.exe",
     "preferred_cli": "C:/Users/fjcy/AppData/Roaming/.pyaedt_env/3_10/Scripts/pyaedt.exe"
   },
+  "aedt_connection": {
+    "preferred_host_mode": "in_process",
+    "external_attach_order": [
+      "com",
+      "grpc"
+    ],
+    "new_session_order": [
+      "com",
+      "grpc"
+    ],
+    "grpc_secure_mode": false,
+    "notes": "On this Windows workstation, prefer ScriptEnv/in-AEDT host first, then COM attach to a local AEDT session, and only fall back to gRPC if COM attach fails."
+  },
   "agent_runtime": {
     "poll_interval_s": 5,
     "heartbeat_interval_s": 10,

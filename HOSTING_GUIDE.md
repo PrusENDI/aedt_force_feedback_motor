@@ -9,6 +9,12 @@ This workspace supports a hosted simulation workflow:
 
 This is the recommended workflow for this machine because direct external AEDT session startup through PyAEDT gRPC is not yet stable enough to rely on for long runs.
 
+Current connection priority on this machine is:
+
+1. in-AEDT `ScriptEnv` / hosted worker
+2. external COM attach to an already running local AEDT session
+3. gRPC only as a fallback
+
 ## Can this workspace detect Codex locally?
 
 Yes, the machine already exposes a local Codex installation and active Codex-related processes.

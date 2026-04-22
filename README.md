@@ -56,6 +56,8 @@ For environment control, the workspace now prefers the user-level PyAEDT environ
 
 If external gRPC startup is unstable on this machine, treat AEDT as a manually launched host process and use the in-AEDT worker scripts instead of trying to create fresh AEDT sessions from the shell.
 
+The repo now also prefers `COM -> gRPC` for external PyAEDT attachment on Windows when it must attach from outside AEDT.
+
 See `templates/TEMPLATE_CONTRACT.md` for the required design names, variables, and report names.
 For the first 2D template build, also see `templates/LINEAR2D_TEMPLATE_SETUP.md`.
 For step-by-step manual building, also see:
