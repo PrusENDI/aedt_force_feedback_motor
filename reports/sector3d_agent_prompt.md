@@ -93,6 +93,7 @@ Use the following literature conclusions as modeling guidance:
 - `config/search_space.json`
 - `config/scoring.json`
 - `reports/sector3d_playbook.md`
+- `reports/sector3d_physics_contract.md`
 - `scripts/sector3d_scaffold.py`
 - `scripts/run_sector_3d_validate.py`
 - `scripts/winding_geometry.py`

@@ -124,7 +124,54 @@
     "validate_top_n": 3,
     "sector_model_pole_count": 2,
     "save_fields": false,
-    "save_mesh_link": false
+    "save_mesh_link": false,
+    "transient": {
+      "time_step_expression": "electrical_period_s/72",
+      "stop_time_expression": "electrical_period_s",
+      "save_fields_type": "None",
+      "samples_per_electrical_period_for_reports": 72
+    },
+    "boundaries": {
+      "periodic_strategy": "master_slave",
+      "periodic_cut_mode": "sector_faces",
+      "master_face_name": "Auto3D_Periodic_Master",
+      "slave_face_name": "Auto3D_Periodic_Slave",
+      "region_object_name": "Auto3D_Region",
+      "require_sector_cut_before_validation": true
+    },
+    "motion": {
+      "enabled": true,
+      "motion_type": "rotating_band",
+      "band_object_name": "Auto3D_RotatingBand",
+      "axis": "Z",
+      "positive_rotation": true,
+      "radial_clearance_mm": 0.4,
+      "axial_clearance_mm": 0.2,
+      "mechanical_transient": true
+    },
+    "winding": {
+      "phase_names": ["PhaseA", "PhaseB", "PhaseC"],
+      "connection": "wye",
+      "loaded_current_mode": "three_phase_sinusoidal",
+      "current_angle_deg": 0.0,
+      "phase_a_expression": "sqrt(2)*phase_current_rms*sin(2*pi*electrical_frequency_hz*time + current_angle_deg*pi/180)",
+      "phase_b_expression": "sqrt(2)*phase_current_rms*sin(2*pi*electrical_frequency_hz*time - 2*pi/3 + current_angle_deg*pi/180)",
+      "phase_c_expression": "sqrt(2)*phase_current_rms*sin(2*pi*electrical_frequency_hz*time + 2*pi/3 + current_angle_deg*pi/180)",
+      "open_circuit_current_rms_arms": 0.0
+    },
+    "mesh": {
+      "manual_mesh_required": true,
+      "airgap_layer_count": 4,
+      "magnet_corner_refinement": true,
+      "conductor_refinement_mode": "detailed_top_cases_only",
+      "detailed_conductor_layers": 3
+    },
+    "verification": {
+      "anchor_case_labels": ["baseline", "lower_airgap", "thicker_magnet", "higher_turns"],
+      "include_tolerance_cases": true,
+      "tolerance_cases": ["airgap_imbalance", "stator_offset", "rotor_runout", "magnet_placement_error"],
+      "include_peak_current_check": true
+    }
   },
   "proxy_models": {
     "copper_resistivity_20c_ohm_m": 1.724e-8,

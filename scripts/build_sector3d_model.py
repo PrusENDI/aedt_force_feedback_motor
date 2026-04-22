@@ -21,6 +21,8 @@ from bootstrap_linear2d_template import _rename_design_if_possible
 from bootstrap_linear2d_template import _save_template_copy
 from bootstrap_linear2d_template import _safe_call
 from sector3d_scaffold import build_sector_3d_scaffold
+from sector3d_scaffold import literature_basis
+from sector3d_scaffold import physics_contract
 from winding_geometry import flat_copper_pack_height_mm
 from winding_geometry import stator_axial_build_mm
 
@@ -94,10 +96,35 @@ def _write_markdown(path, summary):
         if key in summary.get("geometry_sanity", {}):
             lines.append("- %s: `%s`" % (key, summary["geometry_sanity"][key]))
     lines.append("")
+    lines.append("## Physics Contract")
+    lines.append("")
+    contract = summary.get("physics_contract", {})
+    transient = contract.get("transient", {})
+    boundaries = contract.get("boundaries", {})
+    motion = contract.get("motion", {})
+    winding = contract.get("winding", {})
+    mesh = contract.get("mesh", {})
+    verification = contract.get("verification", {})
+    lines.append("- transient_time_step_expression: `%s`" % transient.get("time_step_expression", ""))
+    lines.append("- transient_stop_time_expression: `%s`" % transient.get("stop_time_expression", ""))
+    lines.append("- periodic_strategy: `%s`" % boundaries.get("periodic_strategy", ""))
+    lines.append("- motion_type: `%s`" % motion.get("motion_type", ""))
+    lines.append("- motion_axis: `%s`" % motion.get("axis", ""))
+    lines.append("- winding_connection: `%s`" % winding.get("connection", ""))
+    lines.append("- loaded_current_mode: `%s`" % winding.get("loaded_current_mode", ""))
+    lines.append("- airgap_layer_count: `%s`" % mesh.get("airgap_layer_count", ""))
+    lines.append("- tolerance_cases: `%s`" % ", ".join(verification.get("tolerance_cases", [])))
+    lines.append("")
     lines.append("## Created Objects")
     lines.append("")
     for item in summary.get("created_objects", []):
         lines.append("- %s (material=`%s`)" % (item.get("name", ""), item.get("material", "")))
+    lines.append("")
+    lines.append("## Literature Basis")
+    lines.append("")
+    for item in summary.get("literature_basis", []):
+        lines.append("- %s: %s" % (item.get("source", ""), item.get("guidance", "")))
+        lines.append("  link: `%s`" % item.get("link", ""))
     lines.append("")
     lines.append("## Blocking Issues")
     lines.append("")
@@ -179,6 +206,8 @@ def main():
         "created_objects": build_result.get("created_objects", []),
         "deleted_objects": build_result.get("deleted_objects", []),
         "scaffold_variables": build_result.get("scaffold_variables", {}),
+        "physics_contract": build_result.get("physics_contract", physics_contract(project_cfg)),
+        "literature_basis": build_result.get("literature_basis", literature_basis()),
         "blocking_issues": build_result.get("blocking_issues", []),
         "warnings": build_result.get("warnings", []),
         "physics_ready_for_validation": not bool(build_result.get("blocking_issues", [])),

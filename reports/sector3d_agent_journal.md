@@ -35,3 +35,19 @@ This file is the running journal for independent `Sector3D` iterations.
   - the new scaffold is still a full-annulus baseline, not yet a true periodic sector with phase-separated conductors and motion bands
 - next step:
   - add the first explicit Maxwell 3D contract for sector cut faces, motion-region placeholders, and named report preparation
+
+## Iteration 2
+
+- goal: encode the research-backed physical and electromagnetic contract into the repo instead of leaving it as free-text guidance
+- changes made:
+  - extended `config/project.json -> sector_3d` with transient, boundaries, motion, winding, mesh, and verification sections
+  - added `physics_contract()` and `literature_basis()` in `scripts/sector3d_scaffold.py`
+  - updated `scripts/build_sector3d_model.py` to write the active physics contract and literature basis into the build summary
+  - added `reports/sector3d_physics_contract.md`
+- validation target:
+  - `py_compile` on the touched scripts
+  - confirm the 3D build summary now carries the contract that future iterations must obey
+- expected limitation:
+  - the code now knows the physical contract, but the actual sector cut, motion object creation, and named report binding still need implementation
+- next step:
+  - make the scaffold produce or reserve the first explicit sector-cut and motion-region objects that satisfy this contract

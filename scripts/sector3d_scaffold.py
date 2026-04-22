@@ -62,6 +62,53 @@ def scaffold_variables(project_cfg):
     }
 
 
+def physics_contract(project_cfg):
+    sector_cfg = project_cfg.get("sector_3d", {})
+    return {
+        "transient": dict(sector_cfg.get("transient", {})),
+        "boundaries": dict(sector_cfg.get("boundaries", {})),
+        "motion": dict(sector_cfg.get("motion", {})),
+        "winding": dict(sector_cfg.get("winding", {})),
+        "mesh": dict(sector_cfg.get("mesh", {})),
+        "verification": dict(sector_cfg.get("verification", {}))
+    }
+
+
+def literature_basis():
+    return [
+        {
+            "source": "Tokgoz thesis, 2022",
+            "guidance": "Treat copper utilization, low inductance risk, and manufacturability as first-class design constraints in PCB-based AFPM studies.",
+            "link": "https://open.metu.edu.tr/handle/11511/97372"
+        },
+        {
+            "source": "Tokgoz et al., IEEE TEC, 2022",
+            "guidance": "Keep electromagnetic, thermal, and structural feasibility coupled during optimization instead of optimizing torque in isolation.",
+            "link": "https://doi.org/10.1109/TEC.2022.3213896"
+        },
+        {
+            "source": "Wu et al., Applied Sciences, 2022",
+            "guidance": "Use a Maxwell 3D sector or half-model with motion boundary, master/slave periodicity, and manual air-gap mesh refinement for practical AFPM optimization.",
+            "link": "https://doi.org/10.3390/app12157863"
+        },
+        {
+            "source": "Corey thesis, 2019",
+            "guidance": "Use a small number of 3D anchor cases to decide which 2D trends remain trustworthy.",
+            "link": "https://minds.wisconsin.edu/handle/1793/79090"
+        },
+        {
+            "source": "Gong thesis, 2018 and Khatab thesis, 2019",
+            "guidance": "Include transient-overload and tolerance sensitivity studies before declaring an axial-flux machine design ready for hardware.",
+            "link": "https://etheses.whiterose.ac.uk/id/eprint/21412/ ; https://etheses.whiterose.ac.uk/id/eprint/24063/"
+        },
+        {
+            "source": "Jeon et al., Actuators, 2025",
+            "guidance": "Refine current-transfer details such as via and interconnect geometry only after the main electromagnetic path is stable.",
+            "link": "https://www.mdpi.com/2076-0825/14/9/424"
+        }
+    ]
+
+
 def _list_auto_objects(oEditor):
     attempts = [
         lambda: list(oEditor.GetMatchedObjectName("%s*" % AUTO3D_PREFIX)),
@@ -386,15 +433,35 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     for item in created:
         created_by_name[item["name"]] = item.get("material", "")
 
+    contract = physics_contract(project_cfg)
     blocking_issues = []
     warnings = []
+    transient_cfg = contract["transient"]
+    boundary_cfg = contract["boundaries"]
+    motion_cfg = contract["motion"]
+    winding_cfg = contract["winding"]
+    mesh_cfg = contract["mesh"]
+    verification_cfg = contract["verification"]
     manual_actions = [
         "Replace the full-annulus flat-copper placeholder with phase-assigned coil sectors or macro-coils before trusting torque or back-EMF results",
-        "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign master/slave boundaries on the cut faces",
-        "Create the rotating band or equivalent motion region for the rotor assembly before trusting transient torque",
+        "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign %s boundaries on the cut faces named %s and %s" % (
+            boundary_cfg.get("periodic_strategy", "master_slave"),
+            boundary_cfg.get("master_face_name", "Auto3D_Periodic_Master"),
+            boundary_cfg.get("slave_face_name", "Auto3D_Periodic_Slave")
+        ),
+        "Create the %s object `%s` about axis %s with approximately %.3f mm radial clearance and %.3f mm axial clearance before trusting transient torque" % (
+            motion_cfg.get("motion_type", "rotating_band"),
+            motion_cfg.get("band_object_name", "Auto3D_RotatingBand"),
+            motion_cfg.get("axis", "Z"),
+            float(motion_cfg.get("radial_clearance_mm", 0.0)),
+            float(motion_cfg.get("axial_clearance_mm", 0.0))
+        ),
         "Assign magnet directions for Auto3D_Magnet_Bottom and Auto3D_Magnet_Top consistent with the chosen SSDR axial-flux polarity convention",
+        "Create the loaded, cogging, and open-circuit cases using the configured winding connection `%s` and three-phase waveform expressions from config/project.json" % winding_cfg.get("connection", "wye"),
         "Create the required named reports: Torque_Loaded, Torque_Cogging, BackEMF_LL, FluxLinkage_PhaseA, and Bmax_BackIron",
-        "Verify that the stator support material is FR4 or an equivalent non-magnetic structural material if the script had to fall back to vacuum"
+        "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
+        "Verify that the stator support material is FR4 or an equivalent non-magnetic structural material if the script had to fall back to vacuum",
+        "Run the first anchor cases in order: %s" % ", ".join(verification_cfg.get("anchor_case_labels", []))
     ]
 
     bottom_magnet_material = created_by_name.get("%sMagnet_Bottom" % AUTO3D_PREFIX, "")
@@ -424,12 +491,27 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     warnings.append(
         "The current Sector3D scaffold intentionally builds a full annular SSDR stack first. Periodic sector cutting, detailed winding segmentation, motion bands, and final report binding remain the next iteration targets."
     )
+    warnings.append(
+        "The active 3D physics contract expects a transient setup of `%s` stop time `%s`, with `%s` samples per electrical period, following the repo's research-backed validation strategy."
+        % (
+            transient_cfg.get("time_step_expression", ""),
+            transient_cfg.get("stop_time_expression", ""),
+            transient_cfg.get("samples_per_electrical_period_for_reports", "")
+        )
+    )
+    if boundary_cfg.get("require_sector_cut_before_validation", False):
+        blocking_issues.append(
+            "The scaffold is still a full annulus. Convert it into a true sector with %s boundaries before using it as the production validation template."
+            % boundary_cfg.get("periodic_strategy", "master_slave")
+        )
 
     return {
         "cleanup_first": cleanup_first,
         "deleted_objects": deleted,
         "created_objects": created,
         "scaffold_variables": scaffold_vars,
+        "physics_contract": contract,
+        "literature_basis": literature_basis(),
         "region_created_or_present": region_created,
         "blocking_issues": blocking_issues,
         "warnings": warnings,
@@ -446,6 +528,8 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "deleted_objects": [],
             "created_objects": [{"name": name, "material": "existing"} for name in existing],
             "scaffold_variables": scaffold_variables(project_cfg),
+            "physics_contract": physics_contract(project_cfg),
+            "literature_basis": literature_basis(),
             "region_created_or_present": True,
             "manual_actions": []
         }
