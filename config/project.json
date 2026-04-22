@@ -125,6 +125,37 @@
     "sector_model_pole_count": 2,
     "save_fields": false,
     "save_mesh_link": false,
+    "contract_layers": {
+      "calibration_topology": "SSDR",
+      "calibration_active_gap_faces": 2,
+      "final_target_topology": "S1-R1-S2-R2-S3",
+      "final_target_stator_count": 3,
+      "final_target_rotor_count": 2,
+      "final_target_active_gap_faces": 4,
+      "require_final_topology_correlation_before_signoff": true
+    },
+    "coreless_physics": {
+      "stator_is_coreless": true,
+      "stator_return_iron_present": false,
+      "do_not_reuse_iron_core_assumptions": true,
+      "expect_strong_fringing_flux": true,
+      "expect_strong_leakage_flux": true,
+      "expect_lower_inductance_than_ironcore": true,
+      "macro_coil_is_envelope_model_only": true,
+      "require_flux_spreading_review": true,
+      "require_air_region_margin_review": true,
+      "air_region_padding_strategy": "coreless_expanded",
+      "minimum_region_padding_mm": 8.0,
+      "region_padding_airgap_multiplier": 4.0,
+      "require_inductance_check": true,
+      "inductance_target_range_mh": [
+        0.6,
+        1.2
+      ],
+      "require_demagnetization_check": true,
+      "demag_check_case": "peak_current_loaded",
+      "require_full_machine_correlation_before_signoff": true
+    },
     "transient": {
       "time_step_expression": "electrical_period_s/72",
       "stop_time_expression": "electrical_period_s",
@@ -187,7 +218,9 @@
     "torque_cogging": "Torque_Cogging",
     "flux_linkage_a": "FluxLinkage_PhaseA",
     "back_emf_ll": "BackEMF_LL",
-    "bmax_backiron": "Bmax_BackIron"
+    "bmax_backiron": "Bmax_BackIron",
+    "inductance_phase_a": "Inductance_PhaseA",
+    "magnet_demag_margin": "MagnetDemag_Margin"
   },
   "run_policy": {
     "autosave_every_n_cases": 5,

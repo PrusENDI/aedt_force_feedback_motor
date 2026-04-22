@@ -44,6 +44,7 @@ def _geometry_sanity(project_cfg, baseline):
     inner_radius = 0.5 * float(baseline["inner_diameter_mm"])
     pole_count = float(baseline["pole_count"])
     sector_pole_count = float(project_cfg["sector_3d"].get("sector_model_pole_count", 2))
+    coreless_cfg = project_cfg["sector_3d"].get("coreless_physics", {})
     pole_arc_ratio = float(baseline["pole_arc_ratio"])
     flat_copper_height = flat_copper_pack_height_mm(project_cfg, baseline)
     stator_height = stator_axial_build_mm(project_cfg, baseline)
@@ -53,6 +54,7 @@ def _geometry_sanity(project_cfg, baseline):
     mean_radius = 0.5 * (outer_radius + inner_radius)
     pole_pitch = 2.0 * math.pi * mean_radius / pole_count
     magnet_arc = pole_pitch * pole_arc_ratio
+    region_padding = float(coreless_cfg.get("minimum_region_padding_mm", 8.0)) + float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0)) * float(baseline["airgap_mm"])
     return {
         "outer_radius_mm": round(outer_radius, 6),
         "inner_radius_mm": round(inner_radius, 6),
@@ -63,7 +65,8 @@ def _geometry_sanity(project_cfg, baseline):
         "flat_copper_outer_radius_mm_est": round(flat_copper_outer, 6),
         "flat_copper_pack_height_mm_est": round(flat_copper_height, 6),
         "stator_axial_build_mm_est": round(stator_height, 6),
-        "stack_height_mm_est": round(stack_height, 6)
+        "stack_height_mm_est": round(stack_height, 6),
+        "region_padding_mm_est": round(region_padding, 6)
     }
 
 
@@ -91,7 +94,8 @@ def _write_markdown(path, summary):
         "flat_copper_outer_radius_mm_est",
         "flat_copper_pack_height_mm_est",
         "stator_axial_build_mm_est",
-        "stack_height_mm_est"
+        "stack_height_mm_est",
+        "region_padding_mm_est"
     ]:
         if key in summary.get("geometry_sanity", {}):
             lines.append("- %s: `%s`" % (key, summary["geometry_sanity"][key]))
@@ -99,12 +103,24 @@ def _write_markdown(path, summary):
     lines.append("## Physics Contract")
     lines.append("")
     contract = summary.get("physics_contract", {})
+    contract_layers = contract.get("contract_layers", {})
+    coreless = contract.get("coreless_physics", {})
     transient = contract.get("transient", {})
     boundaries = contract.get("boundaries", {})
     motion = contract.get("motion", {})
     winding = contract.get("winding", {})
     mesh = contract.get("mesh", {})
     verification = contract.get("verification", {})
+    lines.append("- calibration_topology: `%s`" % contract_layers.get("calibration_topology", ""))
+    lines.append("- final_target_topology: `%s`" % contract_layers.get("final_target_topology", ""))
+    lines.append("- final_target_active_gap_faces: `%s`" % contract_layers.get("final_target_active_gap_faces", ""))
+    lines.append("- stator_is_coreless: `%s`" % coreless.get("stator_is_coreless", ""))
+    lines.append("- do_not_reuse_iron_core_assumptions: `%s`" % coreless.get("do_not_reuse_iron_core_assumptions", ""))
+    lines.append("- expect_strong_fringing_flux: `%s`" % coreless.get("expect_strong_fringing_flux", ""))
+    lines.append("- expect_strong_leakage_flux: `%s`" % coreless.get("expect_strong_leakage_flux", ""))
+    lines.append("- require_inductance_check: `%s`" % coreless.get("require_inductance_check", ""))
+    lines.append("- inductance_target_range_mh: `%s`" % coreless.get("inductance_target_range_mh", ""))
+    lines.append("- require_demagnetization_check: `%s`" % coreless.get("require_demagnetization_check", ""))
     lines.append("- transient_time_step_expression: `%s`" % transient.get("time_step_expression", ""))
     lines.append("- transient_stop_time_expression: `%s`" % transient.get("stop_time_expression", ""))
     lines.append("- periodic_strategy: `%s`" % boundaries.get("periodic_strategy", ""))

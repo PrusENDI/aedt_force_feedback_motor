@@ -38,6 +38,9 @@ def _set_model_units(oEditor, logger):
 def scaffold_variables(project_cfg):
     sector_cfg = project_cfg.get("sector_3d", {})
     sector_pole_count = max(1, int(sector_cfg.get("sector_model_pole_count", 2)))
+    coreless_cfg = sector_cfg.get("coreless_physics", {})
+    padding_mm = float(coreless_cfg.get("minimum_region_padding_mm", 8.0))
+    padding_airgap_multiplier = float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0))
     return {
         "outer_radius_mm": "outer_diameter_mm/2",
         "inner_radius_mm": "inner_diameter_mm/2",
@@ -45,7 +48,7 @@ def scaffold_variables(project_cfg):
         "sector_pole_count": str(sector_pole_count),
         "sector_angle_deg": "360deg*sector_pole_count/pole_count",
         "sector_start_angle_deg": "-sector_angle_deg/2",
-        "auto3d_region_padding_mm": "8mm",
+        "auto3d_region_padding_mm": "%.6gmm + %.6g*airgap_mm" % (padding_mm, padding_airgap_multiplier),
         "auto3d_flat_copper_pack_height_mm": "conductor_thickness_mm*parallel_strands + flat_copper_interlayer_insulation_mm*(parallel_strands-1) + flat_copper_bondline_axial_build_mm",
         "auto3d_stator_axial_build_mm": "stator_support_thickness_mm + auto3d_flat_copper_pack_height_mm",
         "auto3d_flat_copper_inner_radius_mm": "coil_mean_radius_mm - coil_radial_span_mm/2",
@@ -65,6 +68,8 @@ def scaffold_variables(project_cfg):
 def physics_contract(project_cfg):
     sector_cfg = project_cfg.get("sector_3d", {})
     return {
+        "contract_layers": dict(sector_cfg.get("contract_layers", {})),
+        "coreless_physics": dict(sector_cfg.get("coreless_physics", {})),
         "transient": dict(sector_cfg.get("transient", {})),
         "boundaries": dict(sector_cfg.get("boundaries", {})),
         "motion": dict(sector_cfg.get("motion", {})),
@@ -102,11 +107,40 @@ def literature_basis():
             "link": "https://etheses.whiterose.ac.uk/id/eprint/21412/ ; https://etheses.whiterose.ac.uk/id/eprint/24063/"
         },
         {
+            "source": "Kamper et al., IEEE TIA, 2008",
+            "guidance": "Treat air-cored AFPM field spread, lower inductance, and winding-layout sensitivity as intrinsic physics instead of expecting iron-core-like flux concentration.",
+            "link": "https://doi.org/10.1109/TIA.2008.2002183"
+        },
+        {
+            "source": "Wang et al., Energies, 2018",
+            "guidance": "For double-rotor coreless AFPM machines, use Maxwell 3D to calibrate simplified models whenever leakage and fringing materially affect torque and back-EMF.",
+            "link": "https://doi.org/10.3390/en11113162"
+        },
+        {
             "source": "Jeon et al., Actuators, 2025",
             "guidance": "Refine current-transfer details such as via and interconnect geometry only after the main electromagnetic path is stable.",
             "link": "https://www.mdpi.com/2076-0825/14/9/424"
         }
     ]
+
+
+def _required_report_names(project_cfg):
+    reports_cfg = project_cfg.get("reports", {})
+    ordered_keys = [
+        "torque_loaded",
+        "torque_cogging",
+        "back_emf_ll",
+        "flux_linkage_a",
+        "bmax_backiron",
+        "inductance_phase_a",
+        "magnet_demag_margin"
+    ]
+    names = []
+    for key in ordered_keys:
+        value = str(reports_cfg.get(key, "")).strip()
+        if value:
+            names.append(value)
+    return names
 
 
 def _list_auto_objects(oEditor):
@@ -436,12 +470,15 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     contract = physics_contract(project_cfg)
     blocking_issues = []
     warnings = []
+    contract_layers = contract["contract_layers"]
+    coreless_cfg = contract["coreless_physics"]
     transient_cfg = contract["transient"]
     boundary_cfg = contract["boundaries"]
     motion_cfg = contract["motion"]
     winding_cfg = contract["winding"]
     mesh_cfg = contract["mesh"]
     verification_cfg = contract["verification"]
+    required_reports = _required_report_names(project_cfg)
     manual_actions = [
         "Replace the full-annulus flat-copper placeholder with phase-assigned coil sectors or macro-coils before trusting torque or back-EMF results",
         "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign %s boundaries on the cut faces named %s and %s" % (
@@ -458,10 +495,22 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         ),
         "Assign magnet directions for Auto3D_Magnet_Bottom and Auto3D_Magnet_Top consistent with the chosen SSDR axial-flux polarity convention",
         "Create the loaded, cogging, and open-circuit cases using the configured winding connection `%s` and three-phase waveform expressions from config/project.json" % winding_cfg.get("connection", "wye"),
-        "Create the required named reports: Torque_Loaded, Torque_Cogging, BackEMF_LL, FluxLinkage_PhaseA, and Bmax_BackIron",
+        "Create the required named reports: %s" % ", ".join(required_reports),
         "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
+        "Review the surrounding air region after sector cutting. A coreless stator spreads flux more broadly than an iron-core machine, so region padding and cut-face placement must be checked before trusting back-EMF, inductance, or leakage results",
+        "Treat Auto3D_FlatCopperPack as an envelope macro-coil only. Before any final signoff, replace it with winding segmentation that preserves phase periodicity and the real flat-copper current path",
+        "Add an inductance extraction path for `%s` using flux linkage or magnetic energy, then compare the result against the target range %.3f to %.3f mH" % (
+            project_cfg.get("reports", {}).get("inductance_phase_a", "Inductance_PhaseA"),
+            float(coreless_cfg.get("inductance_target_range_mh", [0.0, 0.0])[0]),
+            float(coreless_cfg.get("inductance_target_range_mh", [0.0, 0.0])[-1])
+        ),
+        "Run a peak-current loaded demagnetization review and bind the result to `%s` before trusting overload capability" % project_cfg.get("reports", {}).get("magnet_demag_margin", "MagnetDemag_Margin"),
         "Verify that the stator support material is FR4 or an equivalent non-magnetic structural material if the script had to fall back to vacuum",
-        "Run the first anchor cases in order: %s" % ", ".join(verification_cfg.get("anchor_case_labels", []))
+        "Run the first anchor cases in order: %s" % ", ".join(verification_cfg.get("anchor_case_labels", [])),
+        "Do not sign off the machine from this SSDR model alone. Correlate the shortlisted design to the final `%s` architecture with `%s` active air-gap faces before claiming hardware readiness" % (
+            contract_layers.get("final_target_topology", "S1-R1-S2-R2-S3"),
+            contract_layers.get("final_target_active_gap_faces", 4)
+        )
     ]
 
     bottom_magnet_material = created_by_name.get("%sMagnet_Bottom" % AUTO3D_PREFIX, "")
@@ -488,6 +537,26 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             "The flat-copper pack fell back to vacuum. Replace Auto3D_FlatCopperPack with copper before trying to define current-carrying conductors."
         )
 
+    if coreless_cfg.get("stator_is_coreless", False):
+        warnings.append(
+            "This contract is for a coreless hybrid stator. Expect broader fringing fields, stronger leakage, and lower inductance than an iron-core AFPM with similar envelope dimensions."
+        )
+    if coreless_cfg.get("do_not_reuse_iron_core_assumptions", False):
+        warnings.append(
+            "Do not interpret this scaffold with iron-core assumptions such as strong slotting-driven flux concentration, naturally high inductance, or narrow flux return paths through the stator."
+        )
+    if coreless_cfg.get("macro_coil_is_envelope_model_only", False):
+        warnings.append(
+            "Auto3D_FlatCopperPack is only an envelope conductor model. It is acceptable for early correlation, but AC loss, current crowding, and periodic winding legality require a more detailed conductor layout."
+        )
+    if contract_layers.get("require_final_topology_correlation_before_signoff", False):
+        warnings.append(
+            "The current scaffold is only the calibration truth model for `%s`. Final design signoff still requires correlation to the `%s` target topology."
+            % (
+                contract_layers.get("calibration_topology", "SSDR"),
+                contract_layers.get("final_target_topology", "S1-R1-S2-R2-S3")
+            )
+        )
     warnings.append(
         "The current Sector3D scaffold intentionally builds a full annular SSDR stack first. Periodic sector cutting, detailed winding segmentation, motion bands, and final report binding remain the next iteration targets."
     )
@@ -503,6 +572,16 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         blocking_issues.append(
             "The scaffold is still a full annulus. Convert it into a true sector with %s boundaries before using it as the production validation template."
             % boundary_cfg.get("periodic_strategy", "master_slave")
+        )
+    if coreless_cfg.get("require_inductance_check", False):
+        warnings.append(
+            "Inductance is a first-class validation item for this coreless machine. Do not trust current ripple, drive compatibility, or torque-per-amp conclusions until `%s` is extracted."
+            % project_cfg.get("reports", {}).get("inductance_phase_a", "Inductance_PhaseA")
+        )
+    if coreless_cfg.get("require_demagnetization_check", False):
+        warnings.append(
+            "Demagnetization must be checked under the `%s` condition because the low-permeability stator path does not shield the magnets the way an iron-core stator would."
+            % coreless_cfg.get("demag_check_case", "peak_current_loaded")
         )
 
     return {
@@ -531,7 +610,13 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "physics_contract": physics_contract(project_cfg),
             "literature_basis": literature_basis(),
             "region_created_or_present": True,
-            "manual_actions": []
+            "blocking_issues": [],
+            "warnings": [
+                "Existing Sector3D geometry was reused. Re-run the dedicated 3D scaffold build if the coreless contract, sector periodicity, or conductor-envelope assumptions have changed."
+            ],
+            "manual_actions": [
+                "Confirm that the reused geometry still satisfies the current coreless contract before launching validation."
+            ]
         }
     logger.log("Building new auto-generated 3D scaffold")
     return build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, cleanup_first=False)

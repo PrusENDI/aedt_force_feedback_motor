@@ -189,6 +189,13 @@ The first `Sector3D` template should use the simplest robust transient setup tha
 - Include both rotor back-irons, all magnets in the sector, the full stator conductive region, and a surrounding air region.
 - Use explicit rotor and stator solids, even if the final loss evaluation is exported rather than field-saved.
 
+### 3.1A Coreless caution
+
+- Do not borrow the usual iron-core simplifications about narrow flux paths or naturally high inductance.
+- In this project the stator is coreless, so magnetic flux spreads more broadly in air and leakage matters more.
+- Keep the outer air region deliberately generous during baseline correlation because back-EMF and inductance can move if the boundary is too close.
+- Treat any macro-coil conductor block as an envelope model only; it is useful for first-pass torque correlation, not as the final truth model for current crowding or AC loss.
+
 ### 3.2 Symmetry and periodicity
 
 - Use a periodic sector based on `gcd(pole_count_total, slot_or_coil_count_total)`.
@@ -262,6 +269,8 @@ Match the current report names where possible:
 Also add:
 
 - `FluxLinkage_PhaseA`
+- `Inductance_PhaseA`
+- `MagnetDemag_Margin`
 - `PhaseResistance_Est` if using post-processing
 - `CopperLoss_DC_Est`
 - `CopperLoss_AC_Est` for detailed verification cases

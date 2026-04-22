@@ -51,3 +51,20 @@ This file is the running journal for independent `Sector3D` iterations.
   - the code now knows the physical contract, but the actual sector cut, motion object creation, and named report binding still need implementation
 - next step:
   - make the scaffold produce or reserve the first explicit sector-cut and motion-region objects that satisfy this contract
+
+## Iteration 3
+
+- goal: remove hidden iron-core assumptions from the 3D contract and make the coreless hybrid route explicit in both config and scaffold warnings
+- changes made:
+  - split the `Sector3D` contract into an `SSDR` calibration layer and a final `S1-R1-S2-R2-S3` target layer
+  - added `coreless_physics` fields in `config/project.json` for flux spreading, leakage, inductance, demagnetization, and air-region review
+  - expanded `scripts/sector3d_scaffold.py` warnings and manual actions so the scaffold now reminds future iterations not to trust iron-core-style field concentration assumptions
+  - added `Inductance_PhaseA` and `MagnetDemag_Margin` to the required report contract
+  - updated the physics contract and playbook docs to state explicitly that the stator is coreless and the macro-coil conductor is only an early envelope model
+- validation target:
+  - `py_compile` on the touched scripts
+  - confirm the build summary now exposes the coreless contract, not just the transient setup
+- expected limitation:
+  - the geometry is still a helper scaffold; the actual sector cut, winding legality, and demag/inductance report binding still need Maxwell-side implementation
+- next step:
+  - reserve or build the first explicit sector-cut and motion-band objects, then bind the new inductance and demag report paths

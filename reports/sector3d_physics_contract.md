@@ -45,6 +45,16 @@ It should be read together with:
   Signal used here:
   Manufacturing and assembly tolerances must be treated as validation cases, not afterthoughts.
 
+- Kamper et al., IEEE TIA, 2008:
+  `https://doi.org/10.1109/TIA.2008.2002183`
+  Signal used here:
+  Air-cored AFPM machines must be interpreted with broader field spread, lower inductance, and stronger winding-layout sensitivity than iron-core machines.
+
+- Wang et al., Energies, 2018:
+  `https://doi.org/10.3390/en11113162`
+  Signal used here:
+  For double-rotor coreless AFPM machines, 3D FEM is required to calibrate leakage- and fringing-sensitive simplified models.
+
 - Jeon et al., Actuators, 2025:
   `https://www.mdpi.com/2076-0825/14/9/424`
   Signal used here:
@@ -52,22 +62,49 @@ It should be read together with:
 
 ## Physical Contract
 
+### Contract Layers
+
+- calibration topology: `SSDR`
+- calibration active air-gap faces: `2`
+- final target topology: `S1-R1-S2-R2-S3`
+- final target active air-gap faces: `4`
+- the current `Sector3D` contract is a calibration truth model, not the final machine signoff model
+- no candidate may be declared hardware-ready until the shortlisted SSDR result is correlated to the final `3 stator / 2 rotor / 4 active face` architecture
+
 ### Model Scope
 
-- baseline topology: `SSDR`
 - first production truth model: one periodic sector, not the full machine
 - first geometry implementation may start from a full-annulus helper scaffold, but production validation must cut to a true sector
 - stator implementation route: rigid PCB as support/interconnect plus flat copper as the main active conductor
+- macro-coil solids are permitted only as envelope models for early 3D correlation
+
+### Coreless-Specific Physics
+
+- stator is `coreless`
+- stator return iron is `absent`
+- do not reuse iron-core assumptions for:
+  - field concentration
+  - flux return paths
+  - inductance level
+  - cogging severity
+  - local saturation interpretation in the stator
+- expect:
+  - broader magnetic field spread
+  - stronger fringing flux
+  - stronger leakage flux
+  - lower inductance than an iron-core machine of similar envelope size
+- the air region around the active annulus must be deliberately expanded and reviewed, because air-core fringing makes remote-boundary placement more important than in a slotted iron-core model
 
 ### Magnetic Circuit
 
 - two rotor back-irons
 - two magnet layers
-- two active air gaps
+- two active air gaps in the calibration model
 - one central stator build that includes:
   - rigid support thickness
   - flat copper pack
   - insulation and bondline allowance
+- the current scaffold does not represent the final `4 active face` machine and must not be scaled blindly as if flux utilization were linear
 
 ### Motion
 
@@ -84,6 +121,7 @@ It should be read together with:
   - `Auto3D_Periodic_Master`
   - `Auto3D_Periodic_Slave`
 - full-annulus baseline geometry is acceptable only as an intermediate construction step
+- periodicity is valid only if the flat-copper phase pattern repeats exactly across the chosen sector
 
 ### Electromagnetic Excitation
 
@@ -92,6 +130,9 @@ Required operating cases:
 - loaded case:
   - three-phase sinusoidal current
   - `3 Arms` continuous baseline
+- peak-current loaded case:
+  - three-phase sinusoidal current
+  - `4 Arms` peak-current demagnetization review
 - cogging case:
   - zero stator current
   - same motion path
@@ -112,6 +153,7 @@ Current waveform contract:
 - refine magnet corners
 - refine detailed conductor thickness only on the top cases, not the whole DOE
 - keep field saving off during screening unless debugging
+- if the outer air region is reduced for speed, re-check back-EMF and inductance on one wider-air verification case because coreless fringing is boundary-sensitive
 
 ### Anchor Cases
 
@@ -141,14 +183,17 @@ Before any real 3D DOE, the repo should have:
 
 - a true periodic sector, not just a full-annulus helper
 - rotating band or equivalent motion region
-- loaded, cogging, and open-circuit report paths
+- loaded, peak-current-loaded, cogging, and open-circuit report paths
 - named reports for:
   - `Torque_Loaded`
   - `Torque_Cogging`
   - `BackEMF_LL`
   - `FluxLinkage_PhaseA`
   - `Bmax_BackIron`
+  - `Inductance_PhaseA`
+  - `MagnetDemag_Margin`
 - one baseline case solved end to end
+- one explicit review that the outer air region is large enough for the coreless field spread
 
 ## Current Repo Mapping
 
