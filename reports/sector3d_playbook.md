@@ -188,6 +188,7 @@ The first `Sector3D` template should use the simplest robust transient setup tha
 - Build one periodic sector, not the full annulus.
 - Include both rotor back-irons, all magnets in the sector, the full stator conductive region, and a surrounding air region.
 - Use explicit rotor and stator solids, even if the final loss evaluation is exported rather than field-saved.
+- The scaffold artifact should report `sector_geometry.geometry_scope = periodic_sector`; a full-annulus build artifact is a geometry regression.
 
 ### 3.1A Coreless caution
 

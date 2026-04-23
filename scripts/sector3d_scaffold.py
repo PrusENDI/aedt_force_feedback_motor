@@ -38,6 +38,60 @@ def _emit_progress(progress_callback, stage, message, details=None):
         pass
 
 
+def _case_float(row, key, default_value):
+    try:
+        return float(row.get(key, default_value))
+    except Exception:
+        return float(default_value)
+
+
+def _case_int(row, key, default_value):
+    try:
+        return int(round(float(row.get(key, default_value))))
+    except Exception:
+        return int(default_value)
+
+
+def _sector_geometry_metadata(project_cfg, case_row):
+    sector_cfg = project_cfg.get("sector_3d", {})
+    boundary_cfg = sector_cfg.get("boundaries", {})
+    pole_count = max(2, _case_int(case_row, "pole_count", project_cfg.get("machine_fixed", {}).get("pole_count", 24)))
+    requested_sector_poles = max(1, int(round(float(sector_cfg.get("sector_model_pole_count", 2)))))
+    sector_pole_count = min(pole_count, requested_sector_poles)
+    pole_pitch_deg = 360.0 / float(pole_count)
+    sweep_angle_deg = pole_pitch_deg * float(sector_pole_count)
+    center_angle_deg = float(sector_cfg.get("sector_center_angle_deg", 0.0))
+    start_angle_deg = center_angle_deg - (0.5 * sweep_angle_deg)
+    end_angle_deg = center_angle_deg + (0.5 * sweep_angle_deg)
+    phase_belt_count = max(1, sector_pole_count * 3)
+    full_phase_belt_count = max(6, pole_count * 3)
+    phase_belt_angle_deg = sweep_angle_deg / float(phase_belt_count)
+    is_periodic_repeat = (
+        sector_pole_count < pole_count
+        and pole_count % sector_pole_count == 0
+        and phase_belt_count % len(PHASE_BELT_SEQUENCE) == 0
+    )
+    return {
+        "geometry_scope": "periodic_sector" if is_periodic_repeat else "nonperiodic_sector",
+        "is_true_periodic_sector": bool(is_periodic_repeat),
+        "pole_count": pole_count,
+        "sector_pole_count": sector_pole_count,
+        "sector_repetition_count": int(pole_count / sector_pole_count) if sector_pole_count else 0,
+        "pole_pitch_deg": pole_pitch_deg,
+        "center_angle_deg": center_angle_deg,
+        "start_angle_deg": start_angle_deg,
+        "end_angle_deg": end_angle_deg,
+        "sweep_angle_deg": sweep_angle_deg,
+        "phase_belt_count": phase_belt_count,
+        "full_machine_phase_belt_count": full_phase_belt_count,
+        "phase_belt_angle_deg": phase_belt_angle_deg,
+        "master_face_name": boundary_cfg.get("master_face_name", "Auto3D_Periodic_Master"),
+        "slave_face_name": boundary_cfg.get("slave_face_name", "Auto3D_Periodic_Slave"),
+        "periodic_strategy": boundary_cfg.get("periodic_strategy", "master_slave"),
+        "trim_supported_by_scaffold": bool(0.0 < sweep_angle_deg < 180.0)
+    }
+
+
 def _modeler(oDesign):
     return oDesign.SetActiveEditor("3D Modeler")
 
@@ -61,9 +115,12 @@ def scaffold_variables(project_cfg):
     sector_pole_count = max(1, int(sector_cfg.get("sector_model_pole_count", 2)))
     coreless_cfg = sector_cfg.get("coreless_physics", {})
     winding_cfg = sector_cfg.get("winding", {})
+    motion_cfg = sector_cfg.get("motion", {})
     padding_mm = float(coreless_cfg.get("minimum_region_padding_mm", 8.0))
     padding_airgap_multiplier = float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0))
     current_angle_deg = float(winding_cfg.get("current_angle_deg", 0.0))
+    motion_radial_clearance_mm = float(motion_cfg.get("radial_clearance_mm", 0.4))
+    motion_axial_clearance_mm = float(motion_cfg.get("axial_clearance_mm", 0.2))
     return {
         "outer_radius_mm": "outer_diameter_mm/2",
         "inner_radius_mm": "inner_diameter_mm/2",
@@ -85,6 +142,8 @@ def scaffold_variables(project_cfg):
         "auto3d_phase_belt_gap_deg": "auto3d_phase_belt_angle_deg*0.01",
         "auto3d_phase_segment_angle_deg": "auto3d_phase_belt_angle_deg-auto3d_phase_belt_gap_deg",
         "auto3d_region_padding_mm": "%.6gmm + %.6g*airgap_mm" % (padding_mm, padding_airgap_multiplier),
+        "auto3d_motion_radial_clearance_mm": "%.6gmm" % motion_radial_clearance_mm,
+        "auto3d_motion_axial_clearance_mm": "%.6gmm" % motion_axial_clearance_mm,
         "auto3d_flat_copper_face_pack_height_mm": "conductor_thickness_mm*auto3d_flat_copper_layers_per_face + flat_copper_interlayer_insulation_mm*(auto3d_flat_copper_layers_per_face-1) + flat_copper_face_bondline_mm",
         "auto3d_stator_axial_build_mm": "stator_support_thickness_mm + auto3d_flat_copper_face_count*auto3d_flat_copper_face_pack_height_mm",
         "auto3d_flat_copper_inner_radius_mm": "coil_mean_radius_mm - coil_radial_span_mm/2",
@@ -98,7 +157,14 @@ def scaffold_variables(project_cfg):
         "auto3d_z_upper_airgap_mm": "auto3d_z_upper_flat_copper_mm + auto3d_flat_copper_face_pack_height_mm",
         "auto3d_z_top_magnet_mm": "auto3d_z_upper_airgap_mm + airgap_mm",
         "auto3d_z_top_backiron_mm": "auto3d_z_top_magnet_mm + magnet_thickness_mm",
-        "auto3d_total_stack_height_mm": "2*backiron_thickness_mm + 2*magnet_thickness_mm + 2*airgap_mm + auto3d_stator_axial_build_mm"
+        "auto3d_total_stack_height_mm": "2*backiron_thickness_mm + 2*magnet_thickness_mm + 2*airgap_mm + auto3d_stator_axial_build_mm",
+        "auto3d_region_outer_radius_mm": "outer_radius_mm + auto3d_region_padding_mm",
+        "auto3d_region_z_start_mm": "-auto3d_region_padding_mm",
+        "auto3d_region_height_mm": "auto3d_total_stack_height_mm + 2*auto3d_region_padding_mm",
+        "auto3d_motion_band_inner_radius_mm": "outer_radius_mm",
+        "auto3d_motion_band_outer_radius_mm": "outer_radius_mm + auto3d_motion_radial_clearance_mm",
+        "auto3d_motion_band_z_start_mm": "auto3d_z_bottom_backiron_mm - auto3d_motion_axial_clearance_mm",
+        "auto3d_motion_band_height_mm": "auto3d_total_stack_height_mm + 2*auto3d_motion_axial_clearance_mm"
     }
 
 
@@ -476,7 +542,49 @@ def _create_annular_sector_with_fallbacks(
         raise
 
 
-def _create_region(oEditor, name, padding_expr, logger):
+def _trim_object_to_angular_sector(oEditor, name, z_start, cutter_radius, height, start_angle_deg, sweep_angle_deg, logger):
+    try:
+        sweep = float(sweep_angle_deg)
+        start = float(start_angle_deg)
+        if sweep <= 0.0 or sweep >= 180.0:
+            raise RuntimeError("Sector sweep %.6gdeg is outside the supported trimming range for %s" % (sweep, name))
+
+        end = start + sweep
+        cutter_specs = [
+            ("%s_TrimStart" % name, start + 90.0),
+            ("%s_TrimEnd" % name, end - 90.0)
+        ]
+        for cutter_name, rotation_deg in cutter_specs:
+            _create_box(
+                oEditor,
+                cutter_name,
+                "-2*(%s)" % cutter_radius,
+                "-2*(%s)" % cutter_radius,
+                "((%s)-0.2mm)" % z_start,
+                "2*(%s)" % cutter_radius,
+                "4*(%s)" % cutter_radius,
+                "((%s)+0.4mm)" % height,
+                "vacuum",
+                "(240 240 240)",
+                0.96,
+                True
+            )
+            if abs(rotation_deg) > 1e-9:
+                if not _rotate(oEditor, cutter_name, "Z", "%.12gdeg" % rotation_deg, logger):
+                    raise RuntimeError("Could not rotate trimming cutter %s" % cutter_name)
+            if not _subtract(oEditor, name, cutter_name, logger):
+                raise RuntimeError("Could not trim %s using %s" % (name, cutter_name))
+        logger.log("Trimmed %s to angular sector %.6gdeg through %.6gdeg" % (name, start, end))
+        return True
+    except Exception:
+        logger.log("Could not trim %s to angular sector" % name)
+        logger.log(traceback.format_exc())
+        return False
+
+
+def _create_region(oEditor, name, padding_expr, logger, sector_meta=None):
+    created = False
+    trimmed_to_sector = False
     try:
         oEditor.CreateRegion(
             [
@@ -497,11 +605,74 @@ def _create_region(oEditor, name, padding_expr, logger):
             _solid_attributes(name, "air", "(143 175 143)", 0.9, True)
         )
         logger.log("Created surrounding region %s" % name)
-        return True
+        created = True
+        return {
+            "created": created,
+            "trimmed_to_sector": trimmed_to_sector,
+            "scope": "expanded_aedt_region",
+            "details": "Maxwell CreateRegion is kept as an expanded outer air boundary; periodic cut sheets define the sector faces."
+        }
     except Exception:
         logger.log("Could not create surrounding region %s automatically" % name)
         logger.log(traceback.format_exc())
-        return False
+        return {
+            "created": created,
+            "trimmed_to_sector": trimmed_to_sector,
+            "scope": "missing",
+            "details": "CreateRegion failed."
+        }
+
+
+def _create_periodic_boundary_sheet(oEditor, name, angle_deg, logger):
+    _create_rectangle(
+        oEditor,
+        name,
+        "0mm",
+        "0mm",
+        "auto3d_region_z_start_mm",
+        "auto3d_region_outer_radius_mm",
+        "auto3d_region_height_mm",
+        "Y",
+        "vacuum",
+        "(90 90 180)",
+        0.72,
+        False
+    )
+    if abs(float(angle_deg)) > 1.0e-9:
+        _rotate(oEditor, name, "Z", "%.12gdeg" % float(angle_deg), logger)
+    logger.log("Created periodic boundary sheet %s at %.6gdeg" % (name, float(angle_deg)))
+    return {"name": name, "material": "vacuum", "role": "periodic_boundary_sheet", "angle_deg": float(angle_deg)}
+
+
+def _create_periodic_boundary_sheets(oEditor, sector_meta, logger):
+    out = []
+    specs = [
+        (sector_meta["master_face_name"], sector_meta["start_angle_deg"]),
+        (sector_meta["slave_face_name"], sector_meta["end_angle_deg"])
+    ]
+    for name, angle_deg in specs:
+        out.append(_create_periodic_boundary_sheet(oEditor, name, angle_deg, logger))
+    return out
+
+
+def _create_motion_band_shell(oEditor, name, sector_meta, logger):
+    created = _create_annular_sector_with_fallbacks(
+        oEditor,
+        name,
+        "auto3d_motion_band_z_start_mm",
+        "auto3d_motion_band_inner_radius_mm",
+        "auto3d_motion_band_outer_radius_mm",
+        "auto3d_motion_band_height_mm",
+        sector_meta["start_angle_deg"],
+        sector_meta["sweep_angle_deg"],
+        ["air"],
+        "(200 200 255)",
+        0.88,
+        True,
+        logger
+    )
+    created["role"] = "rotating_band_clearance_shell"
+    return created
 
 
 def _phase_group_template():
@@ -606,14 +777,17 @@ def _sector3d_objects_definition():
     ]
 
 
-def _magnet_pole_objects_definition(case_row):
-    pole_count = max(2, int(round(float(case_row.get("pole_count", 24)))))
+def _magnet_pole_objects_definition(project_cfg, case_row, sector_meta=None):
+    if sector_meta is None:
+        sector_meta = _sector_geometry_metadata(project_cfg, case_row)
+    pole_count = max(2, int(round(float(case_row.get("pole_count", sector_meta["pole_count"])))))
     pole_arc_ratio = max(0.05, min(0.98, float(case_row.get("pole_arc_ratio", 0.7))))
-    pole_pitch_deg = 360.0 / float(pole_count)
+    pole_pitch_deg = sector_meta["pole_pitch_deg"] if sector_meta else (360.0 / float(pole_count))
     magnet_arc_deg = pole_pitch_deg * pole_arc_ratio
     out = []
-    for index in range(pole_count):
-        start_angle_deg = (index * pole_pitch_deg) - (0.5 * magnet_arc_deg)
+    for index in range(sector_meta["sector_pole_count"]):
+        pole_center_deg = sector_meta["start_angle_deg"] + ((float(index) + 0.5) * pole_pitch_deg)
+        start_angle_deg = pole_center_deg - (0.5 * magnet_arc_deg)
         bottom_direction = (0, 0, 1) if (index % 2 == 0) else (0, 0, -1)
         top_direction = (0, 0, -bottom_direction[2])
         out.append(
@@ -630,7 +804,9 @@ def _magnet_pole_objects_definition(case_row):
                 "transparency": 0.05,
                 "solve_inside": True,
                 "direction": bottom_direction,
-                "rotor": "bottom"
+                "rotor": "bottom",
+                "local_pole_index": index + 1,
+                "pole_center_angle_deg": pole_center_deg
             }
         )
         out.append(
@@ -647,16 +823,19 @@ def _magnet_pole_objects_definition(case_row):
                 "transparency": 0.05,
                 "solve_inside": True,
                 "direction": top_direction,
-                "rotor": "top"
+                "rotor": "top",
+                "local_pole_index": index + 1,
+                "pole_center_angle_deg": pole_center_deg
             }
         )
     return out
 
 
-def _phase_belt_objects_definition(case_row):
-    pole_count = max(2, int(round(float(case_row.get("pole_count", 24)))))
-    segment_count = max(6, pole_count * 3)
-    phase_belt_angle_deg = 360.0 / float(segment_count)
+def _phase_belt_objects_definition(project_cfg, case_row, sector_meta=None):
+    if sector_meta is None:
+        sector_meta = _sector_geometry_metadata(project_cfg, case_row)
+    segment_count = max(6, sector_meta["phase_belt_count"])
+    phase_belt_angle_deg = sector_meta["sweep_angle_deg"] / float(segment_count)
     phase_belt_gap_deg = min(0.08, max(0.01, phase_belt_angle_deg * 0.01))
     phase_segment_angle_deg = max(0.001, phase_belt_angle_deg - phase_belt_gap_deg)
     face_specs = [
@@ -667,7 +846,7 @@ def _phase_belt_objects_definition(case_row):
     phase_groups = _phase_group_template()
     for index in range(segment_count):
         phase_name, polarity = PHASE_BELT_SEQUENCE[index % len(PHASE_BELT_SEQUENCE)]
-        start_angle_deg = (index * phase_belt_angle_deg) + (0.5 * phase_belt_gap_deg)
+        start_angle_deg = sector_meta["start_angle_deg"] + (index * phase_belt_angle_deg) + (0.5 * phase_belt_gap_deg)
         for face_label, z_start in face_specs:
             name = "Auto3D_%s_%s_%s_%03d" % (
                 phase_name,
@@ -700,7 +879,8 @@ def _phase_belt_objects_definition(case_row):
         "segment_count": segment_count,
         "phase_belt_angle_deg": phase_belt_angle_deg,
         "phase_belt_gap_deg": phase_belt_gap_deg,
-        "phase_segment_angle_deg": phase_segment_angle_deg
+        "phase_segment_angle_deg": phase_segment_angle_deg,
+        "sector_geometry": dict(sector_meta)
     }
 
 
@@ -811,6 +991,7 @@ def assign_axial_magnet_materials(oProject, oDesign, magnet_objects, logger):
 
 def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, cleanup_first=False, progress_callback=None):
     scaffold_vars = scaffold_variables(project_cfg)
+    sector_meta = _sector_geometry_metadata(project_cfg, case_row)
     oEditor = _modeler(oDesign)
     _set_model_units(oEditor, logger)
 
@@ -835,7 +1016,9 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     created = []
     magnet_objects = []
-    phase_belts = _phase_belt_objects_definition(case_row)
+    boundary_objects = []
+    motion_band_objects = []
+    phase_belts = _phase_belt_objects_definition(project_cfg, case_row, sector_meta)
     existing = _list_auto_objects(oEditor)
     static_objects = _sector3d_objects_definition()
     total_static = len(static_objects)
@@ -843,7 +1026,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         _emit_progress(
             progress_callback,
             "sector3d_build_static_objects",
-            "Building static annular solids",
+            "Building static sector solids",
             {"index": index, "total": total_static, "object_name": item["name"]}
         )
         if (item["name"] in existing) and (not cleanup_first):
@@ -851,13 +1034,15 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             created.append({"name": item["name"], "material": "existing"})
             continue
         created.append(
-            _create_annulus_with_fallbacks(
+            _create_annular_sector_with_fallbacks(
                 oEditor,
                 item["name"],
                 item["z_start"],
-                item["outer_radius"],
                 item["inner_radius"],
+                item["outer_radius"],
                 item["height"],
+                sector_meta["start_angle_deg"],
+                sector_meta["sweep_angle_deg"],
                 item["materials"],
                 item["color"],
                 item["transparency"],
@@ -865,6 +1050,27 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
                 logger
             )
         )
+
+    _emit_progress(
+        progress_callback,
+        "sector3d_build_periodic_boundary_sheets",
+        "Building periodic sector boundary sheets",
+        {"master": sector_meta["master_face_name"], "slave": sector_meta["slave_face_name"]}
+    )
+    boundary_objects = _create_periodic_boundary_sheets(oEditor, sector_meta, logger)
+    created.extend(boundary_objects)
+
+    motion_cfg = project_cfg.get("sector_3d", {}).get("motion", {})
+    if motion_cfg.get("enabled", True):
+        motion_band_name = motion_cfg.get("band_object_name", "Auto3D_RotatingBand")
+        _emit_progress(
+            progress_callback,
+            "sector3d_build_motion_band",
+            "Building rotating-band clearance shell",
+            {"object_name": motion_band_name}
+        )
+        motion_band_objects.append(_create_motion_band_shell(oEditor, motion_band_name, sector_meta, logger))
+        created.extend(motion_band_objects)
 
     phase_objects = phase_belts["objects"]
     total_phase_objects = len(phase_objects)
@@ -897,7 +1103,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             )
         )
 
-    magnet_defs = _magnet_pole_objects_definition(case_row)
+    magnet_defs = _magnet_pole_objects_definition(project_cfg, case_row, sector_meta)
     total_magnets = len(magnet_defs)
     for index, item in enumerate(magnet_defs, 1):
         _emit_progress(
@@ -935,9 +1141,11 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     region_created = False
     if region_name not in existing:
         _emit_progress(progress_callback, "sector3d_build_region", "Building surrounding air region", {"object_name": region_name})
-        region_created = _create_region(oEditor, region_name, "auto3d_region_padding_mm", logger)
+        region_status = _create_region(oEditor, region_name, "auto3d_region_padding_mm", logger, sector_meta=sector_meta)
+        region_created = bool(region_status.get("created", False))
     else:
         logger.log("Reusing existing region %s" % region_name)
+        region_status = {"created": True, "trimmed_to_sector": False, "reused_existing": True}
         region_created = True
 
     created_by_name = {}
@@ -959,23 +1167,22 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     required_reports = _required_report_names(project_cfg)
     manual_actions = [
         "Review the generated Auto3D_Phase*_Top/Bottom segmented conductors against the intended hybrid winding path before trusting torque or back-EMF results",
-        "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign %s boundaries on the cut faces named %s and %s" % (
+        "Assign %s boundaries on the generated radial cut sheets named %s and %s. They bound the %.6g degree SSDR calibration sector." % (
             boundary_cfg.get("periodic_strategy", "master_slave"),
             boundary_cfg.get("master_face_name", "Auto3D_Periodic_Master"),
-            boundary_cfg.get("slave_face_name", "Auto3D_Periodic_Slave")
+            boundary_cfg.get("slave_face_name", "Auto3D_Periodic_Slave"),
+            sector_meta["sweep_angle_deg"]
         ),
-        "Create the %s object `%s` about axis %s with approximately %.3f mm radial clearance and %.3f mm axial clearance before trusting transient torque" % (
+        "Review the %s object `%s` about axis %s. It is generated as a conservative clearance shell and still needs live Maxwell motion validation before trusting transient torque." % (
             motion_cfg.get("motion_type", "rotating_band"),
             motion_cfg.get("band_object_name", "Auto3D_RotatingBand"),
-            motion_cfg.get("axis", "Z"),
-            float(motion_cfg.get("radial_clearance_mm", 0.0)),
-            float(motion_cfg.get("axial_clearance_mm", 0.0))
+            motion_cfg.get("axis", "Z")
         ),
         "Verify that the generated bottom and top magnet pole segments really follow the intended axial SSDR polarity convention before trusting field plots or torque",
         "Create the loaded, cogging, and open-circuit cases using the configured winding connection `%s` and three-phase waveform expressions from config/project.json" % winding_cfg.get("connection", "wye"),
         "Create the required named reports: %s" % ", ".join(required_reports),
         "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
-        "Review the surrounding air region after sector cutting. A coreless stator spreads flux more broadly than an iron-core machine, so region padding and cut-face placement must be checked before trusting back-EMF, inductance, or leakage results",
+        "Review the surrounding air region after sector trimming. A coreless stator spreads flux more broadly than an iron-core machine, so region padding and cut-face placement must be checked before trusting back-EMF, inductance, or leakage results",
         "The generated Auto3D_Phase*_Top/Bottom phase-belt solids are a segmented macro-coil truth model, not a finished manufacturable winding. Before final signoff, add explicit crossover/return/interconnect geometry that preserves the chosen hybrid current path.",
         "Keep the rigid PCB carrier as a non-magnetic support/interconnect body, not as the main active conductor, to stay aligned with the selected hybrid route and the cited PCB AFPM literature",
         "Add an inductance extraction path for `%s` using flux linkage or magnetic energy, then compare the result against the target range %.3f to %.3f mH" % (
@@ -1030,6 +1237,21 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         item = "The scaffold did not create the expected separated double-sided phase-belt conductors for the hybrid stator."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
+    if not sector_meta.get("trim_supported_by_scaffold", False):
+        item = (
+            "sector_model_pole_count=%s gives a %.6g degree sector, outside the current scaffold trimming range."
+            % (sector_meta.get("sector_pole_count", ""), sector_meta.get("sweep_angle_deg", 0.0))
+        )
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
+    if boundary_cfg.get("require_sector_cut_before_validation", False) and not sector_meta.get("is_true_periodic_sector", False):
+        blocking_issues.append(
+            "The generated geometry is not a true periodic sector. Choose a sector_model_pole_count that divides pole_count and repeats the six-belt phase sequence."
+        )
+    if len(boundary_objects) < 2:
+        blocking_issues.append("The scaffold did not create both periodic cut-face sheet placeholders.")
+    if motion_cfg.get("enabled", True) and not motion_band_objects:
+        blocking_issues.append("The scaffold did not create the configured rotating-band geometry placeholder.")
     path_capacity = physical_parallel_path_capacity(project_cfg)
     actual_parallel_paths = float(case_row.get("parallel_strands", 1.0))
     if actual_parallel_paths > path_capacity:
@@ -1066,7 +1288,8 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             )
         )
     warnings.append(
-        "The current Sector3D scaffold intentionally builds a full annular SSDR stack first. Periodic sector cutting, detailed winding segmentation, motion bands, and final report binding remain the next iteration targets."
+        "The current Sector3D scaffold now builds a %.6g degree SSDR periodic sector first. Boundary assignment, report binding, and live motion validation remain separate AEDT steps."
+        % sector_meta["sweep_angle_deg"]
     )
     warnings.append(
         "The active 3D physics contract expects a transient setup of `%s` stop time `%s`, with `%s` samples per electrical period, following the repo's research-backed validation strategy."
@@ -1076,10 +1299,9 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             transient_cfg.get("samples_per_electrical_period_for_reports", "")
         )
     )
-    if boundary_cfg.get("require_sector_cut_before_validation", False):
-        blocking_issues.append(
-            "The scaffold is still a full annulus. Convert it into a true sector with %s boundaries before using it as the production validation template."
-            % boundary_cfg.get("periodic_strategy", "master_slave")
+    if region_status.get("created", False) and not region_status.get("trimmed_to_sector", False):
+        warnings.append(
+            "Auto3D_Region is an expanded outer air boundary, not a trimmed sector solid. Inspect the generated periodic cut sheets and region padding before treating boundary placement as final."
         )
     if coreless_cfg.get("require_inductance_check", False):
         warnings.append(
@@ -1102,10 +1324,14 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "phase_belt_angle_deg": phase_belts["phase_belt_angle_deg"],
         "phase_belt_gap_deg": phase_belts["phase_belt_gap_deg"],
         "phase_segment_angle_deg": phase_belts["phase_segment_angle_deg"],
+        "sector_geometry": sector_meta,
+        "periodic_boundary_objects": boundary_objects,
+        "motion_band_objects": motion_band_objects,
         "scaffold_variables": scaffold_vars,
         "physics_contract": contract,
         "literature_basis": literature_basis(),
         "region_created_or_present": region_created,
+        "region_status": region_status,
         "baseline_blocking_issues": baseline_blocking_issues,
         "baseline_ready_for_solve": not bool(baseline_blocking_issues) and not bool(blocking_issues),
         "blocking_issues": blocking_issues,
@@ -1118,6 +1344,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
     existing = _list_auto_objects(_modeler(oDesign))
     if existing:
+        sector_meta = _sector_geometry_metadata(project_cfg, case_row)
         logger.log("Auto-generated 3D scaffold already exists; reusing current geometry")
         return {
             "cleanup_first": False,
@@ -1126,7 +1353,16 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "scaffold_variables": scaffold_variables(project_cfg),
             "physics_contract": physics_contract(project_cfg),
             "literature_basis": literature_basis(),
+            "sector_geometry": sector_meta,
+            "periodic_boundary_objects": [],
+            "motion_band_objects": [],
             "region_created_or_present": True,
+            "region_status": {
+                "created": True,
+                "trimmed_to_sector": False,
+                "reused_existing": True,
+                "scope": "expanded_aedt_region"
+            },
             "baseline_blocking_issues": [],
             "baseline_ready_for_solve": False,
             "blocking_issues": [],

@@ -170,3 +170,26 @@ This file is the running journal for independent `Sector3D` iterations.
   - the excitation is still a segmented radial macro-coil model, not the final manufacturable flat-copper crossover/return path
 - next step:
   - once the macro terminals bind successfully, add explicit inner/outer return/crossover geometry for shortlisted cases and compare torque/back-EMF sensitivity
+
+## Iteration 10
+
+- goal: move the Sector3D geometry scaffold from full-annulus SSDR helper toward a true periodic-sector SSDR calibration scaffold
+- changes made:
+  - added a `sector_geometry` metadata contract in `scripts/sector3d_scaffold.py` for the 24-pole / 2-pole / 30-degree baseline sector
+  - changed static rotor back-iron, stator support, and air-gap solids to use the same annular-sector generation path as magnets and phase belts
+  - limited generated magnets and phase-belt flat-copper conductors to the active sector instead of all 24 poles / 72 belts
+  - added generated periodic cut sheets named from config and a conservative `Auto3D_RotatingBand` clearance-shell scaffold
+  - extended `scripts/build_sector3d_model.py` summaries with sector scope, cut-sheet objects, motion-band objects, and region trim status
+  - changed the build script to write a pre-template-save geometry artifact before the potentially slow AEDT `SaveAs` path
+  - kept `Auto3D_Region` as an expanded AEDT outer region instead of trying to subtract-trim the special Region object
+  - updated the physics contract/playbook so full-annulus scaffold artifacts are treated as a regression
+- validation target:
+  - pure Python sector-metadata assertion for the 30-degree periodic sector
+  - `py_compile` on `scripts/sector3d_scaffold.py`, `scripts/build_sector3d_model.py`, and `scripts/winding_geometry.py`
+  - if the in-AEDT host is fresh, queue `Queue-BuildSector3DModel.ps1` and inspect `artifacts/sector3d_model_build.json`
+- expected limitation:
+  - the generated rotating band is a geometry scaffold and still needs live Maxwell motion assignment/solve feedback before torque or back-EMF can be trusted
+  - live AEDT rebuild wrote a pre-template-save `artifacts/sector3d_model_build.json` with `sector_geometry.geometry_scope = periodic_sector`, but the host command is still running/stalled in `sector3d_save_template`
+  - the artifact still blocks solve readiness on missing `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ` project material definitions
+- next step:
+  - rebuild the Sector3D template in AEDT, confirm `sector_geometry.geometry_scope = periodic_sector`, then let the solve agent bind master/slave boundaries, motion, excitations, and reports from the new sector geometry

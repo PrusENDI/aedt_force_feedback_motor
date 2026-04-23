@@ -26,6 +26,7 @@ from sector3d_scaffold import literature_basis
 from sector3d_scaffold import physics_contract
 from sector3d_scaffold import _delete_auto_objects
 from sector3d_scaffold import _modeler
+from sector3d_scaffold import _sector_geometry_metadata
 from winding_geometry import flat_copper_active_face_count
 from winding_geometry import flat_copper_face_pack_height_mm
 from winding_geometry import flat_copper_pack_height_mm
@@ -86,10 +87,17 @@ def _geometry_sanity(project_cfg, baseline):
     region_padding = float(coreless_cfg.get("minimum_region_padding_mm", 8.0)) + float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0)) * float(baseline["airgap_mm"])
     path_capacity = physical_parallel_path_capacity(project_cfg)
     actual_parallel_paths = float(baseline.get("parallel_strands", 1.0))
+    sector_meta = _sector_geometry_metadata(project_cfg, baseline)
     return {
         "outer_radius_mm": round(outer_radius, 6),
         "inner_radius_mm": round(inner_radius, 6),
         "sector_angle_deg_est": round(360.0 * sector_pole_count / pole_count, 6),
+        "sector_geometry_scope": sector_meta.get("geometry_scope", ""),
+        "sector_is_true_periodic": bool(sector_meta.get("is_true_periodic_sector", False)),
+        "sector_start_angle_deg": round(sector_meta.get("start_angle_deg", 0.0), 6),
+        "sector_end_angle_deg": round(sector_meta.get("end_angle_deg", 0.0), 6),
+        "sector_phase_belt_count": int(sector_meta.get("phase_belt_count", 0)),
+        "sector_repetition_count": int(sector_meta.get("sector_repetition_count", 0)),
         "pole_pitch_mm_est": round(pole_pitch, 6),
         "magnet_arc_mm_est": round(magnet_arc, 6),
         "flat_copper_inner_radius_mm_est": round(flat_copper_inner, 6),
@@ -125,6 +133,12 @@ def _write_markdown(path, summary):
         "outer_radius_mm",
         "inner_radius_mm",
         "sector_angle_deg_est",
+        "sector_geometry_scope",
+        "sector_is_true_periodic",
+        "sector_start_angle_deg",
+        "sector_end_angle_deg",
+        "sector_phase_belt_count",
+        "sector_repetition_count",
         "pole_pitch_mm_est",
         "magnet_arc_mm_est",
         "flat_copper_inner_radius_mm_est",
@@ -141,6 +155,30 @@ def _write_markdown(path, summary):
     ]:
         if key in summary.get("geometry_sanity", {}):
             lines.append("- %s: `%s`" % (key, summary["geometry_sanity"][key]))
+    lines.append("")
+    lines.append("## Sector Objects")
+    lines.append("")
+    sector_geometry = summary.get("sector_geometry", {})
+    for key in [
+        "geometry_scope",
+        "is_true_periodic_sector",
+        "pole_count",
+        "sector_pole_count",
+        "sector_repetition_count",
+        "start_angle_deg",
+        "end_angle_deg",
+        "sweep_angle_deg",
+        "phase_belt_count",
+        "periodic_strategy",
+        "trim_supported_by_scaffold"
+    ]:
+        if key in sector_geometry:
+            lines.append("- %s: `%s`" % (key, sector_geometry[key]))
+    lines.append("- periodic_boundary_objects: `%s`" % ", ".join([item.get("name", "") for item in summary.get("periodic_boundary_objects", [])]))
+    lines.append("- motion_band_objects: `%s`" % ", ".join([item.get("name", "") for item in summary.get("motion_band_objects", [])]))
+    region_status = summary.get("region_status", {})
+    lines.append("- region_created: `%s`" % region_status.get("created", ""))
+    lines.append("- region_trimmed_to_sector: `%s`" % region_status.get("trimmed_to_sector", ""))
     lines.append("")
     lines.append("## Save Status")
     lines.append("")
@@ -251,6 +289,79 @@ def _write_markdown(path, summary):
         handle.close()
 
 
+def _summary_payload(
+    root,
+    project_cfg,
+    oProject,
+    oDesign,
+    baseline,
+    build_result,
+    magnet_assignment,
+    geometry_save_status,
+    magnet_save_status,
+    save_result,
+    baseline_blocking,
+    blocking
+):
+    return {
+        "timestamp": timestamp_string(),
+        "workspace_root": root,
+        "project_name": _safe_call(lambda: oProject.GetName(), ""),
+        "design_name": _safe_call(lambda: oDesign.GetName(), ""),
+        "solution_type": get_design_solution_type(oDesign, None),
+        "baseline_variables": baseline,
+        "geometry_sanity": _geometry_sanity(project_cfg, baseline),
+        "created_objects": build_result.get("created_objects", []),
+        "magnet_objects": build_result.get("magnet_objects", []),
+        "phase_groups": _json_safe_phase_groups(build_result.get("phase_groups", {})),
+        "phase_belt_segment_count": build_result.get("phase_belt_segment_count", 0),
+        "phase_belt_angle_deg": build_result.get("phase_belt_angle_deg", ""),
+        "phase_belt_gap_deg": build_result.get("phase_belt_gap_deg", ""),
+        "phase_segment_angle_deg": build_result.get("phase_segment_angle_deg", ""),
+        "sector_geometry": build_result.get("sector_geometry", {}),
+        "periodic_boundary_objects": build_result.get("periodic_boundary_objects", []),
+        "motion_band_objects": build_result.get("motion_band_objects", []),
+        "region_status": build_result.get("region_status", {}),
+        "magnet_assignment": magnet_assignment,
+        "deleted_objects": build_result.get("deleted_objects", []),
+        "scaffold_variables": build_result.get("scaffold_variables", {}),
+        "physics_contract": build_result.get("physics_contract", physics_contract(project_cfg)),
+        "literature_basis": build_result.get("literature_basis", literature_basis()),
+        "baseline_blocking_issues": baseline_blocking,
+        "blocking_issues": blocking,
+        "warnings": build_result.get("warnings", []),
+        "baseline_ready_for_solve": (
+            bool(build_result.get("baseline_ready_for_solve", False))
+            and bool(magnet_assignment.get("assigned_ok", False))
+        ),
+        "physics_ready_for_validation": (not bool(blocking)) and bool(magnet_assignment.get("assigned_ok", False)),
+        "manual_actions": build_result.get("manual_actions", []),
+        "project_save_status": {
+            "after_geometry_build": geometry_save_status,
+            "after_magnet_assignment": magnet_save_status,
+            "template_copy": save_result
+        },
+        "saved_template_path": save_result.get("saved_template_path", ""),
+        "backup_copy_path": save_result.get("backup_copy_path", "")
+    }
+
+
+def _write_summary_artifacts(artifact_json, artifact_md, summary):
+    save_json(artifact_json, summary)
+    _write_markdown(artifact_md, summary)
+
+
+def _json_safe_phase_groups(phase_groups):
+    out = {}
+    for key, value in phase_groups.items():
+        if isinstance(key, (list, tuple)):
+            text_key = "_".join([str(item) for item in key])
+        else:
+            text_key = str(key)
+        out[text_key] = list(value)
+    return out
+
+
 def main():
     root = repo_root()
     ensure_workspace_dirs(root)
@@ -319,8 +430,6 @@ def main():
     )
     _emit_progress("sector3d_save_after_magnets", "Saving project after axial magnet assignment")
     magnet_save_status = save_project(oProject, logger)
-    _emit_progress("sector3d_save_template", "Saving canonical Sector3D template copy")
-    save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
 
     baseline_blocking = list(build_result.get("baseline_blocking_issues", []))
     blocking = list(build_result.get("blocking_issues", []))
@@ -332,46 +441,51 @@ def main():
     if not magnet_save_status.get("saved", False):
         baseline_blocking.append("AEDT could not save the project after axial magnet material assignment.")
         blocking.append("AEDT could not save the project after axial magnet material assignment.")
+    save_result = {
+        "saved_template_path": "",
+        "backup_copy_path": "",
+        "backup_copy_ok": False,
+        "current_project_file": "",
+        "pending": True
+    }
+    presave_summary = _summary_payload(
+        root,
+        project_cfg,
+        oProject,
+        oDesign,
+        baseline,
+        build_result,
+        magnet_assignment,
+        geometry_save_status,
+        magnet_save_status,
+        save_result,
+        list(baseline_blocking),
+        list(blocking)
+    )
+    _write_summary_artifacts(artifact_json, artifact_md, presave_summary)
+    logger.log("Wrote pre-template-save sector 3D geometry summary: %s" % artifact_json)
+
+    _emit_progress("sector3d_save_template", "Saving canonical Sector3D template copy")
+    save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
     if not save_result.get("saved_template_path"):
         baseline_blocking.append("The sector 3D template could not be saved to the canonical template path.")
         blocking.append("The sector 3D template could not be saved to the canonical template path.")
 
-    summary = {
-        "timestamp": timestamp_string(),
-        "workspace_root": root,
-        "project_name": _safe_call(lambda: oProject.GetName(), ""),
-        "design_name": _safe_call(lambda: oDesign.GetName(), ""),
-        "solution_type": get_design_solution_type(oDesign, logger),
-        "baseline_variables": baseline,
-        "geometry_sanity": _geometry_sanity(project_cfg, baseline),
-        "created_objects": build_result.get("created_objects", []),
-        "magnet_objects": build_result.get("magnet_objects", []),
-        "phase_groups": build_result.get("phase_groups", {}),
-        "phase_belt_segment_count": build_result.get("phase_belt_segment_count", 0),
-        "phase_belt_angle_deg": build_result.get("phase_belt_angle_deg", ""),
-        "phase_belt_gap_deg": build_result.get("phase_belt_gap_deg", ""),
-        "phase_segment_angle_deg": build_result.get("phase_segment_angle_deg", ""),
-        "magnet_assignment": magnet_assignment,
-        "deleted_objects": build_result.get("deleted_objects", []),
-        "scaffold_variables": build_result.get("scaffold_variables", {}),
-        "physics_contract": build_result.get("physics_contract", physics_contract(project_cfg)),
-        "literature_basis": build_result.get("literature_basis", literature_basis()),
-        "baseline_blocking_issues": baseline_blocking,
-        "blocking_issues": blocking,
-        "warnings": build_result.get("warnings", []),
-        "baseline_ready_for_solve": bool(build_result.get("baseline_ready_for_solve", False)) and bool(magnet_assignment.get("assigned_ok", False)),
-        "physics_ready_for_validation": (not bool(blocking)) and bool(magnet_assignment.get("assigned_ok", False)),
-        "manual_actions": build_result.get("manual_actions", []),
-        "project_save_status": {
-            "after_geometry_build": geometry_save_status,
-            "after_magnet_assignment": magnet_save_status,
-            "template_copy": save_result
-        },
-        "saved_template_path": save_result.get("saved_template_path", ""),
-        "backup_copy_path": save_result.get("backup_copy_path", "")
-    }
-    save_json(artifact_json, summary)
-    _write_markdown(artifact_md, summary)
+    summary = _summary_payload(
+        root,
+        project_cfg,
+        oProject,
+        oDesign,
+        baseline,
+        build_result,
+        magnet_assignment,
+        geometry_save_status,
+        magnet_save_status,
+        save_result,
+        baseline_blocking,
+        blocking
+    )
+    _write_summary_artifacts(artifact_json, artifact_md, summary)
     _emit_progress("sector3d_build_complete", "Wrote Sector3D build summary", {"artifact_json": artifact_json})
     logger.log("Wrote sector 3D model build summary: %s" % artifact_json)
 
