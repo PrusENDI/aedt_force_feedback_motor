@@ -55,6 +55,8 @@ def scaffold_variables(project_cfg):
         "sector_pole_count": str(sector_pole_count),
         "sector_angle_deg": "360deg*sector_pole_count/pole_count",
         "sector_start_angle_deg": "-sector_angle_deg/2",
+        "auto3d_pole_pitch_deg": "360deg/pole_count",
+        "auto3d_magnet_arc_deg": "auto3d_pole_pitch_deg*pole_arc_ratio",
         "auto3d_phase_belt_count": "3*pole_count",
         "auto3d_phase_belt_angle_deg": "360deg/auto3d_phase_belt_count",
         "auto3d_phase_belt_gap_deg": "auto3d_phase_belt_angle_deg*0.01",
@@ -231,6 +233,22 @@ def _create_cylinder(oEditor, name, z_start, radius, height, material, color, tr
     )
 
 
+def _create_rectangle(oEditor, name, x_start, y_start, z_start, width, height, axis, material, color, transparency, solve_inside):
+    return oEditor.CreateRectangle(
+        [
+            "NAME:RectangleParameters",
+            "IsCovered:=", True,
+            "XStart:=", x_start,
+            "YStart:=", y_start,
+            "ZStart:=", z_start,
+            "Width:=", width,
+            "Height:=", height,
+            "WhichAxis:=", axis
+        ],
+        _solid_attributes(name, material, color, transparency, solve_inside)
+    )
+
+
 def _create_cylinder_with_fallbacks(oEditor, name, z_start, radius, height, materials, color, transparency, solve_inside, logger):
     last_error = None
     for material in materials:
@@ -244,6 +262,54 @@ def _create_cylinder_with_fallbacks(oEditor, name, z_start, radius, height, mate
     if last_error:
         raise last_error
     raise RuntimeError("Could not create cylinder %s" % name)
+
+
+def _rotate(oEditor, selection_name, axis, angle, logger):
+    try:
+        oEditor.Rotate(
+            [
+                "NAME:Selections",
+                "Selections:=", selection_name,
+                "NewPartsModelFlag:=", "Model"
+            ],
+            [
+                "NAME:RotateParameters",
+                "RotateAxis:=", axis,
+                "RotateAngle:=", angle
+            ]
+        )
+        logger.log("Rotated %s around %s by %s" % (selection_name, axis, angle))
+        return True
+    except Exception:
+        logger.log("Rotate failed for %s around %s by %s" % (selection_name, axis, angle))
+        logger.log(traceback.format_exc())
+        return False
+
+
+def _sweep_around_axis(oEditor, selection_name, axis, sweep_angle, logger):
+    try:
+        oEditor.SweepAroundAxis(
+            [
+                "NAME:Selections",
+                "Selections:=", selection_name,
+                "NewPartsModelFlag:=", "Model"
+            ],
+            [
+                "NAME:AxisSweepParameters",
+                "DraftAngle:=", "0deg",
+                "DraftType:=", "Round",
+                "CheckFaceFaceIntersection:=", False,
+                "SweepAxis:=", axis,
+                "SweepAngle:=", sweep_angle,
+                "NumOfSegments:=", "0"
+            ]
+        )
+        logger.log("Swept %s around %s by %s" % (selection_name, axis, sweep_angle))
+        return True
+    except Exception:
+        logger.log("SweepAroundAxis failed for %s around %s by %s" % (selection_name, axis, sweep_angle))
+        logger.log(traceback.format_exc())
+        return False
 
 
 def _subtract(oEditor, blank_name, tool_name, logger):
@@ -293,6 +359,55 @@ def _create_annulus_with_fallbacks(
         logger.log("Could not finish annulus %s automatically" % name)
         logger.log(traceback.format_exc())
         return outer
+
+
+def _create_annular_sector_with_fallbacks(
+    oEditor,
+    name,
+    z_start,
+    inner_radius,
+    outer_radius,
+    height,
+    start_angle_deg,
+    sweep_angle_deg,
+    materials,
+    color,
+    transparency,
+    solve_inside,
+    logger
+):
+    radial_span = "((%s)-(%s))" % (outer_radius, inner_radius)
+    last_error = None
+    for material in materials:
+        try:
+            _create_rectangle(
+                oEditor,
+                name,
+                inner_radius,
+                "0mm",
+                z_start,
+                radial_span,
+                height,
+                "Y",
+                material,
+                color,
+                transparency,
+                solve_inside
+            )
+            if not _sweep_around_axis(oEditor, name, "Z", "%.12gdeg" % sweep_angle_deg, logger):
+                raise RuntimeError("Could not sweep sector solid %s" % name)
+            if abs(float(start_angle_deg)) > 1e-9:
+                if not _rotate(oEditor, name, "Z", "%.12gdeg" % start_angle_deg, logger):
+                    raise RuntimeError("Could not rotate sector solid %s" % name)
+            logger.log("Created %s as annular sector with material %s" % (name, material))
+            return {"name": name, "material": material}
+        except Exception as exc:
+            last_error = exc
+            logger.log("Could not create annular sector %s with material %s" % (name, material))
+            logger.log(traceback.format_exc())
+    if last_error:
+        raise last_error
+    raise RuntimeError("Could not create annular sector %s" % name)
 
 
 def _create_region(oEditor, name, padding_expr, logger):
@@ -353,17 +468,6 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
-            "name": "%sMagnet_Bottom" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_bottom_magnet_mm",
-            "outer_radius": "outer_radius_mm",
-            "inner_radius": "inner_radius_mm",
-            "height": "magnet_thickness_mm",
-            "materials": [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB", "vacuum"],
-            "color": "(220 60 60)",
-            "transparency": 0.05,
-            "solve_inside": True
-        },
-        {
             "name": "%sAirGap_Bottom" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_lower_airgap_mm",
             "outer_radius": "outer_radius_mm",
@@ -408,17 +512,6 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
-            "name": "%sMagnet_Top" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_top_magnet_mm",
-            "outer_radius": "outer_radius_mm",
-            "inner_radius": "inner_radius_mm",
-            "height": "magnet_thickness_mm",
-            "materials": [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB", "vacuum"],
-            "color": "(60 90 220)",
-            "transparency": 0.05,
-            "solve_inside": True
-        },
-        {
             "name": "%sRotorBackIron_Top" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_top_backiron_mm",
             "outer_radius": "outer_radius_mm",
@@ -432,6 +525,134 @@ def _sector3d_objects_definition():
     ]
 
 
+def _magnet_pole_objects_definition(case_row):
+    pole_count = max(2, int(round(float(case_row.get("pole_count", 24)))))
+    pole_arc_ratio = max(0.05, min(0.98, float(case_row.get("pole_arc_ratio", 0.7))))
+    pole_pitch_deg = 360.0 / float(pole_count)
+    magnet_arc_deg = pole_pitch_deg * pole_arc_ratio
+    out = []
+    for index in range(pole_count):
+        start_angle_deg = (index * pole_pitch_deg) - (0.5 * magnet_arc_deg)
+        bottom_direction = (0, 0, 1) if (index % 2 == 0) else (0, 0, -1)
+        top_direction = (0, 0, -bottom_direction[2])
+        out.append(
+            {
+                "name": "%sMagnet_Bottom_%03d" % (AUTO3D_PREFIX, index + 1),
+                "z_start": "auto3d_z_bottom_magnet_mm",
+                "outer_radius": "outer_radius_mm",
+                "inner_radius": "inner_radius_mm",
+                "height": "magnet_thickness_mm",
+                "start_angle_deg": start_angle_deg,
+                "sweep_angle_deg": magnet_arc_deg,
+                "materials": [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB", "vacuum"],
+                "color": "(220 60 60)" if bottom_direction[2] > 0 else "(255 165 90)",
+                "transparency": 0.05,
+                "solve_inside": True,
+                "direction": bottom_direction,
+                "rotor": "bottom"
+            }
+        )
+        out.append(
+            {
+                "name": "%sMagnet_Top_%03d" % (AUTO3D_PREFIX, index + 1),
+                "z_start": "auto3d_z_top_magnet_mm",
+                "outer_radius": "outer_radius_mm",
+                "inner_radius": "inner_radius_mm",
+                "height": "magnet_thickness_mm",
+                "start_angle_deg": start_angle_deg,
+                "sweep_angle_deg": magnet_arc_deg,
+                "materials": [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB", "vacuum"],
+                "color": "(60 90 220)" if top_direction[2] > 0 else "(120 190 255)",
+                "transparency": 0.05,
+                "solve_inside": True,
+                "direction": top_direction,
+                "rotor": "top"
+            }
+        )
+    return out
+
+
+def _select_existing_base_magnet_material(app):
+    for material_name in [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB"]:
+        if _safe_call(lambda: app.materials.exists_material(material_name), False):
+            return material_name
+    return PREFERRED_MAGNET_MATERIAL
+
+
+def _ensure_oriented_material(app, base_material_name, new_name, direction, logger):
+    material = _safe_call(lambda: app.materials.exists_material(new_name), False)
+    created = False
+    if not material:
+        material = app.materials.duplicate_material(base_material_name, name=new_name)
+        created = bool(material)
+        if created:
+            logger.log("Duplicated material %s -> %s" % (base_material_name, new_name))
+    if not material:
+        raise RuntimeError("Could not duplicate base material %s as %s" % (base_material_name, new_name))
+    coercivity = _safe_call(lambda: material.get_magnetic_coercivity(), False)
+    if coercivity:
+        magnitude = str(coercivity[0]).replace("A_per_meter", "").strip()
+    else:
+        magnitude = "0"
+    material.set_magnetic_coercivity(magnitude, direction[0], direction[1], direction[2])
+    logger.log("Set coercivity for %s to magnitude=%s direction=%s" % (new_name, magnitude, direction))
+    return {"created": created, "material_name": new_name, "magnitude": magnitude, "direction": direction}
+
+
+def assign_axial_magnet_materials(oDesktop, oProject, oDesign, magnet_objects, logger):
+    from sector3d_aedt import attach_maxwell3d
+
+    if not magnet_objects:
+        return {"assigned_ok": False, "results": [], "blocking_issues": ["No magnet objects were generated."]}
+
+    app = attach_maxwell3d(oDesktop, oProject, oDesign, logger)
+    object_names = [str(name) for name in _safe_call(lambda: list(app.modeler.object_names), [])]
+    base_material_name = _select_existing_base_magnet_material(app)
+    material_cache = {}
+    results = []
+    blocking_issues = []
+
+    for item in magnet_objects:
+        object_name = item["name"]
+        direction = tuple(item.get("direction", (0, 0, 0)))
+        material_name = "%sPM_Axial_%sZ" % (AUTO3D_PREFIX, "Plus" if direction[2] >= 0 else "Minus")
+        result = {
+            "object_name": object_name,
+            "direction": list(direction),
+            "material_name": material_name,
+            "assigned": False,
+            "details": ""
+        }
+        if object_name not in object_names:
+            result["details"] = "object not found"
+            blocking_issues.append("Missing required magnet object %s" % object_name)
+            results.append(result)
+            continue
+        try:
+            if material_name not in material_cache:
+                material_cache[material_name] = _ensure_oriented_material(
+                    app,
+                    base_material_name,
+                    material_name,
+                    direction,
+                    logger
+                )
+            app.modeler[object_name].material_name = material_name
+            result["assigned"] = True
+            result["details"] = "oriented axial magnet material assigned"
+        except Exception as exc:
+            result["details"] = str(exc)
+            blocking_issues.append("Could not assign axial magnet orientation to %s" % object_name)
+        results.append(result)
+
+    return {
+        "assigned_ok": not bool(blocking_issues),
+        "base_material_name": base_material_name,
+        "results": results,
+        "blocking_issues": blocking_issues
+    }
+
+
 def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, cleanup_first=False):
     scaffold_vars = scaffold_variables(project_cfg)
     apply_variables(oDesign, scaffold_vars, logger)
@@ -443,6 +664,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         deleted = _delete_auto_objects(oEditor, logger)
 
     created = []
+    magnet_objects = []
     existing = _list_auto_objects(oEditor)
     for item in _sector3d_objects_definition():
         if (item["name"] in existing) and (not cleanup_first):
@@ -464,6 +686,31 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
                 logger
             )
         )
+
+    for item in _magnet_pole_objects_definition(case_row):
+        if (item["name"] in existing) and (not cleanup_first):
+            logger.log("Reusing existing magnet pole %s" % item["name"])
+            created.append({"name": item["name"], "material": "existing"})
+            magnet_objects.append(item)
+            continue
+        created.append(
+            _create_annular_sector_with_fallbacks(
+                oEditor,
+                item["name"],
+                item["z_start"],
+                item["inner_radius"],
+                item["outer_radius"],
+                item["height"],
+                item["start_angle_deg"],
+                item["sweep_angle_deg"],
+                item["materials"],
+                item["color"],
+                item["transparency"],
+                item["solve_inside"],
+                logger
+            )
+        )
+        magnet_objects.append(item)
 
     region_name = "%sRegion" % AUTO3D_PREFIX
     existing = _list_auto_objects(oEditor)
@@ -505,7 +752,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             float(motion_cfg.get("radial_clearance_mm", 0.0)),
             float(motion_cfg.get("axial_clearance_mm", 0.0))
         ),
-        "Assign magnet directions for Auto3D_Magnet_Bottom and Auto3D_Magnet_Top consistent with the chosen SSDR axial-flux polarity convention",
+        "Verify that the generated bottom and top magnet pole segments really follow the intended axial SSDR polarity convention before trusting field plots or torque",
         "Create the loaded, cogging, and open-circuit cases using the configured winding connection `%s` and three-phase waveform expressions from config/project.json" % winding_cfg.get("connection", "wye"),
         "Create the required named reports: %s" % ", ".join(required_reports),
         "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
@@ -525,16 +772,15 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         )
     ]
 
-    bottom_magnet_material = created_by_name.get("%sMagnet_Bottom" % AUTO3D_PREFIX, "")
-    top_magnet_material = created_by_name.get("%sMagnet_Top" % AUTO3D_PREFIX, "")
+    magnet_materials = [created_by_name.get(item["name"], "") for item in magnet_objects]
     support_material = created_by_name.get("%sStatorSupport" % AUTO3D_PREFIX, "")
     copper_material = created_by_name.get("%sFlatCopperPack" % AUTO3D_PREFIX, "")
 
-    if bottom_magnet_material.lower() == "vacuum" or top_magnet_material.lower() == "vacuum":
-        item = "Permanent magnets fell back to vacuum. Replace Auto3D_Magnet_Bottom and Auto3D_Magnet_Top with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
+    if any([str(material_name).lower() == "vacuum" for material_name in magnet_materials]):
+        item = "Permanent magnets fell back to vacuum. Replace the generated Auto3D_Magnet_* pole segments with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
-    elif (not _looks_like_permanent_magnet(bottom_magnet_material)) or (not _looks_like_permanent_magnet(top_magnet_material)):
+    elif magnet_materials and any([(not _looks_like_permanent_magnet(material_name)) for material_name in magnet_materials]):
         warnings.append(
             "The magnet objects were created with non-NdFeB materials. Verify that the selected materials are really permanent magnets."
         )
@@ -546,6 +792,10 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     if copper_material.lower() == "vacuum":
         item = "The flat-copper pack fell back to vacuum. Replace Auto3D_FlatCopperPack with copper before trying to define current-carrying conductors."
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
+    if len(magnet_objects) < 2:
+        item = "The scaffold did not create segmented rotor magnets, so it cannot represent alternating axial poles."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
 
@@ -600,12 +850,13 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "cleanup_first": cleanup_first,
         "deleted_objects": deleted,
         "created_objects": created,
+        "magnet_objects": magnet_objects,
         "scaffold_variables": scaffold_vars,
         "physics_contract": contract,
         "literature_basis": literature_basis(),
         "region_created_or_present": region_created,
         "baseline_blocking_issues": baseline_blocking_issues,
-        "baseline_ready_for_solve": not bool(baseline_blocking_issues),
+        "baseline_ready_for_solve": not bool(baseline_blocking_issues) and not bool(blocking_issues),
         "blocking_issues": blocking_issues,
         "validation_ready_for_template": not bool(blocking_issues),
         "warnings": warnings,
@@ -626,7 +877,7 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "literature_basis": literature_basis(),
             "region_created_or_present": True,
             "baseline_blocking_issues": [],
-            "baseline_ready_for_solve": True,
+            "baseline_ready_for_solve": False,
             "blocking_issues": [],
             "validation_ready_for_template": False,
             "warnings": [

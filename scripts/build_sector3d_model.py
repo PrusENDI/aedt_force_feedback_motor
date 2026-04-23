@@ -20,6 +20,7 @@ from bootstrap_linear2d_template import _active_project
 from bootstrap_linear2d_template import _rename_design_if_possible
 from bootstrap_linear2d_template import _save_template_copy
 from bootstrap_linear2d_template import _safe_call
+from sector3d_scaffold import assign_axial_magnet_materials
 from sector3d_scaffold import build_sector_3d_scaffold
 from sector3d_scaffold import literature_basis
 from sector3d_scaffold import physics_contract
@@ -221,7 +222,20 @@ def main():
     apply_variables(oDesign, baseline, logger)
     build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=True)
     save_project(oProject, logger)
+    magnet_assignment = assign_axial_magnet_materials(
+        oDesktop,
+        oProject,
+        oDesign,
+        build_result.get("magnet_objects", []),
+        logger
+    )
+    save_project(oProject, logger)
     save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
+
+    baseline_blocking = list(build_result.get("baseline_blocking_issues", []))
+    blocking = list(build_result.get("blocking_issues", []))
+    baseline_blocking.extend(magnet_assignment.get("blocking_issues", []))
+    blocking.extend(magnet_assignment.get("blocking_issues", []))
 
     summary = {
         "timestamp": timestamp_string(),
@@ -232,15 +246,17 @@ def main():
         "baseline_variables": baseline,
         "geometry_sanity": _geometry_sanity(project_cfg, baseline),
         "created_objects": build_result.get("created_objects", []),
+        "magnet_objects": build_result.get("magnet_objects", []),
+        "magnet_assignment": magnet_assignment,
         "deleted_objects": build_result.get("deleted_objects", []),
         "scaffold_variables": build_result.get("scaffold_variables", {}),
         "physics_contract": build_result.get("physics_contract", physics_contract(project_cfg)),
         "literature_basis": build_result.get("literature_basis", literature_basis()),
-        "baseline_blocking_issues": build_result.get("baseline_blocking_issues", []),
-        "blocking_issues": build_result.get("blocking_issues", []),
+        "baseline_blocking_issues": baseline_blocking,
+        "blocking_issues": blocking,
         "warnings": build_result.get("warnings", []),
-        "baseline_ready_for_solve": bool(build_result.get("baseline_ready_for_solve", False)),
-        "physics_ready_for_validation": not bool(build_result.get("blocking_issues", [])),
+        "baseline_ready_for_solve": bool(build_result.get("baseline_ready_for_solve", False)) and bool(magnet_assignment.get("assigned_ok", False)),
+        "physics_ready_for_validation": (not bool(blocking)) and bool(magnet_assignment.get("assigned_ok", False)),
         "manual_actions": build_result.get("manual_actions", []),
         "saved_template_path": save_result.get("saved_template_path", ""),
         "backup_copy_path": save_result.get("backup_copy_path", "")
