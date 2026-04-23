@@ -31,11 +31,19 @@ from winding_geometry import physical_parallel_path_capacity
 from winding_geometry import stator_axial_build_mm
 
 
+def _is_numeric_design_value(value):
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, (int, float))
+
+
 def _baseline_variables(project_cfg, search_cfg):
     fixed = project_cfg["machine_fixed"]
     hybrid = project_cfg.get("hybrid_winding", {})
     out = dict(fixed)
-    out.update(hybrid)
+    for key, value in hybrid.items():
+        if _is_numeric_design_value(value):
+            out[key] = value
     out["phase_current_rms"] = fixed["continuous_phase_current_arms"]
     out["speed_rpm"] = fixed["max_speed_rpm"]
     for spec in search_cfg["variables"]:
