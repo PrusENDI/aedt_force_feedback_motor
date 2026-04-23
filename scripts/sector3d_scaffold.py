@@ -29,6 +29,15 @@ def _safe_call(func, default_value=None):
         return default_value
 
 
+def _emit_progress(progress_callback, stage, message, details=None):
+    if not progress_callback:
+        return
+    try:
+        progress_callback(stage, message, details or {})
+    except Exception:
+        pass
+
+
 def _modeler(oDesign):
     return oDesign.SetActiveEditor("3D Modeler")
 
@@ -800,21 +809,43 @@ def assign_axial_magnet_materials(oProject, oDesign, magnet_objects, logger):
     }
 
 
-def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, cleanup_first=False):
+def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, cleanup_first=False, progress_callback=None):
     scaffold_vars = scaffold_variables(project_cfg)
-    apply_variables(oDesign, scaffold_vars, logger)
     oEditor = _modeler(oDesign)
     _set_model_units(oEditor, logger)
 
     deleted = []
     if cleanup_first:
+        _emit_progress(progress_callback, "sector3d_cleanup_existing_geometry", "Deleting existing auto-generated Sector3D objects")
         deleted = _delete_auto_objects(oEditor, logger)
+        _emit_progress(
+            progress_callback,
+            "sector3d_cleanup_existing_geometry_complete",
+            "Deleted existing auto-generated Sector3D objects",
+            {"deleted_count": len(deleted)}
+        )
+
+    apply_variables(
+        oDesign,
+        scaffold_vars,
+        logger,
+        progress_callback=progress_callback,
+        progress_stage="sector3d_apply_scaffold_variables"
+    )
 
     created = []
     magnet_objects = []
     phase_belts = _phase_belt_objects_definition(case_row)
     existing = _list_auto_objects(oEditor)
-    for item in _sector3d_objects_definition():
+    static_objects = _sector3d_objects_definition()
+    total_static = len(static_objects)
+    for index, item in enumerate(static_objects, 1):
+        _emit_progress(
+            progress_callback,
+            "sector3d_build_static_objects",
+            "Building static annular solids",
+            {"index": index, "total": total_static, "object_name": item["name"]}
+        )
         if (item["name"] in existing) and (not cleanup_first):
             logger.log("Reusing existing object %s" % item["name"])
             created.append({"name": item["name"], "material": "existing"})
@@ -835,7 +866,15 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             )
         )
 
-    for item in phase_belts["objects"]:
+    phase_objects = phase_belts["objects"]
+    total_phase_objects = len(phase_objects)
+    for index, item in enumerate(phase_objects, 1):
+        _emit_progress(
+            progress_callback,
+            "sector3d_build_phase_belts",
+            "Building segmented phase-belt conductors",
+            {"index": index, "total": total_phase_objects, "object_name": item["name"]}
+        )
         if (item["name"] in existing) and (not cleanup_first):
             logger.log("Reusing existing phase-belt conductor %s" % item["name"])
             created.append({"name": item["name"], "material": "existing"})
@@ -858,7 +897,15 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             )
         )
 
-    for item in _magnet_pole_objects_definition(case_row):
+    magnet_defs = _magnet_pole_objects_definition(case_row)
+    total_magnets = len(magnet_defs)
+    for index, item in enumerate(magnet_defs, 1):
+        _emit_progress(
+            progress_callback,
+            "sector3d_build_magnets",
+            "Building segmented axial magnet poles",
+            {"index": index, "total": total_magnets, "object_name": item["name"]}
+        )
         if (item["name"] in existing) and (not cleanup_first):
             logger.log("Reusing existing magnet pole %s" % item["name"])
             created.append({"name": item["name"], "material": "existing"})
@@ -887,6 +934,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     existing = _list_auto_objects(oEditor)
     region_created = False
     if region_name not in existing:
+        _emit_progress(progress_callback, "sector3d_build_region", "Building surrounding air region", {"object_name": region_name})
         region_created = _create_region(oEditor, region_name, "auto3d_region_padding_mm", logger)
     else:
         logger.log("Reusing existing region %s" % region_name)

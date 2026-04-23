@@ -33,6 +33,20 @@ from winding_geometry import physical_parallel_path_capacity
 from winding_geometry import stator_axial_build_mm
 
 
+def _progress_callback():
+    return globals().get("__command_progress_callback")
+
+
+def _emit_progress(stage, message, details=None):
+    callback = _progress_callback()
+    if not callback:
+        return
+    try:
+        callback(stage, message, details or {})
+    except Exception:
+        pass
+
+
 def _is_numeric_design_value(value):
     if isinstance(value, bool):
         return False
@@ -241,6 +255,7 @@ def main():
     root = repo_root()
     ensure_workspace_dirs(root)
     logger = Logger(os.path.join(root, "logs", "build_sector3d_model_%s.log" % timestamp_string()))
+    _emit_progress("sector3d_build_start", "Starting Sector3D scaffold build")
     project_cfg = load_json(os.path.join(root, "config", "project.json"))
     search_cfg = load_json(os.path.join(root, "config", "search_space.json"))
     paths = config_paths(root, project_cfg)
@@ -267,19 +282,44 @@ def main():
         logger
     )
 
+    _emit_progress("sector3d_delete_old_geometry", "Deleting existing Auto3D geometry before rebuild")
     deleted_before_rebuild = _delete_auto_objects(_modeler(oDesign), logger)
+    _emit_progress(
+        "sector3d_delete_old_geometry_complete",
+        "Deleted existing Auto3D geometry before rebuild",
+        {"deleted_count": len(deleted_before_rebuild)}
+    )
     baseline = _baseline_variables(project_cfg, search_cfg)
-    apply_variables(oDesign, baseline, logger)
-    build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=False)
+    apply_variables(
+        oDesign,
+        baseline,
+        logger,
+        progress_callback=_progress_callback(),
+        progress_stage="sector3d_apply_baseline_variables"
+    )
+    _emit_progress("sector3d_build_geometry", "Building literature-constrained Sector3D geometry")
+    build_result = build_sector_3d_scaffold(
+        oProject,
+        oDesign,
+        project_cfg,
+        baseline,
+        logger,
+        cleanup_first=False,
+        progress_callback=_progress_callback()
+    )
     build_result["deleted_objects"] = deleted_before_rebuild + list(build_result.get("deleted_objects", []))
+    _emit_progress("sector3d_save_after_geometry", "Saving project after geometry build")
     geometry_save_status = save_project(oProject, logger)
+    _emit_progress("sector3d_assign_magnets", "Assigning axial magnet materials")
     magnet_assignment = assign_axial_magnet_materials(
         oProject,
         oDesign,
         build_result.get("magnet_objects", []),
         logger
     )
+    _emit_progress("sector3d_save_after_magnets", "Saving project after axial magnet assignment")
     magnet_save_status = save_project(oProject, logger)
+    _emit_progress("sector3d_save_template", "Saving canonical Sector3D template copy")
     save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
 
     baseline_blocking = list(build_result.get("baseline_blocking_issues", []))
@@ -332,6 +372,7 @@ def main():
     }
     save_json(artifact_json, summary)
     _write_markdown(artifact_md, summary)
+    _emit_progress("sector3d_build_complete", "Wrote Sector3D build summary", {"artifact_json": artifact_json})
     logger.log("Wrote sector 3D model build summary: %s" % artifact_json)
 
 

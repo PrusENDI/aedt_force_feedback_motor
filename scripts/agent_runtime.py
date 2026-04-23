@@ -7,6 +7,7 @@ import traceback
 import uuid
 import sys
 import json
+import datetime
 
 from aedt_native_common import config_paths
 from aedt_native_common import copy_template_if_needed
@@ -169,6 +170,81 @@ def update_running_command(context, running_path, patch):
     payload.update(patch or {})
     save_json(running_path, payload)
     return payload
+
+
+def _parse_runtime_timestamp(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    for fmt in ["%Y-%m-%dT%H-%M-%SZ", "%Y-%m-%dT%H:%M:%SZ"]:
+        try:
+            return datetime.datetime.strptime(text, fmt)
+        except Exception:
+            pass
+    return None
+
+
+def _runtime_timestamp_age_s(value):
+    captured = _parse_runtime_timestamp(value)
+    if not captured:
+        return None
+    return (datetime.datetime.utcnow() - captured).total_seconds()
+
+
+def _running_command_age_s(payload):
+    for key in ["progress_at", "started_at", "created_at"]:
+        age = _runtime_timestamp_age_s(payload.get(key))
+        if age is not None:
+            return age
+    return None
+
+
+def recover_running_commands(context, logger=None, current_host_pid=None, stale_after_s=None):
+    runtime_cfg = context.get("runtime_cfg", {})
+    if stale_after_s is None:
+        stale_after_s = max(60, int(runtime_cfg.get("heartbeat_interval_s", 10)) * 6)
+    recovered = []
+    running_files = list_command_files(context["runtime_paths"]["running_dir"])
+    for running_path in running_files:
+        payload = load_json_file(running_path, default_value={}) or {}
+        age_s = _running_command_age_s(payload)
+        if (age_s is not None) and (age_s < stale_after_s):
+            if logger:
+                logger.log(
+                    "Keeping active running command %s age %.1fs below stale threshold %.1fs"
+                    % (payload.get("command_id", ""), age_s, stale_after_s)
+                )
+            continue
+        payload["finished_at"] = timestamp_string()
+        payload["success"] = False
+        payload["result"] = "stale_running_command_recovered"
+        payload["error"] = "Recovered stale running command during host startup"
+        payload["recovered_by_pid"] = current_host_pid
+        payload["recovered_after_s"] = age_s
+        payload["stale_after_s"] = stale_after_s
+        basename = os.path.basename(running_path)
+        target_path = os.path.join(context["runtime_paths"]["failed_dir"], basename)
+        save_json(running_path, payload)
+        shutil.move(running_path, target_path)
+        save_last_result(context, payload)
+        recovered.append(
+            {
+                "command_id": payload.get("command_id"),
+                "action": payload.get("action"),
+                "host_pid": payload.get("host_pid"),
+                "target_path": target_path
+            }
+        )
+        if logger:
+            logger.log(
+                "Recovered stale running command %s (%s) from previous host pid %s"
+                % (
+                    payload.get("command_id", ""),
+                    payload.get("action", ""),
+                    payload.get("host_pid", "")
+                )
+            )
+    return recovered
 
 
 def make_progress_callback(context, oDesktop, running_path):

@@ -137,3 +137,20 @@ This file is the running journal for independent `Sector3D` iterations.
   - this improves local attachment stability, but the most stable path is still the in-AEDT host because it bypasses external transport entirely
 - next step:
   - rerun `scripts/in_aedt_probe.py` and `launchers/Probe-Environment.ps1`, then continue the 3D baseline queue from the now COM-first host stack
+
+## Iteration 8
+
+- goal: make the 3D build loop recoverable and diagnosable when Maxwell hangs during geometry/variable updates
+- changes made:
+  - changed `scripts/build_sector3d_model.py` so stale `Auto3D_*` geometry is deleted before applying baseline variables, reducing the chance that Maxwell rebuilds old invalid geometry during variable writes
+  - added progress callbacks to `scripts/build_sector3d_model.py`, `scripts/sector3d_scaffold.py`, and `scripts/aedt_native_common.py` so the running queue file records whether the build is setting variables, creating stator/support solids, creating phase belts, creating magnets, assigning magnet materials, or saving the project
+  - added stale-running recovery to `scripts/agent_runtime.py` and host startup recovery in `scripts/in_aedt_agent_host.py`
+  - guarded stale-running recovery with an age threshold so a duplicate host start does not immediately mark a genuinely active command as failed
+- validation target:
+  - `py_compile` on the host, common AEDT helpers, Sector3D scaffold, and Sector3D build script
+  - restart the in-AEDT host and confirm old stale `runtime/running/*.json` entries are moved to `runtime/failed`
+  - rerun `Queue-BuildSector3DModel.ps1` and verify the new running file advances past `sector3d_delete_old_geometry` and into `sector3d_build_phase_belts`
+- expected limitation:
+  - this iteration improves recovery and observability; it does not yet guarantee the full Maxwell solve converges
+- next step:
+  - rebuild the Sector3D template from a recovered host, inspect the fresh `sector3d_model_build.json`, then continue excitation/report binding only after the generated geometry matches the coreless axial-flux hybrid contract

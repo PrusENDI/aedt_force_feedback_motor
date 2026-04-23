@@ -685,10 +685,25 @@ def _format_number(value):
     return ("%.8f" % float(value)).rstrip("0").rstrip(".")
 
 
-def apply_variables(oDesign, mapping, logger):
+def apply_variables(oDesign, mapping, logger, progress_callback=None, progress_stage="apply_variables"):
     keys = list(mapping.keys())
-    for key in keys:
+    total = len(keys)
+    for index, key in enumerate(keys, 1):
         formatted = format_aedt_value(key, mapping[key])
+        if progress_callback:
+            try:
+                progress_callback(
+                    progress_stage,
+                    "Setting design variable",
+                    {
+                        "index": index,
+                        "total": total,
+                        "variable_name": key,
+                        "variable_value": formatted
+                    }
+                )
+            except Exception:
+                pass
         logger.log("Setting design variable %s = %s" % (key, formatted))
         try:
             set_design_variable(oDesign, key, formatted, logger=logger)
@@ -697,6 +712,15 @@ def apply_variables(oDesign, mapping, logger):
             logger.exception()
             raise RuntimeError("Failed to set design variable %s = %s" % (key, formatted))
     logger.log("Applied %d design variables" % len(keys))
+    if progress_callback:
+        try:
+            progress_callback(
+                "%s_complete" % progress_stage,
+                "Applied design variables",
+                {"total": total}
+            )
+        except Exception:
+            pass
 
 
 def analyze_setup(oDesign, setup_name, logger):

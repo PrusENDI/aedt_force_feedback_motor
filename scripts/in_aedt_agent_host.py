@@ -94,6 +94,9 @@ def main():
     logger = Logger(log_path)
     logger.log("Starting in-AEDT agent host")
     oDesktop = initialize_aedt(logger)
+    recovered = agent_runtime_module.recover_running_commands(context, logger=logger, current_host_pid=os.getpid())
+    if recovered:
+        logger.log("Recovered %d stale running command(s) before entering the host loop" % len(recovered))
     save_session_snapshot(oDesktop, context)
 
     runtime_cfg = context["runtime_cfg"]
