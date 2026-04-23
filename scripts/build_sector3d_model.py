@@ -24,6 +24,8 @@ from sector3d_scaffold import assign_axial_magnet_materials
 from sector3d_scaffold import build_sector_3d_scaffold
 from sector3d_scaffold import literature_basis
 from sector3d_scaffold import physics_contract
+from sector3d_scaffold import _delete_auto_objects
+from sector3d_scaffold import _modeler
 from winding_geometry import flat_copper_active_face_count
 from winding_geometry import flat_copper_face_pack_height_mm
 from winding_geometry import flat_copper_pack_height_mm
@@ -265,9 +267,11 @@ def main():
         logger
     )
 
+    deleted_before_rebuild = _delete_auto_objects(_modeler(oDesign), logger)
     baseline = _baseline_variables(project_cfg, search_cfg)
     apply_variables(oDesign, baseline, logger)
-    build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=True)
+    build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=False)
+    build_result["deleted_objects"] = deleted_before_rebuild + list(build_result.get("deleted_objects", []))
     geometry_save_status = save_project(oProject, logger)
     magnet_assignment = assign_axial_magnet_materials(
         oProject,
