@@ -154,3 +154,19 @@ This file is the running journal for independent `Sector3D` iterations.
   - this iteration improves recovery and observability; it does not yet guarantee the full Maxwell solve converges
 - next step:
   - rebuild the Sector3D template from a recovered host, inspect the fresh `sector3d_model_build.json`, then continue excitation/report binding only after the generated geometry matches the coreless axial-flux hybrid contract
+
+## Iteration 9
+
+- goal: make the hybrid-stator excitation path less like an iron-core slot winding surrogate and more like a coreless axial-flux radial-conductor macro model
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` so each generated `Auto3D_Phase*` radial phase-belt solid receives its own Maxwell 3D coil terminal before being grouped into a phase winding
+  - replaced the previous one-terminal-per-phase-polarity assignment, which was too coarse and failed on the 3D object groups produced by Maxwell
+  - changed the fallback direct-current path to assign per-object current boundaries instead of one large object-group current boundary
+  - recorded terminal/current counts in the excitation summary so the next AEDT run can show whether the winding path is physically bound or still falling back
+- validation target:
+  - `py_compile` on the excitation script
+  - after the host rebuild succeeds, queue `Queue-AssignSector3DExcitation.ps1` and confirm each phase reports nonzero `coil_terminal_count`
+- expected limitation:
+  - the excitation is still a segmented radial macro-coil model, not the final manufacturable flat-copper crossover/return path
+- next step:
+  - once the macro terminals bind successfully, add explicit inner/outer return/crossover geometry for shortlisted cases and compare torque/back-EMF sensitivity

@@ -42,6 +42,21 @@ def _coil_name(phase_name, polarity):
     return "%s_Coil_%s" % (phase_name, "Pos" if polarity == "Positive" else "Neg")
 
 
+def _coil_terminal_name(phase_name, polarity, index):
+    return "%s_%s_%03d" % (_coil_name(phase_name, polarity), "Terminal", int(index))
+
+
+def _phase_boundary_name_prefix(phase_name):
+    return [
+        _winding_name(phase_name),
+        _coil_name(phase_name, "Positive"),
+        _coil_name(phase_name, "Negative"),
+        "%s_Current_Pos" % phase_name,
+        "%s_Current_Neg" % phase_name,
+        "%s_JRadial" % phase_name
+    ]
+
+
 def _write_markdown(path, summary):
     lines = []
     lines.append("# Sector3D Excitation Assignment Summary")
@@ -63,13 +78,15 @@ def _write_markdown(path, summary):
     lines.append("")
     for item in summary.get("winding_results", []):
         lines.append(
-            "- %s: assigned=`%s`, fallback_current=`%s`, positive_objects=`%s`, negative_objects=`%s`, details=`%s`"
+            "- %s: assigned=`%s`, fallback_current=`%s`, positive_objects=`%s`, negative_objects=`%s`, terminals=`%s`, direct_currents=`%s`, details=`%s`"
             % (
                 item.get("phase_name", ""),
                 item.get("assigned", False),
                 item.get("used_fallback_current_boundaries", False),
                 item.get("positive_object_count", 0),
                 item.get("negative_object_count", 0),
+                item.get("coil_terminal_count", 0),
+                item.get("current_boundary_count", 0),
                 item.get("details", "")
             )
         )
@@ -108,31 +125,24 @@ def _write_markdown(path, summary):
 
 
 def _assign_phase_with_winding_group(app, phase_name, current_expression, positive_objects, negative_objects, turns_per_phase, logger):
-    boundary_names = [
-        _winding_name(phase_name),
-        _coil_name(phase_name, "Positive"),
-        _coil_name(phase_name, "Negative"),
-        "%s_Current_Pos" % phase_name,
-        "%s_Current_Neg" % phase_name
-    ]
+    boundary_names = _phase_boundary_name_prefix(phase_name)
+    for index in range(1, max(len(positive_objects), len(negative_objects)) + 1):
+        boundary_names.append(_coil_terminal_name(phase_name, "Positive", index))
+        boundary_names.append(_coil_terminal_name(phase_name, "Negative", index))
     deleted = delete_named_boundaries_if_present(app, boundary_names, logger)
-    conductors_per_terminal = max(1, int(round(max(1.0, turns_per_phase) / 2.0)))
-    coil_pos = app.assign_coil(
-        assignment=positive_objects,
-        conductors_number=conductors_per_terminal,
-        polarity="Positive",
-        name=_coil_name(phase_name, "Positive")
-    )
-    if not coil_pos:
-        raise RuntimeError("Could not create positive coil terminal for %s" % phase_name)
-    coil_neg = app.assign_coil(
-        assignment=negative_objects,
-        conductors_number=conductors_per_terminal,
-        polarity="Negative",
-        name=_coil_name(phase_name, "Negative")
-    )
-    if not coil_neg:
-        raise RuntimeError("Could not create negative coil terminal for %s" % phase_name)
+    conductors_per_terminal = max(1, int(round(max(1.0, turns_per_phase) / float(max(1, len(positive_objects))))))
+    coil_terminal_names = []
+    for polarity, objects in [("Positive", positive_objects), ("Negative", negative_objects)]:
+        for index, object_name in enumerate(objects, 1):
+            terminal = app.assign_coil(
+                assignment=[object_name],
+                conductors_number=conductors_per_terminal,
+                polarity=polarity,
+                name=_coil_terminal_name(phase_name, polarity, index)
+            )
+            if not terminal:
+                raise RuntimeError("Could not create %s coil terminal %s for %s" % (polarity.lower(), object_name, phase_name))
+            coil_terminal_names.append(terminal.name)
     winding = app.assign_winding(
         assignment=None,
         winding_type="Current",
@@ -143,7 +153,7 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
     )
     if not winding:
         raise RuntimeError("Could not create winding group for %s" % phase_name)
-    app.add_winding_coils(winding.name, [coil_pos.name, coil_neg.name])
+    app.add_winding_coils(winding.name, coil_terminal_names)
     logger.log("Assigned winding %s with current=%s" % (winding.name, current_expression))
     return {
         "phase_name": phase_name,
@@ -151,44 +161,37 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
         "used_fallback_current_boundaries": False,
         "deleted_existing": bool(deleted),
         "winding_name": winding.name,
-        "coil_positive_name": coil_pos.name,
-        "coil_negative_name": coil_neg.name,
+        "coil_terminal_count": len(coil_terminal_names),
+        "coil_terminal_names": coil_terminal_names,
+        "conductors_per_terminal": conductors_per_terminal,
         "positive_object_count": len(positive_objects),
         "negative_object_count": len(negative_objects),
-        "details": "macro phase-belt winding assigned"
+        "details": "segmented radial macro-coil terminals assigned"
     }
 
 
 def _assign_phase_with_direct_current(app, phase_name, current_expression, positive_objects, negative_objects, logger):
-    deleted = delete_named_boundaries_if_present(
-        app,
-        [
-            _winding_name(phase_name),
-            _coil_name(phase_name, "Positive"),
-            _coil_name(phase_name, "Negative"),
-            "%s_Current_Pos" % phase_name,
-            "%s_Current_Neg" % phase_name
-        ],
-        logger
-    )
-    current_pos = app.assign_current(
-        assignment=positive_objects,
-        amplitude=current_expression,
-        solid=True,
-        swap_direction=False,
-        name="%s_Current_Pos" % phase_name
-    )
-    if not current_pos:
-        raise RuntimeError("Could not create fallback positive current for %s" % phase_name)
-    current_neg = app.assign_current(
-        assignment=negative_objects,
-        amplitude=current_expression,
-        solid=True,
-        swap_direction=True,
-        name="%s_Current_Neg" % phase_name
-    )
-    if not current_neg:
-        raise RuntimeError("Could not create fallback negative current for %s" % phase_name)
+    boundary_names = _phase_boundary_name_prefix(phase_name)
+    for index in range(1, max(len(positive_objects), len(negative_objects)) + 1):
+        boundary_names.append("%s_Current_Pos_%03d" % (phase_name, index))
+        boundary_names.append("%s_Current_Neg_%03d" % (phase_name, index))
+    deleted = delete_named_boundaries_if_present(app, boundary_names, logger)
+    current_names = []
+    for polarity, objects, swap_direction, prefix in [
+        ("Positive", positive_objects, False, "%s_Current_Pos" % phase_name),
+        ("Negative", negative_objects, True, "%s_Current_Neg" % phase_name)
+    ]:
+        for index, object_name in enumerate(objects, 1):
+            current = app.assign_current(
+                assignment=[object_name],
+                amplitude=current_expression,
+                solid=True,
+                swap_direction=swap_direction,
+                name="%s_%03d" % (prefix, index)
+            )
+            if not current:
+                raise RuntimeError("Could not create fallback %s current for %s object %s" % (polarity.lower(), phase_name, object_name))
+            current_names.append(current.name)
     logger.log("Assigned fallback direct current boundaries for %s" % phase_name)
     return {
         "phase_name": phase_name,
@@ -196,11 +199,11 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
         "used_fallback_current_boundaries": True,
         "deleted_existing": bool(deleted),
         "winding_name": "",
-        "coil_positive_name": current_pos.name,
-        "coil_negative_name": current_neg.name,
+        "current_boundary_count": len(current_names),
+        "current_boundary_names": current_names,
         "positive_object_count": len(positive_objects),
         "negative_object_count": len(negative_objects),
-        "details": "fallback direct current boundaries assigned"
+        "details": "segmented fallback direct current boundaries assigned"
     }
 
 
