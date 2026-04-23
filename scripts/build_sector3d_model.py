@@ -138,6 +138,13 @@ def _write_markdown(path, summary):
     lines.append("- template_copy.saved_template_path: `%s`" % template_copy.get("saved_template_path", ""))
     lines.append("- template_copy.backup_copy_ok: `%s`" % template_copy.get("backup_copy_ok", False))
     lines.append("")
+    lines.append("## Winding Geometry")
+    lines.append("")
+    lines.append("- phase_belt_segment_count: `%s`" % summary.get("phase_belt_segment_count", 0))
+    lines.append("- phase_belt_angle_deg: `%s`" % summary.get("phase_belt_angle_deg", ""))
+    lines.append("- phase_belt_gap_deg: `%s`" % summary.get("phase_belt_gap_deg", ""))
+    lines.append("- phase_segment_angle_deg: `%s`" % summary.get("phase_segment_angle_deg", ""))
+    lines.append("")
     lines.append("## Physics Contract")
     lines.append("")
     contract = summary.get("physics_contract", {})
@@ -263,7 +270,6 @@ def main():
     build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=True)
     geometry_save_status = save_project(oProject, logger)
     magnet_assignment = assign_axial_magnet_materials(
-        oDesktop,
         oProject,
         oDesign,
         build_result.get("magnet_objects", []),
@@ -296,6 +302,11 @@ def main():
         "geometry_sanity": _geometry_sanity(project_cfg, baseline),
         "created_objects": build_result.get("created_objects", []),
         "magnet_objects": build_result.get("magnet_objects", []),
+        "phase_groups": build_result.get("phase_groups", {}),
+        "phase_belt_segment_count": build_result.get("phase_belt_segment_count", 0),
+        "phase_belt_angle_deg": build_result.get("phase_belt_angle_deg", ""),
+        "phase_belt_gap_deg": build_result.get("phase_belt_gap_deg", ""),
+        "phase_segment_angle_deg": build_result.get("phase_segment_angle_deg", ""),
         "magnet_assignment": magnet_assignment,
         "deleted_objects": build_result.get("deleted_objects", []),
         "scaffold_variables": build_result.get("scaffold_variables", {}),

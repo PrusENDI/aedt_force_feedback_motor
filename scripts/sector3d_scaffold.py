@@ -12,6 +12,14 @@ from winding_geometry import physical_parallel_path_capacity
 AUTO3D_PREFIX = "Auto3D_"
 PREFERRED_MAGNET_MATERIAL = "Magnet, permanent, Neodymium N42SH"
 PREFERRED_SUPPORT_MATERIAL = "FR4_epoxy"
+PHASE_BELT_SEQUENCE = [
+    ("PhaseA", "Positive"),
+    ("PhaseC", "Negative"),
+    ("PhaseB", "Positive"),
+    ("PhaseA", "Negative"),
+    ("PhaseC", "Positive"),
+    ("PhaseB", "Negative")
+]
 
 
 def _safe_call(func, default_value=None):
@@ -487,6 +495,32 @@ def _create_region(oEditor, name, padding_expr, logger):
         return False
 
 
+def _phase_group_template():
+    out = {}
+    for phase_name in ["PhaseA", "PhaseB", "PhaseC"]:
+        out[(phase_name, "Positive")] = []
+        out[(phase_name, "Negative")] = []
+    return out
+
+
+def _phase_object_color(phase_name, polarity, face_label):
+    face_scale = 0.0 if face_label == "Bottom" else 35.0
+    table = {
+        ("PhaseA", "Positive"): (230, 95, 45),
+        ("PhaseA", "Negative"): (255, 175, 120),
+        ("PhaseB", "Positive"): (235, 185, 40),
+        ("PhaseB", "Negative"): (245, 225, 130),
+        ("PhaseC", "Positive"): (70, 120, 230),
+        ("PhaseC", "Negative"): (145, 185, 255)
+    }
+    red, green, blue = table[(phase_name, polarity)]
+    return "(%d %d %d)" % (
+        min(255, int(red + face_scale)),
+        min(255, int(green + face_scale)),
+        min(255, int(blue + face_scale))
+    )
+
+
 def _looks_like_permanent_magnet(material_name):
     text = str(material_name or "").strip().lower()
     if not text:
@@ -528,17 +562,6 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
-            "name": "%sFlatCopper_Bottom" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_lower_flat_copper_mm",
-            "outer_radius": "auto3d_flat_copper_outer_radius_mm",
-            "inner_radius": "auto3d_flat_copper_inner_radius_mm",
-            "height": "auto3d_flat_copper_face_pack_height_mm",
-            "materials": ["copper", "vacuum"],
-            "color": "(255 150 60)",
-            "transparency": 0.2,
-            "solve_inside": True
-        },
-        {
             "name": "%sStatorSupport" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_stator_support_mm",
             "outer_radius": "outer_radius_mm",
@@ -547,17 +570,6 @@ def _sector3d_objects_definition():
             "materials": [PREFERRED_SUPPORT_MATERIAL, "vacuum"],
             "color": "(80 160 80)",
             "transparency": 0.55,
-            "solve_inside": True
-        },
-        {
-            "name": "%sFlatCopper_Top" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_upper_flat_copper_mm",
-            "outer_radius": "auto3d_flat_copper_outer_radius_mm",
-            "inner_radius": "auto3d_flat_copper_inner_radius_mm",
-            "height": "auto3d_flat_copper_face_pack_height_mm",
-            "materials": ["copper", "vacuum"],
-            "color": "(255 150 60)",
-            "transparency": 0.2,
             "solve_inside": True
         },
         {
@@ -632,45 +644,122 @@ def _magnet_pole_objects_definition(case_row):
     return out
 
 
-def _select_existing_base_magnet_material(app):
+def _phase_belt_objects_definition(case_row):
+    pole_count = max(2, int(round(float(case_row.get("pole_count", 24)))))
+    segment_count = max(6, pole_count * 3)
+    phase_belt_angle_deg = 360.0 / float(segment_count)
+    phase_belt_gap_deg = min(0.08, max(0.01, phase_belt_angle_deg * 0.01))
+    phase_segment_angle_deg = max(0.001, phase_belt_angle_deg - phase_belt_gap_deg)
+    face_specs = [
+        ("Bottom", "auto3d_z_lower_flat_copper_mm"),
+        ("Top", "auto3d_z_upper_flat_copper_mm")
+    ]
+    objects = []
+    phase_groups = _phase_group_template()
+    for index in range(segment_count):
+        phase_name, polarity = PHASE_BELT_SEQUENCE[index % len(PHASE_BELT_SEQUENCE)]
+        start_angle_deg = (index * phase_belt_angle_deg) + (0.5 * phase_belt_gap_deg)
+        for face_label, z_start in face_specs:
+            name = "Auto3D_%s_%s_%s_%03d" % (
+                phase_name,
+                "Pos" if polarity == "Positive" else "Neg",
+                face_label,
+                index + 1
+            )
+            objects.append(
+                {
+                    "name": name,
+                    "z_start": z_start,
+                    "outer_radius": "auto3d_flat_copper_outer_radius_mm",
+                    "inner_radius": "auto3d_flat_copper_inner_radius_mm",
+                    "height": "auto3d_flat_copper_face_pack_height_mm",
+                    "start_angle_deg": start_angle_deg,
+                    "sweep_angle_deg": phase_segment_angle_deg,
+                    "materials": ["copper", "vacuum"],
+                    "color": _phase_object_color(phase_name, polarity, face_label),
+                    "transparency": 0.18,
+                    "solve_inside": True,
+                    "phase_name": phase_name,
+                    "polarity": polarity,
+                    "face_label": face_label
+                }
+            )
+            phase_groups[(phase_name, polarity)].append(name)
+    return {
+        "objects": objects,
+        "phase_groups": phase_groups,
+        "segment_count": segment_count,
+        "phase_belt_angle_deg": phase_belt_angle_deg,
+        "phase_belt_gap_deg": phase_belt_gap_deg,
+        "phase_segment_angle_deg": phase_segment_angle_deg
+    }
+
+
+def _project_material_name_map(oProject):
+    definition_manager = _safe_call(lambda: oProject.GetDefinitionManager(), None)
+    names = _safe_call(lambda: list(definition_manager.GetProjectMaterialNames()), []) if definition_manager else []
+    out = {}
+    for name in names:
+        text = str(name).strip()
+        if text:
+            out[text.lower()] = text
+    return out
+
+
+def _select_existing_base_magnet_material(oProject):
+    available = _project_material_name_map(oProject)
     for material_name in [PREFERRED_MAGNET_MATERIAL, "NdFeB-N42SH", "NdFeB"]:
-        if _safe_call(lambda: app.materials.exists_material(material_name), False):
-            return material_name
+        matched = available.get(str(material_name).lower())
+        if matched:
+            return matched
     return PREFERRED_MAGNET_MATERIAL
 
 
-def _ensure_oriented_material(app, base_material_name, new_name, direction, logger):
-    material = _safe_call(lambda: app.materials.exists_material(new_name), False)
-    created = False
-    if not material:
-        material = app.materials.duplicate_material(base_material_name, name=new_name)
-        created = bool(material)
-        if created:
-            logger.log("Duplicated material %s -> %s" % (base_material_name, new_name))
-    if not material:
-        raise RuntimeError("Could not duplicate base material %s as %s" % (base_material_name, new_name))
-    coercivity = _safe_call(lambda: material.get_magnetic_coercivity(), False)
-    if coercivity:
-        magnitude = str(coercivity[0]).replace("A_per_meter", "").strip()
-    else:
-        magnitude = "0"
-    material.set_magnetic_coercivity(magnitude, direction[0], direction[1], direction[2])
-    logger.log("Set coercivity for %s to magnitude=%s direction=%s" % (new_name, magnitude, direction))
-    return {"created": created, "material_name": new_name, "magnitude": magnitude, "direction": direction}
+def _change_geometry_material(oEditor, object_names, material_name, logger):
+    names = [str(name) for name in object_names if str(name).strip()]
+    if not names:
+        return False
+    try:
+        oEditor.ChangeProperty(
+            [
+                "NAME:AllTabs",
+                [
+                    "NAME:Geometry3DAttributeTab",
+                    ["NAME:PropServers"] + names,
+                    ["NAME:ChangedProps", ["NAME:Material", "Value:=", "\"%s\"" % material_name]]
+                ]
+            ]
+        )
+        logger.log("Assigned material %s to %d objects" % (material_name, len(names)))
+        return True
+    except Exception:
+        logger.log("Could not assign material %s to objects: %s" % (material_name, ", ".join(names)))
+        logger.log(traceback.format_exc())
+        return False
 
 
-def assign_axial_magnet_materials(oDesktop, oProject, oDesign, magnet_objects, logger):
-    from sector3d_aedt import attach_maxwell3d
-
+def assign_axial_magnet_materials(oProject, oDesign, magnet_objects, logger):
     if not magnet_objects:
         return {"assigned_ok": False, "results": [], "blocking_issues": ["No magnet objects were generated."]}
 
-    app = attach_maxwell3d(oDesktop, oProject, oDesign, logger)
-    object_names = [str(name) for name in _safe_call(lambda: list(app.modeler.object_names), [])]
-    base_material_name = _select_existing_base_magnet_material(app)
-    material_cache = {}
+    oEditor = _modeler(oDesign)
+    object_names = _list_auto_objects(oEditor)
+    project_materials = _project_material_name_map(oProject)
+    base_material_name = _select_existing_base_magnet_material(oProject)
     results = []
     blocking_issues = []
+    grouped = {}
+    for item in magnet_objects:
+        direction = tuple(item.get("direction", (0, 0, 0)))
+        material_name = "%sPM_Axial_%sZ" % (AUTO3D_PREFIX, "Plus" if direction[2] >= 0 else "Minus")
+        grouped.setdefault(material_name, []).append(item["name"])
+
+    for material_name, names in grouped.items():
+        if str(material_name).lower() not in project_materials:
+            blocking_issues.append(
+                "Missing project material definition %s. Recreate the oriented magnet materials before solving the 3D model."
+                % material_name
+            )
 
     for item in magnet_objects:
         object_name = item["name"]
@@ -680,34 +769,32 @@ def assign_axial_magnet_materials(oDesktop, oProject, oDesign, magnet_objects, l
             "object_name": object_name,
             "direction": list(direction),
             "material_name": material_name,
+            "base_material_name": base_material_name,
             "assigned": False,
             "details": ""
         }
         if object_name not in object_names:
             result["details"] = "object not found"
             blocking_issues.append("Missing required magnet object %s" % object_name)
-            results.append(result)
-            continue
-        try:
-            if material_name not in material_cache:
-                material_cache[material_name] = _ensure_oriented_material(
-                    app,
-                    base_material_name,
-                    material_name,
-                    direction,
-                    logger
-                )
-            app.modeler[object_name].material_name = material_name
-            result["assigned"] = True
-            result["details"] = "oriented axial magnet material assigned"
-        except Exception as exc:
-            result["details"] = str(exc)
-            blocking_issues.append("Could not assign axial magnet orientation to %s" % object_name)
+        elif str(material_name).lower() not in project_materials:
+            result["details"] = "required oriented material is missing from project definitions"
+        else:
+            result["details"] = "pending grouped material assignment"
         results.append(result)
+
+    if not blocking_issues:
+        for material_name, names in grouped.items():
+            if not _change_geometry_material(oEditor, names, project_materials[str(material_name).lower()], logger):
+                blocking_issues.append("Could not assign axial magnet orientation material %s" % material_name)
+        if not blocking_issues:
+            for result in results:
+                result["assigned"] = True
+                result["details"] = "oriented axial magnet material assigned via native geometry attributes"
 
     return {
         "assigned_ok": not bool(blocking_issues),
         "base_material_name": base_material_name,
+        "project_materials_seen": sorted(project_materials.values()),
         "results": results,
         "blocking_issues": blocking_issues
     }
@@ -725,6 +812,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     created = []
     magnet_objects = []
+    phase_belts = _phase_belt_objects_definition(case_row)
     existing = _list_auto_objects(oEditor)
     for item in _sector3d_objects_definition():
         if (item["name"] in existing) and (not cleanup_first):
@@ -739,6 +827,29 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
                 item["outer_radius"],
                 item["inner_radius"],
                 item["height"],
+                item["materials"],
+                item["color"],
+                item["transparency"],
+                item["solve_inside"],
+                logger
+            )
+        )
+
+    for item in phase_belts["objects"]:
+        if (item["name"] in existing) and (not cleanup_first):
+            logger.log("Reusing existing phase-belt conductor %s" % item["name"])
+            created.append({"name": item["name"], "material": "existing"})
+            continue
+        created.append(
+            _create_annular_sector_with_fallbacks(
+                oEditor,
+                item["name"],
+                item["z_start"],
+                item["inner_radius"],
+                item["outer_radius"],
+                item["height"],
+                item["start_angle_deg"],
+                item["sweep_angle_deg"],
                 item["materials"],
                 item["color"],
                 item["transparency"],
@@ -799,7 +910,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     verification_cfg = contract["verification"]
     required_reports = _required_report_names(project_cfg)
     manual_actions = [
-        "Replace the double-sided flat-copper envelope placeholders with phase-assigned coil sectors or macro-coils before trusting torque or back-EMF results",
+        "Review the generated Auto3D_Phase*_Top/Bottom segmented conductors against the intended hybrid winding path before trusting torque or back-EMF results",
         "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign %s boundaries on the cut faces named %s and %s" % (
             boundary_cfg.get("periodic_strategy", "master_slave"),
             boundary_cfg.get("master_face_name", "Auto3D_Periodic_Master"),
@@ -817,7 +928,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "Create the required named reports: %s" % ", ".join(required_reports),
         "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
         "Review the surrounding air region after sector cutting. A coreless stator spreads flux more broadly than an iron-core machine, so region padding and cut-face placement must be checked before trusting back-EMF, inductance, or leakage results",
-        "Treat Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top as envelope macro-coils only. Before any final signoff, replace them with winding segmentation that preserves phase periodicity and the real flat-copper current path",
+        "The generated Auto3D_Phase*_Top/Bottom phase-belt solids are a segmented macro-coil truth model, not a finished manufacturable winding. Before final signoff, add explicit crossover/return/interconnect geometry that preserves the chosen hybrid current path.",
         "Keep the rigid PCB carrier as a non-magnetic support/interconnect body, not as the main active conductor, to stay aligned with the selected hybrid route and the cited PCB AFPM literature",
         "Add an inductance extraction path for `%s` using flux linkage or magnetic energy, then compare the result against the target range %.3f to %.3f mH" % (
             project_cfg.get("reports", {}).get("inductance_phase_a", "Inductance_PhaseA"),
@@ -835,10 +946,10 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     magnet_materials = [created_by_name.get(item["name"], "") for item in magnet_objects]
     support_material = created_by_name.get("%sStatorSupport" % AUTO3D_PREFIX, "")
-    copper_materials = [
-        created_by_name.get("%sFlatCopper_Bottom" % AUTO3D_PREFIX, ""),
-        created_by_name.get("%sFlatCopper_Top" % AUTO3D_PREFIX, "")
-    ]
+    phase_object_names = []
+    for names in phase_belts["phase_groups"].values():
+        phase_object_names.extend(names)
+    copper_materials = [created_by_name.get(name, "") for name in phase_object_names]
 
     if any([str(material_name).lower() == "vacuum" for material_name in magnet_materials]):
         item = "Permanent magnets fell back to vacuum. Replace the generated Auto3D_Magnet_* pole segments with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
@@ -855,7 +966,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         )
 
     if any([str(material_name).lower() == "vacuum" for material_name in copper_materials]):
-        item = "At least one flat-copper face fell back to vacuum. Replace Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top with copper before trying to define current-carrying conductors."
+        item = "At least one segmented flat-copper phase-belt conductor fell back to vacuum. Replace the Auto3D_Phase* conductor solids with copper before trying to define current-carrying conductors."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
     if len(magnet_objects) < 2:
@@ -863,8 +974,12 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
     expected_copper_faces = max(1, int(winding_cfg.get("active_conductor_face_count", flat_copper_active_face_count(project_cfg))))
-    if len([name for name in ["%sFlatCopper_Bottom" % AUTO3D_PREFIX, "%sFlatCopper_Top" % AUTO3D_PREFIX] if created_by_name.get(name, "")]) < expected_copper_faces:
-        item = "The scaffold did not create the expected separated flat-copper face bodies for the hybrid stator."
+    existing_phase_faces = {}
+    for item in phase_belts["objects"]:
+        if created_by_name.get(item["name"], ""):
+            existing_phase_faces[item["face_label"]] = True
+    if len(existing_phase_faces) < expected_copper_faces:
+        item = "The scaffold did not create the expected separated double-sided phase-belt conductors for the hybrid stator."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
     path_capacity = physical_parallel_path_capacity(project_cfg)
@@ -888,7 +1003,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         )
     if coreless_cfg.get("macro_coil_is_envelope_model_only", False):
         warnings.append(
-            "Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top are only envelope conductor models. They are acceptable for early correlation, but AC loss, current crowding, and periodic winding legality require a more detailed conductor layout."
+            "The conductor model is still a macro-coil abstraction. Even with discrete phase belts, AC loss, current crowding, and the exact hybrid return/interconnect path still require a more detailed conductor layout."
         )
     if winding_cfg.get("require_support_and_conductor_separation", False):
         warnings.append(
@@ -934,6 +1049,11 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "deleted_objects": deleted,
         "created_objects": created,
         "magnet_objects": magnet_objects,
+        "phase_groups": phase_belts["phase_groups"],
+        "phase_belt_segment_count": phase_belts["segment_count"],
+        "phase_belt_angle_deg": phase_belts["phase_belt_angle_deg"],
+        "phase_belt_gap_deg": phase_belts["phase_belt_gap_deg"],
+        "phase_segment_angle_deg": phase_belts["phase_segment_angle_deg"],
         "scaffold_variables": scaffold_vars,
         "physics_contract": contract,
         "literature_basis": literature_basis(),
@@ -964,7 +1084,7 @@ def ensure_sector_3d_design(oProject, oDesign, project_cfg, case_row, logger):
             "blocking_issues": [],
             "validation_ready_for_template": False,
             "warnings": [
-                "Existing Sector3D geometry was reused. Re-run the dedicated 3D scaffold build if the coreless contract, sector periodicity, or conductor-envelope assumptions have changed."
+                "Existing Sector3D geometry was reused. Re-run the dedicated 3D scaffold build if the coreless contract, sector periodicity, or segmented-conductor assumptions have changed."
             ],
             "manual_actions": [
                 "Confirm that the reused geometry still satisfies the current coreless contract before launching validation."
