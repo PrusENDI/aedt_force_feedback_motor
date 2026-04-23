@@ -769,11 +769,19 @@ def waveform_stats(path):
 
 
 def save_project(oProject, logger):
+    result = {
+        "saved": False,
+        "error": ""
+    }
     try:
         oProject.Save()
         logger.log("Project saved")
-    except Exception:
+        result["saved"] = True
+    except Exception as exc:
         logger.log("Project save failed")
+        logger.log(traceback.format_exc())
+        result["error"] = str(exc)
+    return result
 
 
 def close_project(oDesktop, oProject, logger):

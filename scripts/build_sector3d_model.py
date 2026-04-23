@@ -126,6 +126,18 @@ def _write_markdown(path, summary):
         if key in summary.get("geometry_sanity", {}):
             lines.append("- %s: `%s`" % (key, summary["geometry_sanity"][key]))
     lines.append("")
+    lines.append("## Save Status")
+    lines.append("")
+    save_status = summary.get("project_save_status", {})
+    for key in ["after_geometry_build", "after_magnet_assignment"]:
+        item = save_status.get(key, {})
+        lines.append("- %s.saved: `%s`" % (key, item.get("saved", False)))
+        if item.get("error"):
+            lines.append("- %s.error: `%s`" % (key, item.get("error", "")))
+    template_copy = save_status.get("template_copy", {})
+    lines.append("- template_copy.saved_template_path: `%s`" % template_copy.get("saved_template_path", ""))
+    lines.append("- template_copy.backup_copy_ok: `%s`" % template_copy.get("backup_copy_ok", False))
+    lines.append("")
     lines.append("## Physics Contract")
     lines.append("")
     contract = summary.get("physics_contract", {})
@@ -249,7 +261,7 @@ def main():
     baseline = _baseline_variables(project_cfg, search_cfg)
     apply_variables(oDesign, baseline, logger)
     build_result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, baseline, logger, cleanup_first=True)
-    save_project(oProject, logger)
+    geometry_save_status = save_project(oProject, logger)
     magnet_assignment = assign_axial_magnet_materials(
         oDesktop,
         oProject,
@@ -257,13 +269,22 @@ def main():
         build_result.get("magnet_objects", []),
         logger
     )
-    save_project(oProject, logger)
+    magnet_save_status = save_project(oProject, logger)
     save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
 
     baseline_blocking = list(build_result.get("baseline_blocking_issues", []))
     blocking = list(build_result.get("blocking_issues", []))
     baseline_blocking.extend(magnet_assignment.get("blocking_issues", []))
     blocking.extend(magnet_assignment.get("blocking_issues", []))
+    if not geometry_save_status.get("saved", False):
+        baseline_blocking.append("AEDT could not save the project immediately after geometry build.")
+        blocking.append("AEDT could not save the project immediately after geometry build.")
+    if not magnet_save_status.get("saved", False):
+        baseline_blocking.append("AEDT could not save the project after axial magnet material assignment.")
+        blocking.append("AEDT could not save the project after axial magnet material assignment.")
+    if not save_result.get("saved_template_path"):
+        baseline_blocking.append("The sector 3D template could not be saved to the canonical template path.")
+        blocking.append("The sector 3D template could not be saved to the canonical template path.")
 
     summary = {
         "timestamp": timestamp_string(),
@@ -286,6 +307,11 @@ def main():
         "baseline_ready_for_solve": bool(build_result.get("baseline_ready_for_solve", False)) and bool(magnet_assignment.get("assigned_ok", False)),
         "physics_ready_for_validation": (not bool(blocking)) and bool(magnet_assignment.get("assigned_ok", False)),
         "manual_actions": build_result.get("manual_actions", []),
+        "project_save_status": {
+            "after_geometry_build": geometry_save_status,
+            "after_magnet_assignment": magnet_save_status,
+            "template_copy": save_result
+        },
         "saved_template_path": save_result.get("saved_template_path", ""),
         "backup_copy_path": save_result.get("backup_copy_path", "")
     }

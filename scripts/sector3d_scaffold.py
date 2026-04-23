@@ -256,6 +256,21 @@ def _create_rectangle(oEditor, name, x_start, y_start, z_start, width, height, a
     )
 
 
+def _create_box(oEditor, name, x_position, y_position, z_position, x_size, y_size, z_size, material, color, transparency, solve_inside):
+    return oEditor.CreateBox(
+        [
+            "NAME:BoxParameters",
+            "XPosition:=", x_position,
+            "YPosition:=", y_position,
+            "ZPosition:=", z_position,
+            "XSize:=", x_size,
+            "YSize:=", y_size,
+            "ZSize:=", z_size
+        ],
+        _solid_attributes(name, material, color, transparency, solve_inside)
+    )
+
+
 def _create_cylinder_with_fallbacks(oEditor, name, z_start, radius, height, materials, color, transparency, solve_inside, logger):
     last_error = None
     for material in materials:
@@ -383,38 +398,65 @@ def _create_annular_sector_with_fallbacks(
     solve_inside,
     logger
 ):
-    radial_span = "((%s)-(%s))" % (outer_radius, inner_radius)
-    last_error = None
-    for material in materials:
-        try:
-            _create_rectangle(
+    try:
+        sweep = float(sweep_angle_deg)
+        start = float(start_angle_deg)
+        if sweep <= 0.0:
+            raise RuntimeError("Non-positive sector sweep is invalid for %s" % name)
+        if sweep >= 180.0:
+            raise RuntimeError("Sector sweep %.6gdeg is too large for stable half-space trimming of %s" % (sweep, name))
+
+        sector = _create_annulus_with_fallbacks(
+            oEditor,
+            name,
+            z_start,
+            outer_radius,
+            inner_radius,
+            height,
+            materials,
+            color,
+            transparency,
+            solve_inside,
+            logger
+        )
+
+        end = start + sweep
+        keep_from_start_angle = start + 90.0
+        keep_to_end_angle = end - 90.0
+        cutter_specs = [
+            ("%s_TrimStart" % name, keep_from_start_angle),
+            ("%s_TrimEnd" % name, keep_to_end_angle)
+        ]
+        for cutter_name, rotation_deg in cutter_specs:
+            _create_box(
                 oEditor,
-                name,
-                inner_radius,
-                "0mm",
-                z_start,
-                radial_span,
-                height,
-                "Y",
-                material,
-                color,
-                transparency,
-                solve_inside
+                cutter_name,
+                "-2*(%s)" % outer_radius,
+                "-2*(%s)" % outer_radius,
+                "((%s)-0.2mm)" % z_start,
+                "2*(%s)" % outer_radius,
+                "4*(%s)" % outer_radius,
+                "((%s)+0.4mm)" % height,
+                "vacuum",
+                "(240 240 240)",
+                0.96,
+                True
             )
-            if not _sweep_around_axis(oEditor, name, "Z", "%.12gdeg" % sweep_angle_deg, logger):
-                raise RuntimeError("Could not sweep sector solid %s" % name)
-            if abs(float(start_angle_deg)) > 1e-9:
-                if not _rotate(oEditor, name, "Z", "%.12gdeg" % start_angle_deg, logger):
-                    raise RuntimeError("Could not rotate sector solid %s" % name)
-            logger.log("Created %s as annular sector with material %s" % (name, material))
-            return {"name": name, "material": material}
-        except Exception as exc:
-            last_error = exc
-            logger.log("Could not create annular sector %s with material %s" % (name, material))
-            logger.log(traceback.format_exc())
-    if last_error:
-        raise last_error
-    raise RuntimeError("Could not create annular sector %s" % name)
+            if abs(rotation_deg) > 1e-9:
+                if not _rotate(oEditor, cutter_name, "Z", "%.12gdeg" % rotation_deg, logger):
+                    raise RuntimeError("Could not rotate trimming cutter %s" % cutter_name)
+            if not _subtract(oEditor, name, cutter_name, logger):
+                raise RuntimeError("Could not trim annular sector %s using %s" % (name, cutter_name))
+
+        logger.log(
+            "Created %s as annular sector by trimming an axial annulus between %.6gdeg and %.6gdeg"
+            % (name, start, end)
+        )
+        return sector
+    except Exception:
+        logger.log("Could not create annular sector %s" % name)
+        logger.log(traceback.format_exc())
+        raise
 
 
 def _create_region(oEditor, name, padding_expr, logger):
