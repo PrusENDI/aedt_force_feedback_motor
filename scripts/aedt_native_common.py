@@ -318,14 +318,30 @@ def copy_template_if_needed(template_path, working_path, logger):
 
 def open_or_create_project(oDesktop, working_path, logger):
     project_name = os.path.splitext(os.path.basename(working_path))[0]
-    if os.path.isfile(working_path):
-        oDesktop.OpenProject(working_path)
-        logger.log("Opened project: %s" % working_path)
+    existing_names = []
+    try:
+        existing_names = [str(name) for name in list(oDesktop.GetProjectList())]
+    except Exception:
+        existing_names = []
+    if project_name in existing_names:
         try:
-            return oDesktop.SetActiveProject(project_name)
+            oProject = oDesktop.SetActiveProject(project_name)
+            if oProject:
+                logger.log("Reused already-open project: %s" % project_name)
+                return oProject
         except Exception:
             logger.exception()
+    if os.path.isfile(working_path):
+        try:
+            oDesktop.OpenProject(working_path)
+            logger.log("Opened project: %s" % working_path)
+            return oDesktop.SetActiveProject(project_name)
+        except Exception:
+            logger.log("OpenProject failed for %s; attempting blank-project fallback" % working_path)
+            logger.exception()
     oProject = oDesktop.NewProject()
+    if not oProject:
+        raise RuntimeError("Could not create a new AEDT project for %s" % working_path)
     oProject.SaveAs(working_path, True)
     logger.log("Created new project: %s" % working_path)
     return oProject

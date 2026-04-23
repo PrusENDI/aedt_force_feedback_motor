@@ -3,6 +3,10 @@ from __future__ import print_function
 import traceback
 
 from aedt_native_common import apply_variables
+from winding_geometry import flat_copper_active_face_count
+from winding_geometry import flat_copper_face_pack_height_mm
+from winding_geometry import flat_copper_layers_per_face
+from winding_geometry import physical_parallel_path_capacity
 
 
 AUTO3D_PREFIX = "Auto3D_"
@@ -57,21 +61,24 @@ def scaffold_variables(project_cfg):
         "sector_start_angle_deg": "-sector_angle_deg/2",
         "auto3d_pole_pitch_deg": "360deg/pole_count",
         "auto3d_magnet_arc_deg": "auto3d_pole_pitch_deg*pole_arc_ratio",
+        "auto3d_flat_copper_face_count": str(max(1, int(sector_cfg.get("winding", {}).get("active_conductor_face_count", flat_copper_active_face_count(project_cfg))))),
+        "auto3d_flat_copper_layers_per_face": str(flat_copper_layers_per_face(project_cfg)),
         "auto3d_phase_belt_count": "3*pole_count",
         "auto3d_phase_belt_angle_deg": "360deg/auto3d_phase_belt_count",
         "auto3d_phase_belt_gap_deg": "auto3d_phase_belt_angle_deg*0.01",
         "auto3d_phase_segment_angle_deg": "auto3d_phase_belt_angle_deg-auto3d_phase_belt_gap_deg",
         "auto3d_region_padding_mm": "%.6gmm + %.6g*airgap_mm" % (padding_mm, padding_airgap_multiplier),
-        "auto3d_flat_copper_pack_height_mm": "conductor_thickness_mm*parallel_strands + flat_copper_interlayer_insulation_mm*(parallel_strands-1) + flat_copper_bondline_axial_build_mm",
-        "auto3d_stator_axial_build_mm": "stator_support_thickness_mm + auto3d_flat_copper_pack_height_mm",
+        "auto3d_flat_copper_face_pack_height_mm": "conductor_thickness_mm*auto3d_flat_copper_layers_per_face + flat_copper_interlayer_insulation_mm*(auto3d_flat_copper_layers_per_face-1) + flat_copper_face_bondline_mm",
+        "auto3d_stator_axial_build_mm": "stator_support_thickness_mm + auto3d_flat_copper_face_count*auto3d_flat_copper_face_pack_height_mm",
         "auto3d_flat_copper_inner_radius_mm": "coil_mean_radius_mm - coil_radial_span_mm/2",
         "auto3d_flat_copper_outer_radius_mm": "coil_mean_radius_mm + coil_radial_span_mm/2",
         "auto3d_z_bottom_backiron_mm": "0mm",
         "auto3d_z_bottom_magnet_mm": "backiron_thickness_mm",
         "auto3d_z_lower_airgap_mm": "backiron_thickness_mm + magnet_thickness_mm",
-        "auto3d_z_stator_support_mm": "backiron_thickness_mm + magnet_thickness_mm + airgap_mm",
-        "auto3d_z_flat_copper_mm": "auto3d_z_stator_support_mm + stator_support_thickness_mm",
-        "auto3d_z_upper_airgap_mm": "auto3d_z_stator_support_mm + auto3d_stator_axial_build_mm",
+        "auto3d_z_lower_flat_copper_mm": "backiron_thickness_mm + magnet_thickness_mm + airgap_mm",
+        "auto3d_z_stator_support_mm": "auto3d_z_lower_flat_copper_mm + auto3d_flat_copper_face_pack_height_mm",
+        "auto3d_z_upper_flat_copper_mm": "auto3d_z_stator_support_mm + stator_support_thickness_mm",
+        "auto3d_z_upper_airgap_mm": "auto3d_z_upper_flat_copper_mm + auto3d_flat_copper_face_pack_height_mm",
         "auto3d_z_top_magnet_mm": "auto3d_z_upper_airgap_mm + airgap_mm",
         "auto3d_z_top_backiron_mm": "auto3d_z_top_magnet_mm + magnet_thickness_mm",
         "auto3d_total_stack_height_mm": "2*backiron_thickness_mm + 2*magnet_thickness_mm + 2*airgap_mm + auto3d_stator_axial_build_mm"
@@ -479,6 +486,17 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
+            "name": "%sFlatCopper_Bottom" % AUTO3D_PREFIX,
+            "z_start": "auto3d_z_lower_flat_copper_mm",
+            "outer_radius": "auto3d_flat_copper_outer_radius_mm",
+            "inner_radius": "auto3d_flat_copper_inner_radius_mm",
+            "height": "auto3d_flat_copper_face_pack_height_mm",
+            "materials": ["copper", "vacuum"],
+            "color": "(255 150 60)",
+            "transparency": 0.2,
+            "solve_inside": True
+        },
+        {
             "name": "%sStatorSupport" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_stator_support_mm",
             "outer_radius": "outer_radius_mm",
@@ -490,11 +508,11 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
-            "name": "%sFlatCopperPack" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_flat_copper_mm",
+            "name": "%sFlatCopper_Top" % AUTO3D_PREFIX,
+            "z_start": "auto3d_z_upper_flat_copper_mm",
             "outer_radius": "auto3d_flat_copper_outer_radius_mm",
             "inner_radius": "auto3d_flat_copper_inner_radius_mm",
-            "height": "auto3d_flat_copper_pack_height_mm",
+            "height": "auto3d_flat_copper_face_pack_height_mm",
             "materials": ["copper", "vacuum"],
             "color": "(255 150 60)",
             "transparency": 0.2,
@@ -739,7 +757,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     verification_cfg = contract["verification"]
     required_reports = _required_report_names(project_cfg)
     manual_actions = [
-        "Replace the full-annulus flat-copper placeholder with phase-assigned coil sectors or macro-coils before trusting torque or back-EMF results",
+        "Replace the double-sided flat-copper envelope placeholders with phase-assigned coil sectors or macro-coils before trusting torque or back-EMF results",
         "Cut the full-annulus scaffold into a periodic sector bounded by sector_angle_deg, then assign %s boundaries on the cut faces named %s and %s" % (
             boundary_cfg.get("periodic_strategy", "master_slave"),
             boundary_cfg.get("master_face_name", "Auto3D_Periodic_Master"),
@@ -757,7 +775,8 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         "Create the required named reports: %s" % ", ".join(required_reports),
         "Apply at least %s air-gap mesh layers and magnet-corner refinement before trusting ripple or cogging" % mesh_cfg.get("airgap_layer_count", 4),
         "Review the surrounding air region after sector cutting. A coreless stator spreads flux more broadly than an iron-core machine, so region padding and cut-face placement must be checked before trusting back-EMF, inductance, or leakage results",
-        "Treat Auto3D_FlatCopperPack as an envelope macro-coil only. Before any final signoff, replace it with winding segmentation that preserves phase periodicity and the real flat-copper current path",
+        "Treat Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top as envelope macro-coils only. Before any final signoff, replace them with winding segmentation that preserves phase periodicity and the real flat-copper current path",
+        "Keep the rigid PCB carrier as a non-magnetic support/interconnect body, not as the main active conductor, to stay aligned with the selected hybrid route and the cited PCB AFPM literature",
         "Add an inductance extraction path for `%s` using flux linkage or magnetic energy, then compare the result against the target range %.3f to %.3f mH" % (
             project_cfg.get("reports", {}).get("inductance_phase_a", "Inductance_PhaseA"),
             float(coreless_cfg.get("inductance_target_range_mh", [0.0, 0.0])[0]),
@@ -774,7 +793,10 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
 
     magnet_materials = [created_by_name.get(item["name"], "") for item in magnet_objects]
     support_material = created_by_name.get("%sStatorSupport" % AUTO3D_PREFIX, "")
-    copper_material = created_by_name.get("%sFlatCopperPack" % AUTO3D_PREFIX, "")
+    copper_materials = [
+        created_by_name.get("%sFlatCopper_Bottom" % AUTO3D_PREFIX, ""),
+        created_by_name.get("%sFlatCopper_Top" % AUTO3D_PREFIX, "")
+    ]
 
     if any([str(material_name).lower() == "vacuum" for material_name in magnet_materials]):
         item = "Permanent magnets fell back to vacuum. Replace the generated Auto3D_Magnet_* pole segments with NdFeB-N42SH or another permanent-magnet material before trusting flux, torque, or back-EMF."
@@ -790,12 +812,27 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             "The stator support fell back to vacuum. This is acceptable for an EM-first baseline, but replace it with FR4_epoxy or a structural support material before tolerance and thermal studies."
         )
 
-    if copper_material.lower() == "vacuum":
-        item = "The flat-copper pack fell back to vacuum. Replace Auto3D_FlatCopperPack with copper before trying to define current-carrying conductors."
+    if any([str(material_name).lower() == "vacuum" for material_name in copper_materials]):
+        item = "At least one flat-copper face fell back to vacuum. Replace Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top with copper before trying to define current-carrying conductors."
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
     if len(magnet_objects) < 2:
         item = "The scaffold did not create segmented rotor magnets, so it cannot represent alternating axial poles."
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
+    expected_copper_faces = max(1, int(winding_cfg.get("active_conductor_face_count", flat_copper_active_face_count(project_cfg))))
+    if len([name for name in ["%sFlatCopper_Bottom" % AUTO3D_PREFIX, "%sFlatCopper_Top" % AUTO3D_PREFIX] if created_by_name.get(name, "")]) < expected_copper_faces:
+        item = "The scaffold did not create the expected separated flat-copper face bodies for the hybrid stator."
+        blocking_issues.append(item)
+        baseline_blocking_issues.append(item)
+    path_capacity = physical_parallel_path_capacity(project_cfg)
+    actual_parallel_paths = float(case_row.get("parallel_strands", 1.0))
+    if actual_parallel_paths > path_capacity:
+        item = (
+            "parallel_strands=%.3f exceeds the configured physical flat-copper capacity %.3f. "
+            "The literature-backed hybrid contract keeps electrical parallel paths separate from axial stacking, so update the face/layer configuration before trusting this case."
+            % (actual_parallel_paths, path_capacity)
+        )
         blocking_issues.append(item)
         baseline_blocking_issues.append(item)
 
@@ -809,7 +846,11 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         )
     if coreless_cfg.get("macro_coil_is_envelope_model_only", False):
         warnings.append(
-            "Auto3D_FlatCopperPack is only an envelope conductor model. It is acceptable for early correlation, but AC loss, current crowding, and periodic winding legality require a more detailed conductor layout."
+            "Auto3D_FlatCopper_Bottom and Auto3D_FlatCopper_Top are only envelope conductor models. They are acceptable for early correlation, but AC loss, current crowding, and periodic winding legality require a more detailed conductor layout."
+        )
+    if winding_cfg.get("require_support_and_conductor_separation", False):
+        warnings.append(
+            "The active 3D contract requires the rigid PCB support and the flat-copper conductors to remain separate solids so the coreless hybrid stator does not collapse back into a single copper block surrogate."
         )
     if contract_layers.get("require_final_topology_correlation_before_signoff", False):
         warnings.append(

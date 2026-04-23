@@ -1,9 +1,12 @@
 from __future__ import print_function
 
+import importlib
 import os
 import time
 import traceback
 
+import aedt_native_common as aedt_native_common_module
+import agent_runtime as agent_runtime_module
 from aedt_native_common import Logger
 from aedt_native_common import initialize_aedt
 from agent_runtime import claim_next_command
@@ -20,10 +23,17 @@ from agent_runtime import timestamp_string
 from agent_runtime import update_running_command
 
 
+def _fresh_runtime_module():
+    importlib.reload(aedt_native_common_module)
+    importlib.reload(agent_runtime_module)
+    return agent_runtime_module
+
+
 def _dispatch_command(command, running_path, oDesktop, context, logger):
+    runtime_module = _fresh_runtime_module()
     action = command["action"]
     payload = command.get("payload", {})
-    progress_callback = make_progress_callback(context, oDesktop, running_path)
+    progress_callback = runtime_module.make_progress_callback(context, oDesktop, running_path)
     shared = {
         "oDesktop": oDesktop,
         "__agent_host_mode": True,
@@ -34,44 +44,44 @@ def _dispatch_command(command, running_path, oDesktop, context, logger):
     preparation = None
     if action == "probe_session":
         progress_callback("probe_session", "Capturing AEDT session snapshot")
-        snapshot = save_session_snapshot(oDesktop, context)
+        snapshot = runtime_module.save_session_snapshot(oDesktop, context)
         return {"command": command, "snapshot": snapshot}
     if action == "run_2d_screen":
         progress_callback("prepare_host", "Preparing active 2D project/design for queued work")
-        preparation = ensure_host_design_ready(oDesktop, context, command, logger)
+        preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
         progress_callback("run_2d_screen", "Starting queued 2D screening batch")
-        run_relative_workspace_script(context, os.path.join("scripts", "run_linear_2d_screen.py"), shared)
+        runtime_module.run_relative_workspace_script(context, os.path.join("scripts", "run_linear_2d_screen.py"), shared)
         return {
             "command": command,
             "result": "2d_screen_complete",
             "preparation": preparation,
-            "snapshot": session_snapshot(oDesktop, context)
+            "snapshot": runtime_module.session_snapshot(oDesktop, context)
         }
     if action == "run_3d_validation":
         progress_callback("prepare_host", "Preparing active 3D project/design for queued work")
-        preparation = ensure_host_design_ready(oDesktop, context, command, logger)
+        preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
         progress_callback("run_3d_validation", "Starting queued 3D validation batch")
-        run_relative_workspace_script(context, os.path.join("scripts", "run_sector_3d_validate.py"), shared)
+        runtime_module.run_relative_workspace_script(context, os.path.join("scripts", "run_sector_3d_validate.py"), shared)
         return {
             "command": command,
             "result": "3d_validation_complete",
             "preparation": preparation,
-            "snapshot": session_snapshot(oDesktop, context)
+            "snapshot": runtime_module.session_snapshot(oDesktop, context)
         }
     if action == "run_script":
         script_path = payload.get("script_path")
         if not script_path:
             raise ValueError("run_script requires payload.script_path")
         progress_callback("prepare_host", "Preparing active project/design for queued script", {"script_path": script_path})
-        preparation = ensure_host_design_ready(oDesktop, context, command, logger)
+        preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
         progress_callback("run_script", "Executing custom workspace script", {"script_path": script_path})
-        run_relative_workspace_script(context, script_path, shared)
+        runtime_module.run_relative_workspace_script(context, script_path, shared)
         return {
             "command": command,
             "result": "script_complete",
             "preparation": preparation,
             "script_path": script_path,
-            "snapshot": session_snapshot(oDesktop, context)
+            "snapshot": runtime_module.session_snapshot(oDesktop, context)
         }
     if action == "stop_worker":
         return {"command": command, "result": "stop_requested"}

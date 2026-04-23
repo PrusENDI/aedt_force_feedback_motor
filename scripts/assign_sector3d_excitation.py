@@ -136,7 +136,7 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
     winding = app.assign_winding(
         assignment=None,
         winding_type="Current",
-        is_solid=False,
+        is_solid=True,
         current=current_expression,
         parallel_branches=1,
         name=_winding_name(phase_name)
@@ -174,7 +174,7 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
     current_pos = app.assign_current(
         assignment=positive_objects,
         amplitude=current_expression,
-        solid=False,
+        solid=True,
         swap_direction=False,
         name="%s_Current_Pos" % phase_name
     )
@@ -183,7 +183,7 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
     current_neg = app.assign_current(
         assignment=negative_objects,
         amplitude=current_expression,
-        solid=False,
+        solid=True,
         swap_direction=True,
         name="%s_Current_Neg" % phase_name
     )

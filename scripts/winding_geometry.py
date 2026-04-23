@@ -6,9 +6,14 @@ HYBRID_DESIGN_KEYS = [
     "carrier_pcb_outer_copper_thickness_mm",
     "carrier_pcb_inner_copper_thickness_mm",
     "stator_support_thickness_mm",
+    "flat_copper_active_face_count",
+    "flat_copper_physical_layers_per_face",
+    "flat_copper_face_bondline_mm",
     "flat_copper_interlayer_insulation_mm",
     "flat_copper_bondline_axial_build_mm",
-    "flat_copper_utilization_factor"
+    "flat_copper_utilization_factor",
+    "carrier_pcb_role",
+    "flat_copper_stack_mode"
 ]
 
 
@@ -41,18 +46,60 @@ def parallel_paths(row):
     return max(1.0, _float(row, "parallel_strands", 1.0))
 
 
-def flat_copper_pack_height_mm(project_cfg, row):
+def _hybrid_cfg(project_cfg):
+    return project_cfg.get("hybrid_winding", {})
+
+
+def flat_copper_active_face_count(project_cfg):
+    hybrid = _hybrid_cfg(project_cfg)
+    return max(1, int(round(float(hybrid.get("flat_copper_active_face_count", 2)))))
+
+
+def flat_copper_layers_per_face(project_cfg):
+    hybrid = _hybrid_cfg(project_cfg)
+    return max(1, int(round(float(hybrid.get("flat_copper_physical_layers_per_face", 1)))))
+
+
+def flat_copper_face_bondline_mm(project_cfg):
+    hybrid = _hybrid_cfg(project_cfg)
+    return max(
+        0.0,
+        float(
+            hybrid.get(
+                "flat_copper_face_bondline_mm",
+                hybrid.get("flat_copper_bondline_axial_build_mm", 0.0)
+            )
+        )
+    )
+
+
+def physical_parallel_path_capacity(project_cfg):
+    if is_rigid_pcb_flat_copper_hybrid(project_cfg):
+        return float(flat_copper_active_face_count(project_cfg) * flat_copper_layers_per_face(project_cfg))
+    return 1.0
+
+
+def flat_copper_face_pack_height_mm(project_cfg, row):
     thickness_mm = max(0.01, _float(row, "conductor_thickness_mm", 0.01))
-    layers = parallel_paths(row)
-    hybrid = project_cfg.get("hybrid_winding", {})
-    insulation_mm = max(0.0, float(hybrid.get("flat_copper_interlayer_insulation_mm", 0.0)))
-    bondline_mm = max(0.0, float(hybrid.get("flat_copper_bondline_axial_build_mm", 0.0)))
-    return thickness_mm * layers + insulation_mm * max(layers - 1.0, 0.0) + bondline_mm
+    if is_rigid_pcb_flat_copper_hybrid(project_cfg):
+        hybrid = _hybrid_cfg(project_cfg)
+        layers = float(flat_copper_layers_per_face(project_cfg))
+        insulation_mm = max(0.0, float(hybrid.get("flat_copper_interlayer_insulation_mm", 0.0)))
+        bondline_mm = flat_copper_face_bondline_mm(project_cfg)
+        return thickness_mm * layers + insulation_mm * max(layers - 1.0, 0.0) + bondline_mm
+    return thickness_mm * parallel_paths(row)
+
+
+def flat_copper_pack_height_mm(project_cfg, row):
+    if is_rigid_pcb_flat_copper_hybrid(project_cfg):
+        return flat_copper_face_pack_height_mm(project_cfg, row) * float(flat_copper_active_face_count(project_cfg))
+    thickness_mm = max(0.01, _float(row, "conductor_thickness_mm", 0.01))
+    return thickness_mm * parallel_paths(row)
 
 
 def stator_axial_build_mm(project_cfg, row):
     if is_rigid_pcb_flat_copper_hybrid(project_cfg):
-        hybrid = project_cfg.get("hybrid_winding", {})
+        hybrid = _hybrid_cfg(project_cfg)
         support_mm = max(
             0.0,
             float(hybrid.get("stator_support_thickness_mm", hybrid.get("carrier_pcb_board_thickness_mm", 0.0)))

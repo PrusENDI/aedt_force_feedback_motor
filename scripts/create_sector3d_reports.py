@@ -197,8 +197,8 @@ def _candidate_contexts(report_key, object_names, winding_names):
             if name in object_names:
                 contexts.append(name)
     if report_key == "magnet_demag_margin":
-        for name in ["Auto3D_Magnet_Bottom", "Auto3D_Magnet_Top"]:
-            if name in object_names:
+        for name in object_names:
+            if str(name).startswith("Auto3D_Magnet_"):
                 contexts.append(name)
     return contexts
 

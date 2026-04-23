@@ -24,7 +24,10 @@ from sector3d_scaffold import assign_axial_magnet_materials
 from sector3d_scaffold import build_sector_3d_scaffold
 from sector3d_scaffold import literature_basis
 from sector3d_scaffold import physics_contract
+from winding_geometry import flat_copper_active_face_count
+from winding_geometry import flat_copper_face_pack_height_mm
 from winding_geometry import flat_copper_pack_height_mm
+from winding_geometry import physical_parallel_path_capacity
 from winding_geometry import stator_axial_build_mm
 
 
@@ -47,6 +50,7 @@ def _geometry_sanity(project_cfg, baseline):
     sector_pole_count = float(project_cfg["sector_3d"].get("sector_model_pole_count", 2))
     coreless_cfg = project_cfg["sector_3d"].get("coreless_physics", {})
     pole_arc_ratio = float(baseline["pole_arc_ratio"])
+    flat_copper_face_height = flat_copper_face_pack_height_mm(project_cfg, baseline)
     flat_copper_height = flat_copper_pack_height_mm(project_cfg, baseline)
     stator_height = stator_axial_build_mm(project_cfg, baseline)
     stack_height = 2.0 * float(baseline["backiron_thickness_mm"]) + 2.0 * float(baseline["magnet_thickness_mm"]) + 2.0 * float(baseline["airgap_mm"]) + stator_height
@@ -56,6 +60,8 @@ def _geometry_sanity(project_cfg, baseline):
     pole_pitch = 2.0 * math.pi * mean_radius / pole_count
     magnet_arc = pole_pitch * pole_arc_ratio
     region_padding = float(coreless_cfg.get("minimum_region_padding_mm", 8.0)) + float(coreless_cfg.get("region_padding_airgap_multiplier", 4.0)) * float(baseline["airgap_mm"])
+    path_capacity = physical_parallel_path_capacity(project_cfg)
+    actual_parallel_paths = float(baseline.get("parallel_strands", 1.0))
     return {
         "outer_radius_mm": round(outer_radius, 6),
         "inner_radius_mm": round(inner_radius, 6),
@@ -64,10 +70,15 @@ def _geometry_sanity(project_cfg, baseline):
         "magnet_arc_mm_est": round(magnet_arc, 6),
         "flat_copper_inner_radius_mm_est": round(flat_copper_inner, 6),
         "flat_copper_outer_radius_mm_est": round(flat_copper_outer, 6),
+        "flat_copper_face_count": int(flat_copper_active_face_count(project_cfg)),
+        "flat_copper_face_pack_height_mm_est": round(flat_copper_face_height, 6),
         "flat_copper_pack_height_mm_est": round(flat_copper_height, 6),
         "stator_axial_build_mm_est": round(stator_height, 6),
         "stack_height_mm_est": round(stack_height, 6),
-        "region_padding_mm_est": round(region_padding, 6)
+        "region_padding_mm_est": round(region_padding, 6),
+        "parallel_path_capacity_est": round(path_capacity, 6),
+        "parallel_paths_requested": round(actual_parallel_paths, 6),
+        "parallel_paths_within_physical_capacity": bool(actual_parallel_paths <= path_capacity)
     }
 
 
@@ -94,10 +105,15 @@ def _write_markdown(path, summary):
         "magnet_arc_mm_est",
         "flat_copper_inner_radius_mm_est",
         "flat_copper_outer_radius_mm_est",
+        "flat_copper_face_count",
+        "flat_copper_face_pack_height_mm_est",
         "flat_copper_pack_height_mm_est",
         "stator_axial_build_mm_est",
         "stack_height_mm_est",
-        "region_padding_mm_est"
+        "region_padding_mm_est",
+        "parallel_path_capacity_est",
+        "parallel_paths_requested",
+        "parallel_paths_within_physical_capacity"
     ]:
         if key in summary.get("geometry_sanity", {}):
             lines.append("- %s: `%s`" % (key, summary["geometry_sanity"][key]))
@@ -129,6 +145,10 @@ def _write_markdown(path, summary):
     lines.append("- motion_type: `%s`" % motion.get("motion_type", ""))
     lines.append("- motion_axis: `%s`" % motion.get("axis", ""))
     lines.append("- winding_connection: `%s`" % winding.get("connection", ""))
+    lines.append("- physical_conductor_model: `%s`" % winding.get("physical_conductor_model", ""))
+    lines.append("- active_conductor_face_count: `%s`" % winding.get("active_conductor_face_count", ""))
+    lines.append("- require_support_and_conductor_separation: `%s`" % winding.get("require_support_and_conductor_separation", ""))
+    lines.append("- parallel_paths_change_equivalent_area_only: `%s`" % winding.get("parallel_paths_change_equivalent_area_only", ""))
     lines.append("- loaded_current_mode: `%s`" % winding.get("loaded_current_mode", ""))
     lines.append("- airgap_layer_count: `%s`" % mesh.get("airgap_layer_count", ""))
     lines.append("- tolerance_cases: `%s`" % ", ".join(verification.get("tolerance_cases", [])))

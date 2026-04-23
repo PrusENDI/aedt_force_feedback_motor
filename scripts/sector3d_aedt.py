@@ -184,9 +184,13 @@ def ensure_macro_phase_belts(app, oDesign, logger):
             "phase_segment_angle_deg": design_variable_number(oDesign, "auto3d_phase_segment_angle_deg", 0.0)
         }
 
-    envelope_name = "Auto3D_FlatCopperPack"
-    if not object_exists(app, envelope_name):
-        raise RuntimeError("Missing %s; build the 3D scaffold before assigning macro phase belts" % envelope_name)
+    envelope_names = ["Auto3D_FlatCopper_Bottom", "Auto3D_FlatCopper_Top"]
+    missing_envelopes = [name for name in envelope_names if not object_exists(app, name)]
+    if missing_envelopes:
+        raise RuntimeError(
+            "Missing flat-copper envelope objects %s; build the 3D scaffold before assigning macro phase belts"
+            % ", ".join(missing_envelopes)
+        )
 
     pole_count = max(2, int(round(design_variable_number(oDesign, "pole_count", 24.0))))
     segment_count = max(6, pole_count * 3)
@@ -195,8 +199,11 @@ def ensure_macro_phase_belts(app, oDesign, logger):
     phase_segment_angle_deg = max(0.001, phase_belt_angle_deg - phase_belt_gap_deg)
     inner_radius = design_variable_number(oDesign, "auto3d_flat_copper_inner_radius_mm", 25.0)
     outer_radius = design_variable_number(oDesign, "auto3d_flat_copper_outer_radius_mm", inner_radius + 5.0)
-    z_start = design_variable_number(oDesign, "auto3d_z_flat_copper_mm", 0.0)
-    height = design_variable_number(oDesign, "auto3d_flat_copper_pack_height_mm", 0.5)
+    face_specs = [
+        ("Bottom", design_variable_number(oDesign, "auto3d_z_lower_flat_copper_mm", 0.0)),
+        ("Top", design_variable_number(oDesign, "auto3d_z_upper_flat_copper_mm", 0.0))
+    ]
+    height = design_variable_number(oDesign, "auto3d_flat_copper_face_pack_height_mm", 0.5)
     radial_span = max(0.1, outer_radius - inner_radius)
 
     phase_groups = _phase_group_template()
@@ -204,34 +211,36 @@ def ensure_macro_phase_belts(app, oDesign, logger):
     deleted_objects = []
     for index in range(segment_count):
         phase_name, polarity = PHASE_BELT_SEQUENCE[index % len(PHASE_BELT_SEQUENCE)]
-        object_name = "Auto3D_%s_%s_%03d" % (
-            phase_name,
-            "Pos" if polarity == "Positive" else "Neg",
-            index + 1
-        )
-        rectangle = app.modeler.create_rectangle(
-            "XZ",
-            [inner_radius, 0.0, z_start],
-            [radial_span, height],
-            name=object_name,
-            material="copper"
-        )
-        if not rectangle:
-            raise RuntimeError("Could not create macro phase-belt rectangle %s" % object_name)
-        swept = rectangle.sweep_around_axis("Z", sweep_angle=phase_segment_angle_deg)
-        if not swept:
-            raise RuntimeError("Could not sweep macro phase-belt %s around Z" % object_name)
-        rotated = app.modeler[object_name].rotate("Z", angle=(index * phase_belt_angle_deg) + 0.5 * phase_belt_gap_deg, units="deg")
-        if not rotated:
-            raise RuntimeError("Could not rotate macro phase-belt %s" % object_name)
-        phase_groups[(phase_name, polarity)].append(object_name)
-        created_objects.append(object_name)
+        for face_label, z_start in face_specs:
+            object_name = "Auto3D_%s_%s_%s_%03d" % (
+                phase_name,
+                "Pos" if polarity == "Positive" else "Neg",
+                face_label,
+                index + 1
+            )
+            rectangle = app.modeler.create_rectangle(
+                "XZ",
+                [inner_radius, 0.0, z_start],
+                [radial_span, height],
+                name=object_name,
+                material="copper"
+            )
+            if not rectangle:
+                raise RuntimeError("Could not create macro phase-belt rectangle %s" % object_name)
+            swept = rectangle.sweep_around_axis("Z", sweep_angle=phase_segment_angle_deg)
+            if not swept:
+                raise RuntimeError("Could not sweep macro phase-belt %s around Z" % object_name)
+            rotated = app.modeler[object_name].rotate("Z", angle=(index * phase_belt_angle_deg) + 0.5 * phase_belt_gap_deg, units="deg")
+            if not rotated:
+                raise RuntimeError("Could not rotate macro phase-belt %s" % object_name)
+            phase_groups[(phase_name, polarity)].append(object_name)
+            created_objects.append(object_name)
 
-    if delete_objects(app, [envelope_name], logger):
-        deleted_objects.append(envelope_name)
+    if delete_objects(app, envelope_names, logger):
+        deleted_objects.extend(envelope_names)
     logger.log(
-        "Created %d macro phase-belt solids with %.6f deg sweep and %.6f deg insulation gap"
-        % (segment_count, phase_segment_angle_deg, phase_belt_gap_deg)
+        "Created %d macro phase-belt solids across %d copper faces with %.6f deg sweep and %.6f deg insulation gap"
+        % (len(created_objects), len(face_specs), phase_segment_angle_deg, phase_belt_gap_deg)
     )
     return {
         "reused": False,
