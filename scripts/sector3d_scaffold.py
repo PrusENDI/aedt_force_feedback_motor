@@ -998,6 +998,70 @@ def _select_existing_base_magnet_material(oProject):
     return PREFERRED_MAGNET_MATERIAL
 
 
+def _attach_maxwell3d_for_materials(oProject, oDesign, logger):
+    from aedt_native_common import initialize_aedt
+    from sector3d_aedt import attach_maxwell3d
+
+    oDesktop = initialize_aedt(logger)
+    return attach_maxwell3d(oDesktop, oProject, oDesign, logger)
+
+
+def _ensure_oriented_material(app, base_material_name, new_name, direction, logger):
+    material = _safe_call(lambda: app.materials.exists_material(new_name), False)
+    created = False
+    if not material:
+        material = app.materials.duplicate_material(base_material_name, name=new_name)
+        created = bool(material)
+        if created:
+            logger.log("Duplicated material %s -> %s" % (base_material_name, new_name))
+
+    if not material:
+        raise RuntimeError("Could not duplicate base material %s as %s" % (base_material_name, new_name))
+
+    coercivity = _safe_call(lambda: material.get_magnetic_coercivity(), False)
+    if coercivity:
+        magnitude = str(coercivity[0]).replace("A_per_meter", "").strip()
+    else:
+        magnitude = "0"
+
+    try:
+        material.coordinate_system = "Cartesian"
+    except Exception:
+        pass
+    material.set_magnetic_coercivity(magnitude, direction[0], direction[1], direction[2])
+    logger.log("Set coercivity for %s to magnitude=%s direction=%s" % (new_name, magnitude, direction))
+    return {
+        "created": created,
+        "material_name": new_name,
+        "magnitude": magnitude,
+        "direction": list(direction)
+    }
+
+
+def _ensure_axial_oriented_materials(oProject, oDesign, base_material_name, logger, required_materials=None):
+    direction_map = {
+        "%sPM_Axial_PlusZ" % AUTO3D_PREFIX: (0, 0, 1),
+        "%sPM_Axial_MinusZ" % AUTO3D_PREFIX: (0, 0, -1)
+    }
+    required_names = []
+    for material_name in required_materials or direction_map.keys():
+        text = str(material_name).strip()
+        if text and (text not in required_names):
+            required_names.append(text)
+
+    app = _attach_maxwell3d_for_materials(oProject, oDesign, logger)
+    if not app:
+        raise RuntimeError("Could not attach Maxwell3d to create oriented axial magnet materials")
+
+    out = {}
+    for material_name in required_names:
+        direction = direction_map.get(material_name)
+        if not direction:
+            raise RuntimeError("Unsupported axial oriented material request %s" % material_name)
+        out[material_name] = _ensure_oriented_material(app, base_material_name, material_name, direction, logger)
+    return out
+
+
 def _change_geometry_material(oEditor, object_names, material_name, logger):
     names = [str(name) for name in object_names if str(name).strip()]
     if not names:
@@ -1031,13 +1095,36 @@ def assign_axial_magnet_materials(oProject, oDesign, magnet_objects, logger):
     base_material_name = _select_existing_base_magnet_material(oProject)
     results = []
     blocking_issues = []
+    ensured_materials = []
     grouped = {}
     for item in magnet_objects:
         direction = tuple(item.get("direction", (0, 0, 0)))
         material_name = "%sPM_Axial_%sZ" % (AUTO3D_PREFIX, "Plus" if direction[2] >= 0 else "Minus")
         grouped.setdefault(material_name, []).append(item["name"])
 
-    for material_name, names in grouped.items():
+    missing_materials = []
+    for material_name in grouped:
+        if str(material_name).lower() not in project_materials:
+            missing_materials.append(material_name)
+
+    if missing_materials:
+        try:
+            ensured = _ensure_axial_oriented_materials(
+                oProject,
+                oDesign,
+                base_material_name,
+                logger,
+                required_materials=missing_materials
+            )
+            ensured_materials = [ensured[name] for name in missing_materials if name in ensured]
+            project_materials = _project_material_name_map(oProject)
+        except Exception as exc:
+            logger.log("Could not ensure axial oriented magnet materials: %s" % exc)
+            logger.log(traceback.format_exc())
+            issue = "Could not create required project material definitions %s" % ", ".join(missing_materials)
+            blocking_issues.append("%s: %s" % (issue, exc))
+
+    for material_name in grouped:
         if str(material_name).lower() not in project_materials:
             blocking_issues.append(
                 "Missing project material definition %s. Recreate the oriented magnet materials before solving the 3D model."
@@ -1077,6 +1164,7 @@ def assign_axial_magnet_materials(oProject, oDesign, magnet_objects, logger):
     return {
         "assigned_ok": not bool(blocking_issues),
         "base_material_name": base_material_name,
+        "ensured_materials": ensured_materials,
         "project_materials_seen": sorted(project_materials.values()),
         "results": results,
         "blocking_issues": blocking_issues

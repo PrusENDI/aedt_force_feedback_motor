@@ -233,3 +233,34 @@ This file is the running journal for independent `Sector3D` iterations.
   - the build still blocks physics-ready solve signoff on missing oriented project materials `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`
 - next step:
   - restore or auto-generate the oriented axial PM project materials, then rerun the build/apply/solve chain to move from geometry/setup verification into real Maxwell transient validation
+
+## Iteration 13
+
+- goal: auto-generate the missing `Auto3D_PM_Axial_PlusZ` / `Auto3D_PM_Axial_MinusZ` project materials inside Maxwell and re-run the live build/apply/solve chain
+- changes made:
+  - updated `scripts/sector3d_scaffold.py` so `assign_axial_magnet_materials()` no longer treats missing oriented PM project materials as a hard stop without trying to create them
+  - added a local 3D material-attach path that reuses the active AEDT desktop, attaches Maxwell 3D through PyAEDT, duplicates the base NdFeB material into `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`, and sets the coercivity vector to `+Z` / `-Z`
+  - kept the final material assignment on the existing native geometry-attribute path, so the fix only changes how missing project materials are prepared
+- regression check before implementation:
+  - a focused one-off Python regression script against `assign_axial_magnet_materials()` failed while the project-material map only contained the base magnet material, proving the 3D entry point ignored the possibility of creating missing oriented materials
+- validation evidence after implementation:
+  - the same focused regression script passed after the `sector3d_scaffold.py` change
+  - `py_compile scripts/sector3d_scaffold.py scripts/build_sector3d_model.py scripts/winding_geometry.py` passed
+  - fresh live build at `2026-04-24T04:53:53Z` wrote `artifacts/sector3d_model_build.json` with:
+    - `magnet_assignment.assigned_ok = true`
+    - `magnet_assignment.ensured_materials` containing both `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`
+    - `baseline_ready_for_solve = true`
+    - `physics_ready_for_validation = true`
+  - `logs/build_sector3d_model_2026-04-24T04-53-07Z.log` recorded:
+    - `Duplicated material Magnet, permanent, Neodymium N42SH -> Auto3D_PM_Axial_PlusZ`
+    - `Duplicated material Magnet, permanent, Neodymium N42SH -> Auto3D_PM_Axial_MinusZ`
+    - `Assigned material Auto3D_PM_Axial_PlusZ to 2 objects`
+    - `Assigned material Auto3D_PM_Axial_MinusZ to 2 objects`
+  - fresh live transient setup at `2026-04-24T04:54:19Z` kept `artifacts/sector3d_transient_setup.json -> motion_assigned = true`
+- remaining limitation:
+  - the downstream solve-chain blocker has now moved out of the geometry/material path and into the Sector3D solve stack:
+    - `artifacts/sector3d_excitation_assignment.json` shows all three phases failed winding assignment and even the fallback direct-current boundaries were not created
+    - `logs/assign_sector3d_excitation_2026-04-24T04-54-45Z.log` then shows `Project save failed` via gRPC `Save`
+    - the following queued `solve_sector3d_setup` and `create_sector3d_reports` commands failed in host preparation because `OpenProject(working)` failed three times and the no-blank-fallback guard correctly refused to create a replacement project
+- next step:
+  - hand the chain to the Sector3D Solve owner to fix Maxwell 3D excitation boundary creation and the post-excitation save/open failure, then rerun the full `assign -> reports -> solve` validation on the now-correct oriented-PM geometry
