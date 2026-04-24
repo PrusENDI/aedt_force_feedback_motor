@@ -1,8 +1,11 @@
 from __future__ import print_function
 
+import traceback
+
 from bootstrap_linear2d_template import _normalize_design_name
 from bootstrap_linear2d_template import _safe_call
 from aedt_native_common import pyaedt_attach
+from aedt_native_common import save_project
 from sector3d_scaffold import _create_annular_sector_with_fallbacks
 from sector3d_scaffold import _modeler
 from sector3d_scaffold import _phase_belt_objects_definition
@@ -67,6 +70,31 @@ def attach_maxwell3d(oDesktop, oProject, oDesign, logger):
 
 def preferred_solution_name(setup_name):
     return "%s : Transient" % setup_name
+
+
+def save_sector3d_project(app, oProject, logger):
+    result = save_project(oProject, logger)
+    result["method"] = "native"
+    if result.get("saved", False):
+        return result
+
+    for method_name, callback in [
+        ("pyaedt_app", lambda: app.save_project()),
+        ("pyaedt_oproject", lambda: app.oproject.Save())
+    ]:
+        try:
+            callback()
+            logger.log("Project saved via %s fallback" % method_name)
+            return {
+                "saved": True,
+                "error": "",
+                "method": method_name
+            }
+        except Exception:
+            logger.log("Project save fallback failed via %s" % method_name)
+            logger.log(traceback.format_exc())
+
+    return result
 
 
 def list_object_names(app):

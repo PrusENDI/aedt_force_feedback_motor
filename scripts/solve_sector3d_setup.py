@@ -11,7 +11,6 @@ from aedt_native_common import initialize_aedt
 from aedt_native_common import load_json
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
-from aedt_native_common import save_project
 from aedt_native_common import timestamp_string
 from bootstrap_linear2d_template import _active_design
 from bootstrap_linear2d_template import _active_project
@@ -19,6 +18,7 @@ from bootstrap_linear2d_template import _normalize_design_name
 from bootstrap_linear2d_template import _safe_call
 from sector3d_aedt import attach_maxwell3d
 from sector3d_aedt import preferred_solution_name
+from sector3d_aedt import save_sector3d_project
 
 
 VERIFY_SIGNALS = [
@@ -51,6 +51,9 @@ def _write_markdown(path, summary):
     lines.append("- setup_name: `%s`" % summary.get("setup_name", ""))
     lines.append("- analyze_invoked: `%s`" % summary.get("analyze_invoked", False))
     lines.append("- solve_ok: `%s`" % summary.get("solve_ok", False))
+    lines.append("- save_ok: `%s`" % summary.get("save_ok", False))
+    lines.append("- save_method: `%s`" % summary.get("save_method", ""))
+    lines.append("- save_error: `%s`" % summary.get("save_error", ""))
     lines.append("")
     lines.append("## Probe Checks")
     lines.append("")
@@ -224,22 +227,28 @@ def main():
     if design_name != required_design_name:
         manual_actions.append("The active design name is %s; expected %s" % (design_name, required_design_name))
 
+    save_status = save_sector3d_project(app, oProject, logger)
+    if not save_status.get("saved", False):
+        manual_actions.append("Project save failed after solve/report export: %s" % save_status.get("error", ""))
+
     summary = {
         "timestamp": timestamp_string(),
         "workspace_root": root,
-        "project_name": _safe_call(lambda: oProject.GetName(), ""),
+        "project_name": _safe_call(lambda: oProject.GetName(), "") or _safe_call(lambda: app.project_name, ""),
         "design_name": design_name,
         "design_name_matches_required": (design_name == required_design_name),
         "setup_name": setup_name,
         "analyze_invoked": analyze_invoked,
         "solve_ok": solve_ok,
+        "save_ok": save_status.get("saved", False),
+        "save_method": save_status.get("method", ""),
+        "save_error": save_status.get("error", ""),
         "probe_results": probe_results,
         "report_exports": report_exports,
         "manual_actions": manual_actions,
         "error_messages": error_messages,
         "info_messages": info_messages
     }
-    save_project(oProject, logger)
     save_json(artifact_json, summary)
     _write_markdown(artifact_md, summary)
     logger.log("Wrote sector 3D solve status summary: %s" % artifact_json)

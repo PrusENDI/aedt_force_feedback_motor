@@ -319,6 +319,20 @@ def copy_template_if_needed(template_path, working_path, logger):
 
 def open_or_create_project(oDesktop, working_path, logger):
     project_name = os.path.splitext(os.path.basename(working_path))[0]
+    try:
+        oProject = oDesktop.GetActiveProject()
+        if oProject and str(oProject.GetName()) == project_name:
+            logger.log("Reused active project: %s" % project_name)
+            return oProject
+    except Exception:
+        pass
+    try:
+        oProject = oDesktop.SetActiveProject(project_name)
+        if oProject and str(oProject.GetName()) == project_name:
+            logger.log("Reused already-open project via SetActiveProject: %s" % project_name)
+            return oProject
+    except Exception:
+        pass
     existing_names = []
     try:
         existing_names = [str(name) for name in list(oDesktop.GetProjectList())]

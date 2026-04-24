@@ -10,7 +10,6 @@ from aedt_native_common import initialize_aedt
 from aedt_native_common import load_json
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
-from aedt_native_common import save_project
 from aedt_native_common import timestamp_string
 from bootstrap_linear2d_template import _active_design
 from bootstrap_linear2d_template import _active_project
@@ -20,6 +19,7 @@ from sector3d_aedt import attach_maxwell3d
 from sector3d_aedt import clean_list
 from sector3d_aedt import list_excitations_of_type
 from sector3d_aedt import list_object_names
+from sector3d_aedt import save_sector3d_project
 
 
 REPORT_MATCH_RULES = {
@@ -67,6 +67,9 @@ def _write_markdown(path, summary):
     lines.append("- design_name_matches_required: `%s`" % summary.get("design_name_matches_required", False))
     lines.append("- setup_name: `%s`" % summary.get("setup_name", ""))
     lines.append("- preferred_solution: `%s`" % summary.get("preferred_solution", ""))
+    lines.append("- save_ok: `%s`" % summary.get("save_ok", False))
+    lines.append("- save_method: `%s`" % summary.get("save_method", ""))
+    lines.append("- save_error: `%s`" % summary.get("save_error", ""))
     lines.append("")
     lines.append("## Report Results")
     lines.append("")
@@ -363,19 +366,25 @@ def main():
     if design_name != required_design_name:
         manual_actions.append("The active design name is %s; expected %s" % (design_name, required_design_name))
 
+    save_status = save_sector3d_project(app, oProject, logger)
+    if not save_status.get("saved", False):
+        manual_actions.append("Project save failed after report creation: %s" % save_status.get("error", ""))
+
     summary = {
         "timestamp": timestamp_string(),
         "workspace_root": root,
-        "project_name": _safe_call(lambda: oProject.GetName(), ""),
+        "project_name": _safe_call(lambda: oProject.GetName(), "") or _safe_call(lambda: app.project_name, ""),
         "design_name": design_name,
         "design_name_matches_required": (design_name == required_design_name),
         "setup_name": setup_name,
         "preferred_solution": _preferred_solution(app, setup_name, "Transient"),
+        "save_ok": save_status.get("saved", False),
+        "save_method": save_status.get("method", ""),
+        "save_error": save_status.get("error", ""),
         "available_report_types": available_report_types,
         "report_results": report_results,
         "manual_actions": manual_actions
     }
-    save_project(oProject, logger)
     save_json(artifact_json, summary)
     _write_markdown(artifact_md, summary)
     logger.log("Wrote sector 3D report creation summary: %s" % artifact_json)

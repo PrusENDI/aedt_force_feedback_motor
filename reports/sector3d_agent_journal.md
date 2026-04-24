@@ -264,3 +264,29 @@ This file is the running journal for independent `Sector3D` iterations.
     - the following queued `solve_sector3d_setup` and `create_sector3d_reports` commands failed in host preparation because `OpenProject(working)` failed three times and the no-blank-fallback guard correctly refused to create a replacement project
 - next step:
   - hand the chain to the Sector3D Solve owner to fix Maxwell 3D excitation boundary creation and the post-excitation save/open failure, then rerun the full `assign -> reports -> solve` validation on the now-correct oriented-PM geometry
+
+## Iteration 14
+
+- goal: make the Sector3D solve stack more Maxwell 3D compatible and separate script-side excitation bugs from host-side project-open failures
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` so each segmented radial phase-belt solid now resolves its inner and outer radial terminal faces before creating Maxwell 3D coil terminals or fallback current boundaries
+  - changed the 3D winding assignment so each belt object contributes a positive and a negative terminal on the proper conductor end faces instead of trying to bind a whole solid as one terminal
+  - added stronger traceback logging in the excitation script so future boundary failures keep the full Maxwell/PyAEDT context
+  - added `save_sector3d_project()` in `scripts/sector3d_aedt.py` and switched `assign_sector3d_excitation.py`, `create_sector3d_reports.py`, and `solve_sector3d_setup.py` to use the native save path first and then a PyAEDT project-save fallback
+  - updated `scripts/aedt_native_common.py -> open_or_create_project()` so the host tries `GetActiveProject()` and `SetActiveProject(project_name)` before attempting `OpenProject()` when the working project already exists
+- regression checks before and after implementation:
+  - one-off red/green regression for the new radial terminal-face selector in `assign_sector3d_excitation.py`; before the patch the helper did not exist, after the patch it correctly chose the minimum-radius and maximum-radius faces
+  - one-off red/green regression for `open_or_create_project()` with a fake AEDT desktop where `GetProjectList()` is empty but `GetActiveProject()` already matches `sector3d_working`; before the patch it still tried `OpenProject()`, after the patch it reused the active project
+- validation evidence after implementation:
+  - `py_compile` passed on `scripts/aedt_native_common.py`, `scripts/sector3d_scaffold.py`, `scripts/build_sector3d_model.py`, `scripts/winding_geometry.py`, `scripts/sector3d_aedt.py`, `scripts/assign_sector3d_excitation.py`, `scripts/create_sector3d_reports.py`, and `scripts/solve_sector3d_setup.py`
+  - queued `Queue-AssignSector3DExcitation.ps1` at `2026-04-24T05:26:58Z` and again at `2026-04-24T05:29:53Z`; both failed during host preparation before the excitation script body ran
+  - fresh `probe_session` queue run at `2026-04-24T05:30:41Z` succeeded but still reported `active_project = null` and `project_list = []`
+  - external workstation observation at the same time showed `ansysedt.exe` main window title `Ansys Electronics Desktop 2024 R1 - sector3d_working - Sector3D - 3D Modeler - [sector3d_working - Sector3D - Modeler]`, so the GUI still appears to have the project open while the in-AEDT host cannot see it through its current desktop object
+- interpretation:
+  - the solve-side code is now materially better aligned with Maxwell 3D radial-conductor excitation requirements
+  - the current live blocker is no longer just boundary creation; the in-AEDT host's desktop object has drifted into a state where it cannot report or reactivate the already-open `sector3d_working` project, so queued solve scripts never reach their actual logic
+- remaining limitation:
+  - there is no fresh post-patch `sector3d_excitation_assignment.json` yet because the host never entered `scripts/assign_sector3d_excitation.py` in this round
+  - until the host desktop state is refreshed, `assign -> reports -> solve` cannot be revalidated from the queue even though the script-side fixes are in place
+- next step:
+  - restart or reattach the in-AEDT host so the desktop object again reports the open `sector3d_working` project, then rerun `Queue-AssignSector3DExcitation.ps1`, `Queue-CreateSector3DReports.ps1`, and `Queue-SolveSector3DSetup.ps1`
