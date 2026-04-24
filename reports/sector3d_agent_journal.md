@@ -345,3 +345,32 @@ This file is the running journal for independent `Sector3D` iterations.
   - the new all-phase cache plus face/object current-variant retry has not yet been live-validated because this fresh host became unhealthy again after the failed save path
 - next step:
   - restart the in-AEDT host again and rerun `Queue-AssignSector3DExcitation.ps1` once more so the new all-phase cache and internal-conductor direct-current retry path can be live-validated before attempting reports/solve
+
+## Iteration 17
+
+- goal: live-validate the new all-phase terminal pre-cache plus `cached face -> cached object` direct-current retry path on a fresh host, without running reports or solve
+- changes made:
+  - no source-code changes this round; focused on fresh host validation only
+  - re-read the active git/config/physics-contract/journal/coordination state and confirmed the latest `assign_sector3d_excitation.py` patch was loaded before queueing the run
+  - reran `Queue-ProbeSession.ps1` at `2026-04-24T09:24:14Z` and confirmed the fresh host saw `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - reran `Queue-AssignSector3DExcitation.ps1` at `2026-04-24T09:24:44Z` and captured the first full live run of the new all-phase pre-cache branch
+- validation evidence:
+  - `runtime/heartbeat.json` at `2026-04-24T09:24:06Z` already showed `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - `runtime/last_result.json` finished at `2026-04-24T09:25:07Z` with `prepared = true`, `project_name = sector3d_working`, and then the same post-script heartbeat collapse back to `active_project = null`
+  - `logs/assign_sector3d_excitation_2026-04-24T09-24-46Z.log` now shows for all three phases:
+    - `AssignCoilTerminal` still fails first on the first positive terminal of each phase
+    - fallback direct current is attempted for `PhaseA`, `PhaseB`, and `PhaseC`, so the new all-phase pre-cache successfully removed the old `PhaseB/C -> GetObjectsInGroup` regression
+    - each fallback now records both retry branches in the same failure string:
+      - `PhaseA`: `face=5602 ... ; object=Auto3D_PhaseA_Pos_Bottom_001 ...`
+      - `PhaseB`: `face=6038 ... ; object=Auto3D_PhaseB_Pos_Bottom_003 ...`
+      - `PhaseC`: `face=6474 ... ; object=Auto3D_PhaseC_Pos_Bottom_005 ...`
+  - `artifacts/sector3d_excitation_assignment.json` at `2026-04-24T09:25:06Z` now records `used_fallback_current_boundaries = true` for all three phases and no longer records any `GetObjectsInGroup` terminal-discovery failure
+  - the same run still ends with `save_ok = false`, `save_error = Failed to execute gRPC AEDT command: Save`, and the host heartbeat again drops to `active_project = null`, `project_list = []`
+- interpretation:
+  - the new all-phase pre-cache patch is now live-validated: `PhaseB` and `PhaseC` no longer depend on a still-healthy modeler after `PhaseA` fails
+  - the current root blocker has narrowed further: Maxwell 3D is rejecting both excitation creation APIs for this geometry in this transient design
+    - `AssignCoilTerminal` fails on cached conductor end faces
+    - `AssignCurrent` also fails on both cached face and cached object retries
+  - the remaining live host-state loss is still downstream of the excitation/save failure, not upstream project opening
+- next step:
+  - investigate whether this `Transient` Maxwell 3D design requires a different excitation primitive for these segmented solids, or whether the conductor bodies must be rebuilt/flagged differently before `AssignCoilTerminal` / `AssignCurrent` will bind
