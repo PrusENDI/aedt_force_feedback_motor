@@ -212,6 +212,38 @@ def _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_ob
     return terminal_specs
 
 
+def _assign_current_boundary_with_variants(
+    app,
+    current_expression,
+    object_name,
+    face_id,
+    swap_direction,
+    boundary_name,
+):
+    attempts = [
+        ("face", [face_id], "face=%s" % face_id),
+        ("object", [object_name], "object=%s" % object_name),
+    ]
+    failures = []
+    for assignment_kind, assignment, description in attempts:
+        try:
+            current = app.assign_current(
+                assignment=assignment,
+                amplitude=current_expression,
+                solid=True,
+                swap_direction=swap_direction,
+                name=boundary_name,
+                excitation_model="Double Potentials",
+            )
+        except Exception as exc:
+            failures.append("%s (%s)" % (description, exc))
+            continue
+        if current:
+            return current, assignment_kind
+        failures.append("%s (returned no boundary object)" % description)
+    raise RuntimeError("; ".join(failures))
+
+
 def _assign_phase_with_winding_group(app, phase_name, current_expression, positive_objects, negative_objects, turns_per_phase, logger, terminal_specs=None):
     boundary_names = _phase_boundary_name_prefix(phase_name)
     total_objects = len(positive_objects) + len(negative_objects)
@@ -294,38 +326,49 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
     if terminal_specs is None:
         terminal_specs = _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_objects)
     face_assignments = list(terminal_specs)
+    assignment_modes = []
     positive_index = 0
     negative_index = 0
     for terminal_spec in terminal_specs:
         object_name = terminal_spec["object_name"]
         positive_index += 1
-        current = app.assign_current(
-            assignment=[terminal_spec["positive_face_id"]],
-            amplitude=current_expression,
-            solid=True,
-            swap_direction=False,
-            name="%s_Current_Pos_%03d" % (phase_name, positive_index)
+        current_name = "%s_Current_Pos_%03d" % (phase_name, positive_index)
+        current, assignment_mode = _assign_current_boundary_with_variants(
+            app,
+            current_expression,
+            object_name,
+            terminal_spec["positive_face_id"],
+            False,
+            current_name,
         )
-        if not current:
-            raise RuntimeError(
-                "Could not create fallback positive current on face %s for %s"
-                % (terminal_spec["positive_face_id"], object_name)
-            )
         current_names.append(current.name)
+        assignment_modes.append(
+            {
+                "boundary_name": current.name,
+                "mode": assignment_mode,
+                "polarity": "Positive",
+                "object_name": object_name,
+            }
+        )
         negative_index += 1
-        current = app.assign_current(
-            assignment=[terminal_spec["negative_face_id"]],
-            amplitude=current_expression,
-            solid=True,
-            swap_direction=True,
-            name="%s_Current_Neg_%03d" % (phase_name, negative_index)
+        current_name = "%s_Current_Neg_%03d" % (phase_name, negative_index)
+        current, assignment_mode = _assign_current_boundary_with_variants(
+            app,
+            current_expression,
+            object_name,
+            terminal_spec["negative_face_id"],
+            True,
+            current_name,
         )
-        if not current:
-            raise RuntimeError(
-                "Could not create fallback negative current on face %s for %s"
-                % (terminal_spec["negative_face_id"], object_name)
-            )
         current_names.append(current.name)
+        assignment_modes.append(
+            {
+                "boundary_name": current.name,
+                "mode": assignment_mode,
+                "polarity": "Negative",
+                "object_name": object_name,
+            }
+        )
     logger.log("Assigned fallback direct current boundaries for %s" % phase_name)
     return {
         "phase_name": phase_name,
@@ -336,9 +379,10 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
         "current_boundary_count": len(current_names),
         "current_boundary_names": current_names,
         "face_assignments": face_assignments,
+        "current_boundary_assignment_modes": assignment_modes,
         "positive_object_count": len(positive_objects),
         "negative_object_count": len(negative_objects),
-        "details": "segmented fallback direct current boundaries assigned on inner/outer conductor faces"
+        "details": "segmented fallback direct current boundaries assigned from cached terminal specs with internal-conductor current variants"
     }
 
 
@@ -364,10 +408,41 @@ def main():
     app = attach_maxwell3d(oDesktop, oProject, oDesign, logger)
     phase_belts = ensure_macro_phase_belts(app, oDesign, logger)
     turns_per_phase = design_variable_number(oDesign, "turns_per_phase", 1.0)
-
+    phase_inputs = []
     for phase_name in PHASE_NAMES:
         positive_objects = phase_belts["phase_groups"].get((phase_name, "Positive"), [])
         negative_objects = phase_belts["phase_groups"].get((phase_name, "Negative"), [])
+        phase_inputs.append(
+            {
+                "phase_name": phase_name,
+                "positive_objects": positive_objects,
+                "negative_objects": negative_objects,
+                "current_expression": _phase_expression(project_cfg, phase_name),
+            }
+        )
+
+    phase_terminal_specs = {}
+    phase_terminal_errors = {}
+    for phase_input in phase_inputs:
+        phase_name = phase_input["phase_name"]
+        positive_objects = phase_input["positive_objects"]
+        negative_objects = phase_input["negative_objects"]
+        if (not positive_objects) or (not negative_objects):
+            continue
+        try:
+            phase_terminal_specs[phase_name] = _collect_phase_terminal_specs(
+                app, phase_name, positive_objects, negative_objects
+            )
+        except Exception as terminal_exc:
+            phase_terminal_errors[phase_name] = {
+                "error": terminal_exc,
+                "traceback": traceback.format_exc(),
+            }
+
+    for phase_input in phase_inputs:
+        phase_name = phase_input["phase_name"]
+        positive_objects = phase_input["positive_objects"]
+        negative_objects = phase_input["negative_objects"]
         if (not positive_objects) or (not negative_objects):
             manual_actions.append("Missing positive/negative macro phase-belt objects for %s" % phase_name)
             winding_results.append(
@@ -381,13 +456,14 @@ def main():
                 }
             )
             continue
-        current_expression = _phase_expression(project_cfg, phase_name)
-        try:
-            terminal_specs = _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_objects)
-        except Exception as terminal_exc:
+        current_expression = phase_input["current_expression"]
+        terminal_specs = phase_terminal_specs.get(phase_name)
+        if terminal_specs is None:
+            terminal_error_info = phase_terminal_errors.get(phase_name, {})
+            terminal_exc = terminal_error_info.get("error")
             logger.log("Terminal-face discovery failed for %s" % phase_name)
             logger.log(str(terminal_exc))
-            logger.log(traceback.format_exc())
+            logger.log(terminal_error_info.get("traceback", ""))
             manual_actions.append("%s terminal-face discovery failed before excitation assignment" % phase_name)
             winding_results.append(
                 {

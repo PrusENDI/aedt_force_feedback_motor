@@ -312,3 +312,36 @@ This file is the running journal for independent `Sector3D` iterations.
   - the new cached-terminal fallback patch is in place, but it has not yet been live-validated on a fresh host because the host became unhealthy before a second excitation rerun could start
 - next step:
   - restart the in-AEDT host again and rerun `Queue-AssignSector3DExcitation.ps1` once more so the new cached-fallback path can be tested against the same fresh `sector3d_working` session before attempting reports/solve again
+
+## Iteration 16
+
+- goal: verify the cached-terminal fallback on a fresh host using only `Queue-AssignSector3DExcitation.ps1`, then tighten the fallback so one failed phase does not poison the remaining phase discovery path
+- changes made:
+  - re-read the active Sector3D contract/config/journal/coordination files and reran a fresh host probe before touching the excitation flow
+  - reran `Queue-ProbeSession.ps1` at `2026-04-24T09:15:19Z` and confirmed the fresh host still saw `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - reran `Queue-AssignSector3DExcitation.ps1` at `2026-04-24T09:15:43Z` and captured the next live failure signature from the fresh host
+  - updated `scripts/assign_sector3d_excitation.py` again so all three phases cache their terminal-face specs before any winding/current boundary is attempted
+  - updated the fallback direct-current path so each boundary now tries the cached terminal face first with the A-Phi internal-conductor excitation model and then retries on the cached object name if the face assignment is rejected
+- regression checks before and after implementation:
+  - one-off regression for `_assign_current_boundary_with_variants(...)`; after the patch it first tries the cached face with `excitation_model = "Double Potentials"` and then falls back to the cached object without re-querying the modeler
+- validation evidence after implementation:
+  - `runtime/heartbeat.json` at `2026-04-24T09:14:35Z` already showed `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - fresh queued `probe_session` at `2026-04-24T09:15:20Z` again showed `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - fresh queued `Queue-AssignSector3DExcitation.ps1` at `2026-04-24T09:15:43Z` entered the script body and completed at `2026-04-24T09:15:52Z`
+  - `logs/assign_sector3d_excitation_2026-04-24T09-15-45Z.log` shows:
+    - `AssignCoilTerminal` still fails first on `PhaseA_Coil_Pos_Terminal_001`
+    - the cached fallback now progresses past the old `GetObjectsInGroup` failure and reaches a real Maxwell `AssignCurrent` call on `PhaseA_Current_Pos_001`
+    - after `PhaseA` fails, `PhaseB` and `PhaseC` still lose terminal-face discovery to `GetObjectsInGroup`, proving per-phase caching was still too late in the prior patch
+  - `artifacts/sector3d_excitation_assignment.json` at `2026-04-24T09:15:52Z` records:
+    - `PhaseA -> used_fallback_current_boundaries = true`, `details = Failed to create boundary Current PhaseA_Current_Pos_001`
+    - `PhaseB` / `PhaseC -> terminal-face discovery failed before excitation assignment` with `details = Failed to execute gRPC AEDT command: GetObjectsInGroup`
+    - `save_ok = false`, `save_error = Failed to execute gRPC AEDT command: Save`
+  - the same excitation run again dropped the host heartbeat back to `active_project = null` and `project_list = []`
+  - `py_compile` passed on `scripts/assign_sector3d_excitation.py`, `scripts/create_sector3d_reports.py`, `scripts/solve_sector3d_setup.py`, `scripts/sector3d_aedt.py`, `scripts/aedt_native_common.py`, `scripts/sector3d_scaffold.py`, `scripts/build_sector3d_model.py`, and `scripts/winding_geometry.py`
+- interpretation:
+  - the cached-terminal fallback is now partially validated: it does survive the first `AssignCoilTerminal` failure well enough to attempt a real `AssignCurrent`
+  - the next Maxwell-side blocker is no longer modeler refresh on `PhaseA`; it is the current boundary creation itself
+  - the follow-on `PhaseB/C` `GetObjectsInGroup` failures came from the previous per-phase caching order, and the new all-phase pre-cache patch is now in place to remove that dependency on a still-healthy modeler
+  - the new all-phase cache plus face/object current-variant retry has not yet been live-validated because this fresh host became unhealthy again after the failed save path
+- next step:
+  - restart the in-AEDT host again and rerun `Queue-AssignSector3DExcitation.ps1` once more so the new all-phase cache and internal-conductor direct-current retry path can be live-validated before attempting reports/solve
