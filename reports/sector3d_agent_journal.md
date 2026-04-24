@@ -290,3 +290,25 @@ This file is the running journal for independent `Sector3D` iterations.
   - until the host desktop state is refreshed, `assign -> reports -> solve` cannot be revalidated from the queue even though the script-side fixes are in place
 - next step:
   - restart or reattach the in-AEDT host so the desktop object again reports the open `sector3d_working` project, then rerun `Queue-AssignSector3DExcitation.ps1`, `Queue-CreateSector3DReports.ps1`, and `Queue-SolveSector3DSetup.ps1`
+
+## Iteration 15
+
+- goal: rerun the live `assign -> reports -> solve` chain on a fresh host, identify the first failing Maxwell call inside the excitation script, and make the fallback path less dependent on a still-healthy PyAEDT modeler cache
+- changes made:
+  - no geometry-side changes this round
+  - updated `scripts/assign_sector3d_excitation.py` again so each phase precomputes and caches all radial terminal-face specs before attempting any boundary creation
+  - changed the fallback direct-current path to consume those cached face specs instead of re-querying `app.modeler.get_object_from_name()` after a failed coil-terminal attempt
+- regression checks before and after implementation:
+  - one-off red/green regression for `_assign_phase_with_direct_current(..., terminal_specs=...)`; before the patch the function did not accept cached terminal specs, after the patch it used the supplied face ids and created four fallback current boundaries in the stubbed test
+- validation evidence after implementation:
+  - fresh host heartbeat at `2026-04-24T08:59:04Z` and fresh queued `probe_session` at `2026-04-24T08:59:30Z` both showed `active_project = sector3d_working` and `project_list = ["Project2", "sector3d_working"]`
+  - fresh queued `Queue-AssignSector3DExcitation.ps1` at `2026-04-24T08:59:52Z` now entered the script body successfully, attached Maxwell 3D, and reused the existing phase-belt objects
+  - `logs/assign_sector3d_excitation_2026-04-24T08-59-55Z.log` shows the first live Maxwell boundary failure is still `AssignCoilTerminal` on `PhaseA_Coil_Pos_Terminal_001`
+  - the same excitation run still ended with project save failure through all three save paths (`native`, `pyaedt_app`, `pyaedt_oproject`), after which the host heartbeat dropped back to `active_project = null` and `project_list = []`
+  - after that host-state loss, rerunning `Queue-CreateSector3DReports.ps1` at `2026-04-24T09:05:44Z` and `Queue-SolveSector3DSetup.ps1` at `2026-04-24T09:06:18Z` both failed in host preparation with `Could not open existing AEDT project ... sector3d_working.aedt after retries`
+- interpretation:
+  - the fresh rerun narrowed the live Maxwell-side blocker to one specific call: `AssignCoilTerminal`
+  - the solve-chain still has a second blocker after the boundary failure: once the excitation script reaches the failing save path, the in-AEDT host loses visibility of the open working project and the remaining queued solve stages cannot re-enter the project
+  - the new cached-terminal fallback patch is in place, but it has not yet been live-validated on a fresh host because the host became unhealthy before a second excitation rerun could start
+- next step:
+  - restart the in-AEDT host again and rerun `Queue-AssignSector3DExcitation.ps1` once more so the new cached-fallback path can be tested against the same fresh `sector3d_working` session before attempting reports/solve again
