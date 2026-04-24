@@ -190,7 +190,13 @@ The first `Sector3D` template should use the simplest robust transient setup tha
 - Use explicit rotor and stator solids, even if the final loss evaluation is exported rather than field-saved.
 - The scaffold artifact should report `sector_geometry.geometry_scope = periodic_sector`; a full-annulus build artifact is a geometry regression.
 
-### 3.1A Coreless caution
+### 3.1A Working file discipline
+
+- Treat `aedt_projects/sector3d_working.aedt` as the authoritative live project for queue-driven build/setup/report steps.
+- Publish `templates/sector3d_template.aedt` only by copying the saved working project on disk.
+- Do not `SaveAs` the active working project into the template path during automated runs, because that changes the active AEDT project identity and increases the chance of duplicate open template sessions and Windows file-lock prompts.
+
+### 3.1B Coreless caution
 
 - Do not borrow the usual iron-core simplifications about narrow flux paths or naturally high inductance.
 - In this project the stator is coreless, so magnetic flux spreads more broadly in air and leakage matters more.

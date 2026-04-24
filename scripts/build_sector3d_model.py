@@ -1,37 +1,44 @@
 from __future__ import print_function
 
+import importlib
 import math
 import os
+import shutil
+import traceback
 
 from aedt_native_common import Logger
 from aedt_native_common import apply_variables
 from aedt_native_common import config_paths
 from aedt_native_common import ensure_design
+from aedt_native_common import ensure_dir
 from aedt_native_common import ensure_workspace_dirs
 from aedt_native_common import get_design_solution_type
 from aedt_native_common import initialize_aedt
 from aedt_native_common import load_json
+from aedt_native_common import open_or_create_project
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
 from aedt_native_common import save_project
 from aedt_native_common import timestamp_string
 from bootstrap_linear2d_template import _active_design
-from bootstrap_linear2d_template import _active_project
-from bootstrap_linear2d_template import _rename_design_if_possible
-from bootstrap_linear2d_template import _save_template_copy
 from bootstrap_linear2d_template import _safe_call
-from sector3d_scaffold import assign_axial_magnet_materials
-from sector3d_scaffold import build_sector_3d_scaffold
-from sector3d_scaffold import literature_basis
-from sector3d_scaffold import physics_contract
-from sector3d_scaffold import _delete_auto_objects
-from sector3d_scaffold import _modeler
-from sector3d_scaffold import _sector_geometry_metadata
+from bootstrap_linear2d_template import _rename_design_if_possible
+import sector3d_scaffold as _sector3d_scaffold
 from winding_geometry import flat_copper_active_face_count
 from winding_geometry import flat_copper_face_pack_height_mm
 from winding_geometry import flat_copper_pack_height_mm
 from winding_geometry import physical_parallel_path_capacity
 from winding_geometry import stator_axial_build_mm
+
+
+_sector3d_scaffold = importlib.reload(_sector3d_scaffold)
+assign_axial_magnet_materials = _sector3d_scaffold.assign_axial_magnet_materials
+build_sector_3d_scaffold = _sector3d_scaffold.build_sector_3d_scaffold
+literature_basis = _sector3d_scaffold.literature_basis
+physics_contract = _sector3d_scaffold.physics_contract
+_delete_auto_objects = _sector3d_scaffold._delete_auto_objects
+_modeler = _sector3d_scaffold._modeler
+_sector_geometry_metadata = _sector3d_scaffold._sector_geometry_metadata
 
 
 def _progress_callback():
@@ -191,6 +198,10 @@ def _write_markdown(path, summary):
     template_copy = save_status.get("template_copy", {})
     lines.append("- template_copy.saved_template_path: `%s`" % template_copy.get("saved_template_path", ""))
     lines.append("- template_copy.backup_copy_ok: `%s`" % template_copy.get("backup_copy_ok", False))
+    lines.append("- template_copy.working_copy_path: `%s`" % template_copy.get("working_copy_path", ""))
+    lines.append("- template_copy.working_copy_synced: `%s`" % template_copy.get("working_copy_synced", False))
+    if template_copy.get("working_copy_error"):
+        lines.append("- template_copy.working_copy_error: `%s`" % template_copy.get("working_copy_error", ""))
     lines.append("")
     lines.append("## Winding Geometry")
     lines.append("")
@@ -351,6 +362,82 @@ def _write_summary_artifacts(artifact_json, artifact_md, summary):
     _write_markdown(artifact_md, summary)
 
 
+def _close_open_projects_by_name(oDesktop, project_name, logger, max_attempts=8):
+    if not project_name:
+        return 0
+    closed = 0
+    for _ in range(max_attempts):
+        try:
+            open_names = [str(name) for name in list(oDesktop.GetProjectList())]
+        except Exception:
+            open_names = []
+        if project_name not in open_names:
+            break
+        try:
+            active = _safe_call(lambda: oDesktop.GetActiveProject(), None)
+            if active and (_safe_call(lambda: active.GetName(), "") == project_name):
+                logger.log("Closing open project copy %s before file sync" % project_name)
+            oDesktop.CloseProject(project_name)
+            closed += 1
+        except Exception:
+            logger.log("Could not close open project copy %s before file sync" % project_name)
+            logger.log(traceback.format_exc())
+            break
+    return closed
+
+
+def _publish_working_project_copy(oDesktop, oProject, working_path, template_path, backup_path, logger):
+    result = {
+        "saved_template_path": "",
+        "backup_copy_path": "",
+        "backup_copy_ok": False,
+        "current_project_file": "",
+        "working_copy_path": working_path,
+        "working_copy_synced": False,
+        "working_copy_error": "",
+        "template_project_closed_count": 0
+    }
+    try:
+        current_project_file = _safe_call(lambda: oProject.GetProjectFile(), "")
+        result["current_project_file"] = current_project_file
+        if not working_path:
+            result["working_copy_error"] = "missing working project path"
+            return result
+        normalized_working = os.path.normcase(os.path.abspath(working_path))
+        normalized_current = os.path.normcase(os.path.abspath(current_project_file)) if current_project_file else ""
+        if normalized_current and (normalized_current != normalized_working):
+            result["working_copy_error"] = "current AEDT project is not the Sector3D working file"
+            return result
+        if not os.path.isfile(working_path):
+            result["working_copy_error"] = "working project file does not exist after save"
+            return result
+        result["working_copy_synced"] = True
+
+        template_project_name = os.path.splitext(os.path.basename(template_path))[0]
+        result["template_project_closed_count"] = _close_open_projects_by_name(oDesktop, template_project_name, logger)
+
+        ensure_dir(os.path.dirname(template_path))
+        shutil.copyfile(working_path, template_path)
+        result["saved_template_path"] = template_path
+        logger.log("Copied Sector3D working project to canonical template path: %s" % template_path)
+
+        if backup_path:
+            ensure_dir(os.path.dirname(backup_path))
+            if os.path.normcase(os.path.abspath(backup_path)) == os.path.normcase(os.path.abspath(template_path)):
+                result["backup_copy_path"] = backup_path
+                result["backup_copy_ok"] = True
+            else:
+                shutil.copyfile(template_path, backup_path)
+                result["backup_copy_path"] = backup_path
+                result["backup_copy_ok"] = True
+                logger.log("Copied Sector3D template file to backup path: %s" % backup_path)
+    except Exception as exc:
+        result["working_copy_error"] = str(exc)
+        logger.log("Sector3D template publish failed: %s" % exc)
+        logger.log(traceback.format_exc())
+    return result
+
+
 def _json_safe_phase_groups(phase_groups):
     out = {}
     for key, value in phase_groups.items():
@@ -376,10 +463,12 @@ def main():
     backup_path = os.path.join(root, "aedt_projects", "sector3d_template.aedt")
 
     oDesktop = initialize_aedt(logger)
-    oProject = _active_project(oDesktop)
-    if not oProject:
-        oProject = oDesktop.NewProject()
-        logger.log("No active project was open; created a new project")
+    _close_open_projects_by_name(
+        oDesktop,
+        os.path.splitext(os.path.basename(paths["sector_3d_template"]))[0],
+        logger
+    )
+    oProject = open_or_create_project(oDesktop, paths["sector_3d_working"], logger)
 
     required_design_name = project_cfg["sector_3d"]["design_name"]
     oDesign = _active_design(oProject)
@@ -465,11 +554,21 @@ def main():
     _write_summary_artifacts(artifact_json, artifact_md, presave_summary)
     logger.log("Wrote pre-template-save sector 3D geometry summary: %s" % artifact_json)
 
-    _emit_progress("sector3d_save_template", "Saving canonical Sector3D template copy")
-    save_result = _save_template_copy(oProject, paths["sector_3d_template"], backup_path, logger, already_saved=True)
+    _emit_progress("sector3d_save_template", "Publishing canonical Sector3D template copy")
+    save_result = _publish_working_project_copy(
+        oDesktop,
+        oProject,
+        paths["sector_3d_working"],
+        paths["sector_3d_template"],
+        backup_path,
+        logger
+    )
     if not save_result.get("saved_template_path"):
         baseline_blocking.append("The sector 3D template could not be saved to the canonical template path.")
         blocking.append("The sector 3D template could not be saved to the canonical template path.")
+    if not save_result.get("working_copy_synced", False):
+        baseline_blocking.append("The sector 3D working project copy could not be synced from the canonical template.")
+        blocking.append("The sector 3D working project copy could not be synced from the canonical template.")
 
     summary = _summary_payload(
         root,

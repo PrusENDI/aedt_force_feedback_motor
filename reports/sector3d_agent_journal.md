@@ -193,3 +193,21 @@ This file is the running journal for independent `Sector3D` iterations.
   - the artifact still blocks solve readiness on missing `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ` project material definitions
 - next step:
   - rebuild the Sector3D template in AEDT, confirm `sector_geometry.geometry_scope = periodic_sector`, then let the solve agent bind master/slave boundaries, motion, excitations, and reports from the new sector geometry
+
+## Iteration 11
+
+- goal: stop silent blank-project creation and reduce AEDT `file is in use` save prompts while keeping the new Maxwell-compatible rotating band flow intact
+- changes made:
+  - kept the Sector3D scaffold on the `Auto3D_RotatingBand` double-rotor container path that now yields `motion_assigned = true` in the latest live transient-setup artifact
+  - patched `scripts/build_sector3d_model.py` so the queue build keeps `aedt_projects/sector3d_working.aedt` as the authoritative open project, closes stale open template copies before publishing, and publishes `templates/sector3d_template.aedt` by file copy instead of `SaveAs`
+  - patched `scripts/aedt_native_common.py -> open_or_create_project()` so an existing working file is retried and then fails loudly if `OpenProject` cannot attach, instead of silently creating a new blank Maxwell project over the same workflow
+  - updated `reports/sector3d_playbook.md` to document the new working-file discipline for queued Sector3D runs
+- validation target:
+  - `py_compile` on `scripts/sector3d_scaffold.py`, `scripts/build_sector3d_model.py`, `scripts/winding_geometry.py`, and the touched AEDT common helper
+  - local source assertions that `build_sector3d_model.py` no longer calls `_save_template_copy()` and `open_or_create_project()` no longer uses blank-project fallback when the working file already exists
+  - latest live host evidence before this final open/save patch: `artifacts/sector3d_model_build.json` at `2026-04-24T03:54:24Z` shows `motion_band_objects[0].role = rotating_band_double_rotor_container`, and `artifacts/sector3d_transient_setup.json` at `2026-04-24T03:54:28Z` shows `band_object_exists = true` and `motion_assigned = true`
+- expected limitation:
+  - the newest open/save-flow patch has not yet been rerun through a fresh in-AEDT host in this session, because the last host heartbeat is stale and no live host loop is currently available to drain a new queue command
+  - the build still blocks physical solve signoff on missing oriented project materials `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`
+- next step:
+  - restart the in-AEDT host, queue `Queue-BuildSector3DModel.ps1`, confirm the build reuses/opens `sector3d_working.aedt` without creating a blank replacement, then queue `Queue-ApplySector3DTransientSetup.ps1` and verify `motion_assigned = true` still holds under the revised save flow

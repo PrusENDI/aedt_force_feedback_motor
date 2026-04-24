@@ -161,10 +161,16 @@ def scaffold_variables(project_cfg):
         "auto3d_region_outer_radius_mm": "outer_radius_mm + auto3d_region_padding_mm",
         "auto3d_region_z_start_mm": "-auto3d_region_padding_mm",
         "auto3d_region_height_mm": "auto3d_total_stack_height_mm + 2*auto3d_region_padding_mm",
-        "auto3d_motion_band_inner_radius_mm": "outer_radius_mm",
+        "auto3d_motion_band_inner_radius_mm": "inner_radius_mm - auto3d_motion_radial_clearance_mm",
         "auto3d_motion_band_outer_radius_mm": "outer_radius_mm + auto3d_motion_radial_clearance_mm",
-        "auto3d_motion_band_z_start_mm": "auto3d_z_bottom_backiron_mm - auto3d_motion_axial_clearance_mm",
-        "auto3d_motion_band_height_mm": "auto3d_total_stack_height_mm + 2*auto3d_motion_axial_clearance_mm"
+        "auto3d_motion_band_bridge_inner_radius_mm": "outer_radius_mm",
+        "auto3d_motion_band_bridge_outer_radius_mm": "outer_radius_mm + auto3d_motion_radial_clearance_mm",
+        "auto3d_motion_band_bottom_z_start_mm": "auto3d_z_bottom_backiron_mm - auto3d_motion_axial_clearance_mm",
+        "auto3d_motion_band_bottom_height_mm": "backiron_thickness_mm + magnet_thickness_mm + airgap_mm + auto3d_motion_axial_clearance_mm",
+        "auto3d_motion_band_top_z_start_mm": "auto3d_z_upper_airgap_mm",
+        "auto3d_motion_band_top_height_mm": "airgap_mm + magnet_thickness_mm + backiron_thickness_mm + auto3d_motion_axial_clearance_mm",
+        "auto3d_motion_band_bridge_z_start_mm": "auto3d_z_bottom_backiron_mm - auto3d_motion_axial_clearance_mm",
+        "auto3d_motion_band_bridge_height_mm": "auto3d_total_stack_height_mm + 2*auto3d_motion_axial_clearance_mm"
     }
 
 
@@ -438,6 +444,29 @@ def _subtract(oEditor, blank_name, tool_name, logger):
         return False
 
 
+def _unite(oEditor, names, logger):
+    try:
+        selections = ",".join([str(name) for name in names if str(name).strip()])
+        if not selections:
+            raise RuntimeError("No objects supplied for Unite")
+        oEditor.Unite(
+            [
+                "NAME:Selections",
+                "Selections:=", selections
+            ],
+            [
+                "NAME:UniteParameters",
+                "KeepOriginals:=", False
+            ]
+        )
+        logger.log("United %s" % selections)
+        return True
+    except Exception:
+        logger.log("Unite failed for %s" % ", ".join([str(name) for name in names]))
+        logger.log(traceback.format_exc())
+        return False
+
+
 def _create_annulus_with_fallbacks(
     oEditor,
     name,
@@ -655,14 +684,14 @@ def _create_periodic_boundary_sheets(oEditor, sector_meta, logger):
     return out
 
 
-def _create_motion_band_shell(oEditor, name, sector_meta, logger):
-    created = _create_annular_sector_with_fallbacks(
+def _create_motion_band_part(oEditor, name, z_start, inner_radius, outer_radius, height, sector_meta, logger):
+    return _create_annular_sector_with_fallbacks(
         oEditor,
         name,
-        "auto3d_motion_band_z_start_mm",
-        "auto3d_motion_band_inner_radius_mm",
-        "auto3d_motion_band_outer_radius_mm",
-        "auto3d_motion_band_height_mm",
+        z_start,
+        inner_radius,
+        outer_radius,
+        height,
         sector_meta["start_angle_deg"],
         sector_meta["sweep_angle_deg"],
         ["air"],
@@ -671,8 +700,61 @@ def _create_motion_band_shell(oEditor, name, sector_meta, logger):
         True,
         logger
     )
-    created["role"] = "rotating_band_clearance_shell"
-    return created
+
+
+def _create_motion_band_container(oEditor, name, sector_meta, logger):
+    part_specs = [
+        (
+            name,
+            "auto3d_motion_band_bottom_z_start_mm",
+            "auto3d_motion_band_inner_radius_mm",
+            "auto3d_motion_band_outer_radius_mm",
+            "auto3d_motion_band_bottom_height_mm"
+        ),
+        (
+            "%s_TopContainer" % name,
+            "auto3d_motion_band_top_z_start_mm",
+            "auto3d_motion_band_inner_radius_mm",
+            "auto3d_motion_band_outer_radius_mm",
+            "auto3d_motion_band_top_height_mm"
+        ),
+        (
+            "%s_OuterBridge" % name,
+            "auto3d_motion_band_bridge_z_start_mm",
+            "auto3d_motion_band_bridge_inner_radius_mm",
+            "auto3d_motion_band_bridge_outer_radius_mm",
+            "auto3d_motion_band_bridge_height_mm"
+        )
+    ]
+    part_names = []
+    for part_name, z_start, inner_radius, outer_radius, height in part_specs:
+        _create_motion_band_part(
+            oEditor,
+            part_name,
+            z_start,
+            inner_radius,
+            outer_radius,
+            height,
+            sector_meta,
+            logger
+        )
+        part_names.append(part_name)
+
+    united = _unite(oEditor, part_names, logger)
+    if not united:
+        raise RuntimeError("Could not unite rotating-band container parts into %s" % name)
+    return {
+        "name": name,
+        "material": "air",
+        "role": "rotating_band_double_rotor_container",
+        "container_parts": part_names,
+        "united": True,
+        "details": (
+            "Single Maxwell band object made from bottom and top rotor containers "
+            "plus an outer radial bridge so it encloses both SSDR rotors without "
+            "filling the stationary stator/conductor annulus."
+        )
+    }
 
 
 def _phase_group_template():
@@ -717,8 +799,12 @@ def _looks_like_permanent_magnet(material_name):
     return False
 
 
-def _sector3d_objects_definition():
-    return [
+def _sector3d_objects_definition(project_cfg=None):
+    motion_cfg = {}
+    if project_cfg:
+        motion_cfg = project_cfg.get("sector_3d", {}).get("motion", {})
+    motion_enabled = bool(motion_cfg.get("enabled", True))
+    objects = [
         {
             "name": "%sRotorBackIron_Bottom" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_bottom_backiron_mm",
@@ -728,17 +814,6 @@ def _sector3d_objects_definition():
             "materials": ["steel_1010", "vacuum"],
             "color": "(120 120 120)",
             "transparency": 0.15,
-            "solve_inside": True
-        },
-        {
-            "name": "%sAirGap_Bottom" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_lower_airgap_mm",
-            "outer_radius": "outer_radius_mm",
-            "inner_radius": "inner_radius_mm",
-            "height": "airgap_mm",
-            "materials": ["air"],
-            "color": "(180 230 255)",
-            "transparency": 0.82,
             "solve_inside": True
         },
         {
@@ -753,17 +828,6 @@ def _sector3d_objects_definition():
             "solve_inside": True
         },
         {
-            "name": "%sAirGap_Top" % AUTO3D_PREFIX,
-            "z_start": "auto3d_z_upper_airgap_mm",
-            "outer_radius": "outer_radius_mm",
-            "inner_radius": "inner_radius_mm",
-            "height": "airgap_mm",
-            "materials": ["air"],
-            "color": "(180 230 255)",
-            "transparency": 0.82,
-            "solve_inside": True
-        },
-        {
             "name": "%sRotorBackIron_Top" % AUTO3D_PREFIX,
             "z_start": "auto3d_z_top_backiron_mm",
             "outer_radius": "outer_radius_mm",
@@ -775,6 +839,36 @@ def _sector3d_objects_definition():
             "solve_inside": True
         }
     ]
+    if not motion_enabled:
+        objects.insert(
+            1,
+            {
+                "name": "%sAirGap_Bottom" % AUTO3D_PREFIX,
+                "z_start": "auto3d_z_lower_airgap_mm",
+                "outer_radius": "outer_radius_mm",
+                "inner_radius": "inner_radius_mm",
+                "height": "airgap_mm",
+                "materials": ["air"],
+                "color": "(180 230 255)",
+                "transparency": 0.82,
+                "solve_inside": True
+            }
+        )
+        objects.insert(
+            3,
+            {
+                "name": "%sAirGap_Top" % AUTO3D_PREFIX,
+                "z_start": "auto3d_z_upper_airgap_mm",
+                "outer_radius": "outer_radius_mm",
+                "inner_radius": "inner_radius_mm",
+                "height": "airgap_mm",
+                "materials": ["air"],
+                "color": "(180 230 255)",
+                "transparency": 0.82,
+                "solve_inside": True
+            }
+        )
+    return objects
 
 
 def _magnet_pole_objects_definition(project_cfg, case_row, sector_meta=None):
@@ -1020,7 +1114,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
     motion_band_objects = []
     phase_belts = _phase_belt_objects_definition(project_cfg, case_row, sector_meta)
     existing = _list_auto_objects(oEditor)
-    static_objects = _sector3d_objects_definition()
+    static_objects = _sector3d_objects_definition(project_cfg)
     total_static = len(static_objects)
     for index, item in enumerate(static_objects, 1):
         _emit_progress(
@@ -1066,10 +1160,10 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
         _emit_progress(
             progress_callback,
             "sector3d_build_motion_band",
-            "Building rotating-band clearance shell",
+            "Building Maxwell rotating-band container",
             {"object_name": motion_band_name}
         )
-        motion_band_objects.append(_create_motion_band_shell(oEditor, motion_band_name, sector_meta, logger))
+        motion_band_objects.append(_create_motion_band_container(oEditor, motion_band_name, sector_meta, logger))
         created.extend(motion_band_objects)
 
     phase_objects = phase_belts["objects"]
@@ -1173,7 +1267,7 @@ def build_sector_3d_scaffold(oProject, oDesign, project_cfg, case_row, logger, c
             boundary_cfg.get("slave_face_name", "Auto3D_Periodic_Slave"),
             sector_meta["sweep_angle_deg"]
         ),
-        "Review the %s object `%s` about axis %s. It is generated as a conservative clearance shell and still needs live Maxwell motion validation before trusting transient torque." % (
+        "Review the %s object `%s` about axis %s. It is generated as a connected double-rotor container for the SSDR top and bottom rotor stacks; live Maxwell motion assignment must pass before trusting transient torque." % (
             motion_cfg.get("motion_type", "rotating_band"),
             motion_cfg.get("band_object_name", "Auto3D_RotatingBand"),
             motion_cfg.get("axis", "Z")

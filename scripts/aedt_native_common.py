@@ -7,6 +7,7 @@ import math
 import os
 import shutil
 import sys
+import time
 import traceback
 
 try:
@@ -332,13 +333,34 @@ def open_or_create_project(oDesktop, working_path, logger):
         except Exception:
             logger.exception()
     if os.path.isfile(working_path):
-        try:
-            oDesktop.OpenProject(working_path)
-            logger.log("Opened project: %s" % working_path)
-            return oDesktop.SetActiveProject(project_name)
-        except Exception:
-            logger.log("OpenProject failed for %s; attempting blank-project fallback" % working_path)
-            logger.exception()
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                oDesktop.OpenProject(working_path)
+                logger.log("Opened project: %s" % working_path)
+                oProject = None
+                try:
+                    oProject = oDesktop.GetActiveProject()
+                except Exception:
+                    oProject = None
+                if not oProject:
+                    oProject = oDesktop.SetActiveProject(project_name)
+                if oProject:
+                    return oProject
+                raise RuntimeError("OpenProject succeeded but the target project was not activated")
+            except Exception as exc:
+                last_error = exc
+                logger.log(
+                    "OpenProject attempt %d/3 failed for %s"
+                    % (attempt, working_path)
+                )
+                logger.exception()
+                if attempt < 3:
+                    time.sleep(2)
+        raise RuntimeError(
+            "Could not open existing AEDT project %s after retries; refusing to create a blank replacement because the file already exists."
+            % working_path
+        ) from last_error
     oProject = oDesktop.NewProject()
     if not oProject:
         raise RuntimeError("Could not create a new AEDT project for %s" % working_path)
