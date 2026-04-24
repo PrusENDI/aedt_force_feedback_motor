@@ -211,3 +211,25 @@ This file is the running journal for independent `Sector3D` iterations.
   - the build still blocks physical solve signoff on missing oriented project materials `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`
 - next step:
   - restart the in-AEDT host, queue `Queue-BuildSector3DModel.ps1`, confirm the build reuses/opens `sector3d_working.aedt` without creating a blank replacement, then queue `Queue-ApplySector3DTransientSetup.ps1` and verify `motion_assigned = true` still holds under the revised save flow
+
+## Iteration 12
+
+- goal: live-verify the revised Sector3D working/template save flow on a fresh in-AEDT host and confirm the Maxwell-compatible rotating band still binds after the build
+- changes made:
+  - no source-code changes this round; focused on live AEDT validation after the host restart
+  - queued `Queue-BuildSector3DModel.ps1` through `Run-Launcher.cmd` and inspected the fresh host/build logs, heartbeat, and `artifacts/sector3d_model_build.json`
+  - queued `Queue-ApplySector3DTransientSetup.ps1` through `Run-Launcher.cmd` and inspected the fresh host/setup logs, heartbeat, and `artifacts/sector3d_transient_setup.json`
+- validation evidence:
+  - `runtime/heartbeat.json` at `2026-04-24T04:40:58Z` showed `worker_state = sector3d_build_phase_belts` with `project_list = ["Project2", "sector3d_working"]`; `sector3d_template` was no longer open during the live build
+  - `logs/in_aedt_agent_host_2026-04-24T04-38-13Z.log` recorded `Reusing working project: ...\\aedt_projects\\sector3d_working.aedt` and `Reused already-open project: sector3d_working` for both the build command and the transient-setup command
+  - the same host log did not emit the old `OpenProject failed ... attempting blank-project fallback` or `Created new project` messages during either queue run
+  - `logs/build_sector3d_model_2026-04-24T04-40-41Z.log` ended with `Copied Sector3D working project to canonical template path` and `Copied Sector3D template file to backup path`, confirming the queue build published by file copy instead of `SaveAs`
+  - `artifacts/sector3d_model_build.json` at `2026-04-24T04:41:30Z` now keeps `project_name = sector3d_working`, `project_save_status.template_copy.working_copy_synced = true`, and `motion_band_objects[0].role = rotating_band_double_rotor_container`
+  - `artifacts/sector3d_transient_setup.json` at `2026-04-24T04:42:11Z` keeps `project_name = sector3d_working`, `band_object_exists = true`, and `motion_assigned = true`
+- interpretation:
+  - the fresh live rerun removed the earlier evidence of silent blank-project creation for the working `.aedt` path
+  - the queue build/apply path completed without any logged sign of the prior save-flow lockup; while AEDT GUI popups are not directly machine-readable here, the working-project reuse, absence of fallback logs, absence of an open template project during the run, and successful save/copy completion are all consistent with the `file is in use` prompt no longer blocking this flow
+- remaining limitation:
+  - the build still blocks physics-ready solve signoff on missing oriented project materials `Auto3D_PM_Axial_PlusZ` and `Auto3D_PM_Axial_MinusZ`
+- next step:
+  - restore or auto-generate the oriented axial PM project materials, then rerun the build/apply/solve chain to move from geometry/setup verification into real Maxwell transient validation

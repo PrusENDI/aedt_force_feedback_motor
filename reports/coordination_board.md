@@ -11,7 +11,7 @@
 |---|---|---|---|---|---|
 | Integration | main | merge/review/coordination | active | current HEAD | no agent branch has unique commits to merge |
 | Host Runtime | agent/host-runtime | host/queue/launchers | integrated | 0ab4a6a | no unique host-runtime commits pending in this Sector3D branch context |
-| Sector3D Geometry | agent/sector3d-geometry | 3D geometry scaffold | active | pending local commit | rotating-band geometry is live-verified; latest local open/save-flow patch still needs a fresh in-AEDT rerun after host restart |
+| Sector3D Geometry | agent/sector3d-geometry | 3D geometry scaffold | active | 2024574 | rotating-band geometry and revised working/template save flow are live-verified; remaining blocker is missing oriented PM project materials for physical solve signoff |
 | Sector3D Solve | agent/sector3d-solve | excitation/setup/reports/solve | blocked | 8b31b49 | needs valid sector geometry; latest excitation artifact has no winding/current excitations assigned |
 | Linear2D | agent/linear2d | 2D screening/ranking | waiting |  |  |
 | DOE Ranking | agent/doe-ranking | search space/DOE/ranking | waiting |  |  |
@@ -24,4 +24,5 @@
 - Generated AEDT/report outputs remain untracked and must not be staged by integration: `reports/sector3d_model_build.md`, `reports/sector3d_excitation_assignment.md`, `templates/sector3d_template.aedt`, plus runtime/log/artifact/export/aedt project outputs.
 - 2026-04-23 Sector3D Geometry: patched scaffold code to generate a 2-pole / 30-degree SSDR periodic-sector geometry instead of a full-annulus helper. Live AEDT rebuild wrote a pre-template-save `artifacts/sector3d_model_build.json` with `sector_geometry.geometry_scope = periodic_sector`.
 - 2026-04-24 Sector3D Geometry: latest live build/apply artifacts show the Maxwell-compatible rotating band path is working end to end at the geometry/setup level: `artifacts/sector3d_model_build.json` recorded `motion_band_objects[0].role = rotating_band_double_rotor_container`, and `artifacts/sector3d_transient_setup.json` recorded `band_object_exists = true` and `motion_assigned = true`.
-- 2026-04-24 Sector3D Geometry: latest local code patch removes the silent blank-project fallback for existing working `.aedt` files and stops queue builds from `SaveAs`-switching the active working project into the template path; this still needs one fresh host rerun after restart to verify the file-lock prompt is gone in practice.
+- 2026-04-24 Sector3D Geometry: latest local code patch removes the silent blank-project fallback for existing working `.aedt` files and stops queue builds from `SaveAs`-switching the active working project into the template path.
+- 2026-04-24 Sector3D Geometry: fresh host rerun at `2026-04-24T04:40Z` reused `sector3d_working.aedt` for both build and transient-setup queue commands, kept `project_list = ["Project2", "sector3d_working"]`, copied the working project to `templates/sector3d_template.aedt` by file copy, and produced no new `OpenProject failed ... attempting blank-project fallback` / `Created new project` evidence in the host log.
