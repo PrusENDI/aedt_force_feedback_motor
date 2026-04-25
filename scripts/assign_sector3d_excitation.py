@@ -79,6 +79,7 @@ def _write_markdown(path, summary):
     lines.append("- phase_belt_angle_deg: `%s`" % summary.get("phase_belt_angle_deg", ""))
     lines.append("- phase_belt_gap_deg: `%s`" % summary.get("phase_belt_gap_deg", ""))
     lines.append("- phase_segment_angle_deg: `%s`" % summary.get("phase_segment_angle_deg", ""))
+    lines.append("- source_sink_terminal_sheet_count: `%s`" % len(summary.get("source_sink_terminal_sheets", [])))
     lines.append("")
     lines.append("## Winding Results")
     lines.append("")
@@ -188,15 +189,21 @@ def _phase_object_terminal_specs(app, object_name, phase_name, belt_polarity):
     if belt_polarity == "Positive":
         positive_face_id = faces["inner_face_id"]
         negative_face_id = faces["outer_face_id"]
+        positive_radial_side = "Inner"
+        negative_radial_side = "Outer"
     else:
         positive_face_id = faces["outer_face_id"]
         negative_face_id = faces["inner_face_id"]
+        positive_radial_side = "Outer"
+        negative_radial_side = "Inner"
     return {
         "phase_name": phase_name,
         "object_name": object_name,
         "belt_polarity": belt_polarity,
         "positive_face_id": positive_face_id,
         "negative_face_id": negative_face_id,
+        "positive_radial_side": positive_radial_side,
+        "negative_radial_side": negative_radial_side,
         "inner_face_id": faces["inner_face_id"],
         "outer_face_id": faces["outer_face_id"],
         "inner_radius": faces["inner_radius"],
@@ -212,18 +219,190 @@ def _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_ob
     return terminal_specs
 
 
+def _object_phase_belt_index(object_name):
+    try:
+        return int(str(object_name).split("_")[-1])
+    except Exception:
+        raise RuntimeError("Could not parse phase-belt index from object name %s" % object_name)
+
+
+def _object_face_label(object_name):
+    text = str(object_name)
+    if "_Bottom_" in text:
+        return "Bottom"
+    if "_Top_" in text:
+        return "Top"
+    raise RuntimeError("Could not parse top/bottom face label from object name %s" % object_name)
+
+
+def _terminal_sheet_name(phase_name, terminal_polarity, object_name, radial_side):
+    return "Auto3D_SourceSink_%s_%s_%s_%03d_%s" % (
+        phase_name,
+        "Pos" if terminal_polarity == "Positive" else "Neg",
+        _object_face_label(object_name),
+        _object_phase_belt_index(object_name),
+        radial_side,
+    )
+
+
+def _sheet_attributes(name):
+    return [
+        "NAME:Attributes",
+        "Name:=", name,
+        "Flags:=", "",
+        "Color:=", "(255 230 80)",
+        "Transparency:=", 0.55,
+        "PartCoordinateSystem:=", "Global",
+        "UDMId:=", "",
+        "MaterialValue:=", "\"vacuum\"",
+        "SurfaceMaterialValue:=", "\"\"",
+        "SolveInside:=", False,
+    ]
+
+
+def _modeler_editor(app):
+    editor = getattr(getattr(app, "modeler", None), "oeditor", None)
+    if editor:
+        return editor
+    editor = getattr(getattr(app, "modeler", None), "oEditor", None)
+    if editor:
+        return editor
+    raise RuntimeError("Could not resolve the active Maxwell 3D modeler editor")
+
+
+def _delete_source_sink_sheets(app, sheet_names, logger):
+    editor = _modeler_editor(app)
+    existing = []
+    for sheet_name in sheet_names:
+        matches = []
+        try:
+            matches = list(editor.GetMatchedObjectName(sheet_name))
+        except Exception:
+            matches = []
+        for match in matches:
+            text = str(match)
+            if text == sheet_name and text not in existing:
+                existing.append(text)
+    if not existing:
+        return []
+    try:
+        editor.Delete(["NAME:Selections", "Selections:=", ",".join(existing)])
+        logger.log("Deleted %d stale Sector3D source/sink terminal sheets" % len(existing))
+        return existing
+    except Exception:
+        logger.log("Could not delete stale source/sink terminal sheets: %s" % ", ".join(existing))
+        logger.log(traceback.format_exc())
+        return existing
+
+
+def _create_terminal_sheet(app, sheet_name, object_name, radial_side, phase_belts, logger):
+    editor = _modeler_editor(app)
+    belt_index = _object_phase_belt_index(object_name)
+    face_label = _object_face_label(object_name)
+    sector_start_angle_deg = design_variable_number(app.odesign, "sector_start_angle_deg", -15.0)
+    phase_belt_angle_deg = float(phase_belts.get("phase_belt_angle_deg", 5.0))
+    phase_belt_gap_deg = float(phase_belts.get("phase_belt_gap_deg", 0.05))
+    phase_segment_angle_deg = float(phase_belts.get("phase_segment_angle_deg", 4.95))
+    segment_start_angle_deg = (
+        float(sector_start_angle_deg)
+        + (float(belt_index) - 1.0) * phase_belt_angle_deg
+        + 0.5 * phase_belt_gap_deg
+    )
+    center_angle_deg = segment_start_angle_deg + 0.5 * phase_segment_angle_deg
+    if radial_side == "Inner":
+        radius_expr = "auto3d_flat_copper_inner_radius_mm"
+    elif radial_side == "Outer":
+        radius_expr = "auto3d_flat_copper_outer_radius_mm"
+    else:
+        raise RuntimeError("Unexpected terminal radial side %s" % radial_side)
+    if face_label == "Bottom":
+        z_start_expr = "auto3d_z_lower_flat_copper_mm"
+    else:
+        z_start_expr = "auto3d_z_upper_flat_copper_mm"
+    width_expr = "2*%s*sin(auto3d_phase_segment_angle_deg/2)" % radius_expr
+    try:
+        editor.CreateRectangle(
+            [
+                "NAME:RectangleParameters",
+                "IsCovered:=", True,
+                "XStart:=", radius_expr,
+                "YStart:=", "-(%s)/2" % width_expr,
+                "ZStart:=", z_start_expr,
+                "Width:=", width_expr,
+                "Height:=", "auto3d_flat_copper_face_pack_height_mm",
+                "WhichAxis:=", "X",
+            ],
+            _sheet_attributes(sheet_name),
+        )
+        if abs(center_angle_deg) > 1.0e-9:
+            editor.Rotate(
+                [
+                    "NAME:Selections",
+                    "Selections:=", sheet_name,
+                    "NewPartsModelFlag:=", "Model",
+                ],
+                [
+                    "NAME:RotateParameters",
+                    "RotateAxis:=", "Z",
+                    "RotateAngle:=", "%.12gdeg" % center_angle_deg,
+                ],
+            )
+    except Exception:
+        logger.log("Could not create source/sink terminal sheet %s for %s" % (sheet_name, object_name))
+        logger.log(traceback.format_exc())
+        raise
+    logger.log(
+        "Created source/sink terminal sheet %s for %s %s at %.6gdeg"
+        % (sheet_name, object_name, radial_side, center_angle_deg)
+    )
+    return {
+        "name": sheet_name,
+        "object_name": object_name,
+        "radial_side": radial_side,
+        "center_angle_deg": center_angle_deg,
+        "face_label": face_label,
+    }
+
+
+def _ensure_phase_terminal_sheets(app, phase_name, terminal_specs, phase_belts, logger):
+    sheet_names = []
+    for terminal_spec in terminal_specs:
+        object_name = terminal_spec["object_name"]
+        sheet_names.append(_terminal_sheet_name(phase_name, "Positive", object_name, terminal_spec["positive_radial_side"]))
+        sheet_names.append(_terminal_sheet_name(phase_name, "Negative", object_name, terminal_spec["negative_radial_side"]))
+    _delete_source_sink_sheets(app, sheet_names, logger)
+    sheet_details = []
+    for terminal_spec in terminal_specs:
+        object_name = terminal_spec["object_name"]
+        positive_sheet = _terminal_sheet_name(phase_name, "Positive", object_name, terminal_spec["positive_radial_side"])
+        negative_sheet = _terminal_sheet_name(phase_name, "Negative", object_name, terminal_spec["negative_radial_side"])
+        sheet_details.append(
+            _create_terminal_sheet(app, positive_sheet, object_name, terminal_spec["positive_radial_side"], phase_belts, logger)
+        )
+        sheet_details.append(
+            _create_terminal_sheet(app, negative_sheet, object_name, terminal_spec["negative_radial_side"], phase_belts, logger)
+        )
+        terminal_spec["positive_terminal_sheet"] = positive_sheet
+        terminal_spec["negative_terminal_sheet"] = negative_sheet
+    return list(terminal_specs), sheet_details
+
+
 def _assign_current_boundary_with_variants(
     app,
     current_expression,
     object_name,
     face_id,
+    sheet_name,
     swap_direction,
     boundary_name,
 ):
-    attempts = [
+    attempts = []
+    if sheet_name:
+        attempts.append(("sheet", [sheet_name], "sheet=%s" % sheet_name))
+    attempts.extend([
         ("face", [face_id], "face=%s" % face_id),
         ("object", [object_name], "object=%s" % object_name),
-    ]
+    ])
     failures = []
     for assignment_kind, assignment, description in attempts:
         try:
@@ -262,8 +441,9 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
         belt_polarity = terminal_spec["belt_polarity"]
         object_name = terminal_spec["object_name"]
         positive_index += 1
+        positive_assignment = terminal_spec.get("positive_terminal_sheet") or terminal_spec["positive_face_id"]
         terminal = app.assign_coil(
-            assignment=[terminal_spec["positive_face_id"]],
+            assignment=[positive_assignment],
             conductors_number=conductors_per_terminal,
             polarity="Positive",
             name=_coil_terminal_name(phase_name, "Positive", positive_index)
@@ -275,8 +455,9 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
             )
         coil_terminal_names.append(terminal.name)
         negative_index += 1
+        negative_assignment = terminal_spec.get("negative_terminal_sheet") or terminal_spec["negative_face_id"]
         terminal = app.assign_coil(
-            assignment=[terminal_spec["negative_face_id"]],
+            assignment=[negative_assignment],
             conductors_number=conductors_per_terminal,
             polarity="Negative",
             name=_coil_terminal_name(phase_name, "Negative", negative_index)
@@ -311,7 +492,7 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
         "conductors_per_terminal": conductors_per_terminal,
         "positive_object_count": len(positive_objects),
         "negative_object_count": len(negative_objects),
-        "details": "segmented radial macro-coil terminals assigned on inner/outer conductor faces"
+        "details": "segmented radial macro-coil terminals assigned on explicit source/sink sheets at inner/outer conductor ends"
     }
 
 
@@ -338,6 +519,7 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
             current_expression,
             object_name,
             terminal_spec["positive_face_id"],
+            terminal_spec.get("positive_terminal_sheet", ""),
             False,
             current_name,
         )
@@ -357,6 +539,7 @@ def _assign_phase_with_direct_current(app, phase_name, current_expression, posit
             current_expression,
             object_name,
             terminal_spec["negative_face_id"],
+            terminal_spec.get("negative_terminal_sheet", ""),
             True,
             current_name,
         )
@@ -397,6 +580,7 @@ def main():
     required_design_name = project_cfg["sector_3d"]["design_name"]
     manual_actions = []
     winding_results = []
+    source_sink_terminal_sheets = []
 
     oDesktop = initialize_aedt(logger)
     oProject = _active_project(oDesktop)
@@ -430,9 +614,14 @@ def main():
         if (not positive_objects) or (not negative_objects):
             continue
         try:
-            phase_terminal_specs[phase_name] = _collect_phase_terminal_specs(
+            terminal_specs = _collect_phase_terminal_specs(
                 app, phase_name, positive_objects, negative_objects
             )
+            terminal_specs, sheet_details = _ensure_phase_terminal_sheets(
+                app, phase_name, terminal_specs, phase_belts, logger
+            )
+            phase_terminal_specs[phase_name] = terminal_specs
+            source_sink_terminal_sheets.extend(sheet_details)
         except Exception as terminal_exc:
             phase_terminal_errors[phase_name] = {
                 "error": terminal_exc,
@@ -542,6 +731,7 @@ def main():
         "deleted_objects": phase_belts.get("deleted_objects", []),
         "created_objects": phase_belts.get("created_objects", []),
         "winding_results": winding_results,
+        "source_sink_terminal_sheets": source_sink_terminal_sheets,
         "current_excitations": list_excitations_of_type(app, "Current"),
         "winding_excitations": list_excitations_of_type(app, "Winding Group"),
         "manual_actions": manual_actions

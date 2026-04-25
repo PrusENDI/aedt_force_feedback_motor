@@ -227,6 +227,17 @@ Phase current law:
 - `Ib = sqrt(2) * I_rms * sin(omega_e * t - 2*pi/3 + theta0)`
 - `Ic = sqrt(2) * I_rms * sin(omega_e * t + 2*pi/3 + theta0)`
 
+### 3.4A Maxwell 3D Transient excitation primitive choice
+
+The generated `Auto3D_Phase*_Top/Bottom_*` solids are flat copper radial-conductor macro segments. For Maxwell 3D `Transient`, use this order:
+
+1. Preferred: explicit source/sink sheet objects at each segment's inner/outer radial end, assigned as `CoilTerminal` objects, then grouped into a solid current `Winding`.
+2. Fallback diagnostic only: `AssignCurrent` on the source/sink sheet, then on the cached end face, then on the conductor object.
+3. Do not use `CurrentDensity` for this transient model. The installed PyAEDT Maxwell 3D implementation rejects 3D `Transient` current density and current-density terminals are limited to Eddy/AC/Magnetostatic style solvers.
+4. Do not treat stranded winding as a physics fix for these flat copper solids. Stranded and solid winding groups both still require Maxwell-accepted terminals; stranded is also less faithful to the intended solid flat-copper conductor.
+
+This choice is based on live AEDT failures where curved end-face `AssignCoilTerminal` and face/object `AssignCurrent` were both rejected. The explicit sheet path is a compatibility scaffold, not final winding signoff.
+
 ### 3.5 Coil modeling choice
 
 Use two model tiers.

@@ -398,3 +398,27 @@ This file is the running journal for independent `Sector3D` iterations.
   - reports/solve should remain paused until the excitation primitive or conductor-body compatibility is corrected
 - next step:
   - investigate Maxwell 3D Transient excitation compatibility for these generated flat-copper solids, especially whether the model needs a different excitation primitive, conductor body setup, or explicit source/sink sheet geometry before current can be applied
+
+## Iteration 19
+
+- goal: choose a Maxwell 3D Transient excitation primitive for the generated flat-copper radial solids and make the smallest code change before the next fresh-host assign-only rerun
+- investigation:
+  - `assign_winding(...)` in the installed PyAEDT Maxwell 3D layer creates a winding group, but any non-empty assignment is converted into `assign_coil(...)`, so it does not bypass the failing `AssignCoilTerminal` primitive
+  - `assign_current(...)` is a legal API path, but repeated fresh-host runs show Maxwell rejects both cached curved end faces and whole conductor objects in this transient design
+  - `assign_current_density(...)` is explicitly rejected by PyAEDT for Maxwell 3D `Transient`, and `assign_current_density_terminal(...)` is limited to Eddy/AC/Magnetostatic style solvers
+  - stranded winding is not a physics fix for the intended flat copper solids because it still depends on accepted terminals and is less faithful to the solid flat-copper conductor path
+  - the next lowest-risk primitive is explicit source/sink sheet geometry at each conductor segment's inner/outer radial end, assigned as `CoilTerminal` objects and then grouped into solid current windings
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` to create deterministic `Auto3D_SourceSink_*` terminal sheets for every cached phase-belt segment before any boundary creation
+  - changed winding-terminal assignment to prefer those sheet objects over the previous curved end-face ids
+  - extended fallback direct-current diagnostics to try `sheet -> cached face -> cached object`
+  - documented the primitive comparison in `reports/sector3d_playbook.md`
+- validation evidence:
+  - focused regression check proved the new source/sink helper exists and generates deterministic terminal-sheet names
+  - focused fake-app check proved `_assign_phase_with_winding_group(...)` now calls `assign_coil(...)` with sheet object names rather than face ids when sheets are available
+  - `py_compile scripts/assign_sector3d_excitation.py scripts/sector3d_scaffold.py scripts/build_sector3d_model.py scripts/winding_geometry.py` passed
+- remaining limitation:
+  - live assign-only rerun was not queued after this patch because the current in-AEDT host heartbeat still reports `active_project = null`, `project_list = []`, and `worker_state = idle`; this is not a fresh usable host state for validating the new primitive
+  - the turn/coil parameter model is still a segmented macro phase-belt calibration abstraction; it follows the repo physics contract, but it is not yet a paper-faithful manufacturable winding with explicit crossover/return/interconnect geometry
+- next step:
+  - restart the in-AEDT host so it can see `sector3d_working`, then run only `Queue-AssignSector3DExcitation.ps1` and inspect whether `PhaseA_Coil_Pos_Terminal_001` is created from `Auto3D_SourceSink_PhaseA_Pos_Bottom_001_Inner` before attempting reports or solve
