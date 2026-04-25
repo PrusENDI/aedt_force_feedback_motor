@@ -445,3 +445,27 @@ This file is the running journal for independent `Sector3D` iterations.
   - reports/solve remain blocked because no usable winding or current excitation exists
 - next step:
   - fix source/sink sheet angular placement for reused expression-based models, then decide whether to create the winding group before terminals or use a native `AssignWindingGroup` argument form that Maxwell 3D Transient accepts before rerunning assign-only on another fresh host
+
+## Iteration 21
+
+- goal: fix `Auto3D_SourceSink_*` sheet angular placement when reused AEDT variables read back as expressions/zero, then rerun assign-only on a fresh host
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` with a phase-belt angle context resolver
+  - the resolver now uses live AEDT numeric phase-belt values when available, falls back to `artifacts/sector3d_model_build.json`, and finally falls back to `config/project.json` sector metadata
+  - source/sink sheet creation now uses the resolved context for center angle and numeric segment width, and the excitation summary records `phase_belt_angle_source` plus `sector_start_angle_deg`
+- regression and compile validation:
+  - focused red/green regression: when live `phase_belts` values are `0.0`, `_resolve_phase_belt_angle_context(...)` falls back to build metadata and `_terminal_sheet_center_angle_deg(3, ...)` returns `-2.5deg`
+  - `py_compile scripts/assign_sector3d_excitation.py scripts/sector3d_scaffold.py scripts/build_sector3d_model.py scripts/winding_geometry.py` passed
+- live assign-only validation:
+  - fresh host heartbeat at `2026-04-25T03:57:34Z` showed `active_project = sector3d_working`, `project_list = ["sector3d_working"]`, and `worker_state = idle`
+  - queued only `Queue-AssignSector3DExcitation.ps1` with command id `3a1bbfa9db67446095747843a90f4ed7`; did not queue reports or solve
+  - `runtime/last_result.json` finished at `2026-04-25T03:58:34Z` with `prepared = true`, `project_name = sector3d_working`, and `result = script_complete`
+  - `artifacts/sector3d_excitation_assignment.json` now records `phase_belt_angle_source = build_artifact`, `phase_belt_angle_deg = 5.0`, `phase_belt_gap_deg = 0.05`, `phase_segment_angle_deg = 4.95`, and `sector_start_angle_deg = -15.0`
+  - the 24 source/sink sheets now land at the expected sector belt centers: `-12.5`, `-7.5`, `-2.5`, `2.5`, `7.5`, and `12.5` degrees instead of all `-15deg`
+- remaining limitation:
+  - no usable excitation was created: `current_excitations = []`, `winding_excitations = []`, and all phases remain `assigned = false`
+  - PhaseA still moves past the first terminal and fails at `AssignWindingGroup PhaseA_Winding`
+  - PhaseB and PhaseC still fail at their first `CoilTerminal`
+  - save still fails with `Failed to execute gRPC AEDT command: Save`, and post-run heartbeat again drops to `active_project = null`, `project_list = []`
+- next step:
+  - investigate Maxwell 3D Transient winding creation order/native arguments: create the winding group before terminals or call native `AssignWindingGroup` with the exact argument form AEDT accepts, then add terminals to the existing group

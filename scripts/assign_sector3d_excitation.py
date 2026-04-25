@@ -79,6 +79,8 @@ def _write_markdown(path, summary):
     lines.append("- phase_belt_angle_deg: `%s`" % summary.get("phase_belt_angle_deg", ""))
     lines.append("- phase_belt_gap_deg: `%s`" % summary.get("phase_belt_gap_deg", ""))
     lines.append("- phase_segment_angle_deg: `%s`" % summary.get("phase_segment_angle_deg", ""))
+    lines.append("- phase_belt_angle_source: `%s`" % summary.get("phase_belt_angle_source", ""))
+    lines.append("- sector_start_angle_deg: `%s`" % summary.get("sector_start_angle_deg", ""))
     lines.append("- source_sink_terminal_sheet_count: `%s`" % len(summary.get("source_sink_terminal_sheets", [])))
     lines.append("")
     lines.append("## Winding Results")
@@ -219,6 +221,87 @@ def _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_ob
     return terminal_specs
 
 
+def _positive_float(value, default_value=None):
+    try:
+        number = float(value)
+    except Exception:
+        return default_value
+    if number > 0.0:
+        return number
+    return default_value
+
+
+def _sector_geometry_from_config(project_cfg):
+    sector_cfg = project_cfg.get("sector_3d", {})
+    machine_cfg = project_cfg.get("machine_fixed", {})
+    pole_count = max(2, int(round(float(machine_cfg.get("pole_count", 24)))))
+    sector_pole_count = max(1, int(round(float(sector_cfg.get("sector_model_pole_count", 2)))))
+    sector_pole_count = min(pole_count, sector_pole_count)
+    sweep_angle_deg = 360.0 * float(sector_pole_count) / float(pole_count)
+    center_angle_deg = float(sector_cfg.get("sector_center_angle_deg", 0.0))
+    start_angle_deg = center_angle_deg - 0.5 * sweep_angle_deg
+    phase_belt_count = max(1, sector_pole_count * 3)
+    return {
+        "start_angle_deg": start_angle_deg,
+        "sweep_angle_deg": sweep_angle_deg,
+        "phase_belt_count": phase_belt_count,
+    }
+
+
+def _resolve_phase_belt_angle_context(phase_belts, build_metadata=None, project_cfg=None):
+    build_metadata = build_metadata or {}
+    sector_geometry = dict(build_metadata.get("sector_geometry", {}) or {})
+    if (not sector_geometry) and project_cfg:
+        sector_geometry = _sector_geometry_from_config(project_cfg)
+
+    phase_belt_count = int(round(float(sector_geometry.get("phase_belt_count", 0) or 0)))
+    sweep_angle_deg = float(sector_geometry.get("sweep_angle_deg", 0.0) or 0.0)
+    if phase_belt_count <= 0 and sweep_angle_deg > 0.0:
+        phase_belt_count = max(1, int(round(sweep_angle_deg / 5.0)))
+
+    phase_belt_angle_deg = _positive_float(phase_belts.get("phase_belt_angle_deg"))
+    source = "live_phase_belts"
+    if phase_belt_angle_deg is None:
+        phase_belt_angle_deg = _positive_float(build_metadata.get("phase_belt_angle_deg"))
+        source = "build_artifact"
+    if phase_belt_angle_deg is None and sweep_angle_deg > 0.0 and phase_belt_count > 0:
+        phase_belt_angle_deg = sweep_angle_deg / float(phase_belt_count)
+        source = "sector_geometry"
+    if phase_belt_angle_deg is None:
+        phase_belt_angle_deg = 5.0
+        source = "default"
+
+    phase_belt_gap_deg = _positive_float(phase_belts.get("phase_belt_gap_deg"))
+    if phase_belt_gap_deg is None:
+        phase_belt_gap_deg = _positive_float(build_metadata.get("phase_belt_gap_deg"))
+    if phase_belt_gap_deg is None:
+        phase_belt_gap_deg = min(0.08, max(0.01, phase_belt_angle_deg * 0.01))
+
+    phase_segment_angle_deg = _positive_float(phase_belts.get("phase_segment_angle_deg"))
+    if phase_segment_angle_deg is None:
+        phase_segment_angle_deg = _positive_float(build_metadata.get("phase_segment_angle_deg"))
+    if phase_segment_angle_deg is None:
+        phase_segment_angle_deg = max(0.001, phase_belt_angle_deg - phase_belt_gap_deg)
+
+    return {
+        "source": source,
+        "sector_start_angle_deg": float(sector_geometry.get("start_angle_deg", -15.0) or -15.0),
+        "phase_belt_count": phase_belt_count,
+        "phase_belt_angle_deg": phase_belt_angle_deg,
+        "phase_belt_gap_deg": phase_belt_gap_deg,
+        "phase_segment_angle_deg": phase_segment_angle_deg,
+    }
+
+
+def _terminal_sheet_center_angle_deg(belt_index, angle_context):
+    segment_start_angle_deg = (
+        float(angle_context.get("sector_start_angle_deg", -15.0))
+        + (float(belt_index) - 1.0) * float(angle_context.get("phase_belt_angle_deg", 5.0))
+        + 0.5 * float(angle_context.get("phase_belt_gap_deg", 0.05))
+    )
+    return segment_start_angle_deg + 0.5 * float(angle_context.get("phase_segment_angle_deg", 4.95))
+
+
 def _object_phase_belt_index(object_name):
     try:
         return int(str(object_name).split("_")[-1])
@@ -295,20 +378,11 @@ def _delete_source_sink_sheets(app, sheet_names, logger):
         return existing
 
 
-def _create_terminal_sheet(app, sheet_name, object_name, radial_side, phase_belts, logger):
+def _create_terminal_sheet(app, sheet_name, object_name, radial_side, angle_context, logger):
     editor = _modeler_editor(app)
     belt_index = _object_phase_belt_index(object_name)
     face_label = _object_face_label(object_name)
-    sector_start_angle_deg = design_variable_number(app.odesign, "sector_start_angle_deg", -15.0)
-    phase_belt_angle_deg = float(phase_belts.get("phase_belt_angle_deg", 5.0))
-    phase_belt_gap_deg = float(phase_belts.get("phase_belt_gap_deg", 0.05))
-    phase_segment_angle_deg = float(phase_belts.get("phase_segment_angle_deg", 4.95))
-    segment_start_angle_deg = (
-        float(sector_start_angle_deg)
-        + (float(belt_index) - 1.0) * phase_belt_angle_deg
-        + 0.5 * phase_belt_gap_deg
-    )
-    center_angle_deg = segment_start_angle_deg + 0.5 * phase_segment_angle_deg
+    center_angle_deg = _terminal_sheet_center_angle_deg(belt_index, angle_context)
     if radial_side == "Inner":
         radius_expr = "auto3d_flat_copper_inner_radius_mm"
     elif radial_side == "Outer":
@@ -319,7 +393,7 @@ def _create_terminal_sheet(app, sheet_name, object_name, radial_side, phase_belt
         z_start_expr = "auto3d_z_lower_flat_copper_mm"
     else:
         z_start_expr = "auto3d_z_upper_flat_copper_mm"
-    width_expr = "2*%s*sin(auto3d_phase_segment_angle_deg/2)" % radius_expr
+    width_expr = "2*%s*sin(%.12gdeg/2)" % (radius_expr, float(angle_context["phase_segment_angle_deg"]))
     try:
         editor.CreateRectangle(
             [
@@ -361,10 +435,11 @@ def _create_terminal_sheet(app, sheet_name, object_name, radial_side, phase_belt
         "radial_side": radial_side,
         "center_angle_deg": center_angle_deg,
         "face_label": face_label,
+        "angle_source": angle_context.get("source", ""),
     }
 
 
-def _ensure_phase_terminal_sheets(app, phase_name, terminal_specs, phase_belts, logger):
+def _ensure_phase_terminal_sheets(app, phase_name, terminal_specs, phase_belts, angle_context, logger):
     sheet_names = []
     for terminal_spec in terminal_specs:
         object_name = terminal_spec["object_name"]
@@ -377,10 +452,10 @@ def _ensure_phase_terminal_sheets(app, phase_name, terminal_specs, phase_belts, 
         positive_sheet = _terminal_sheet_name(phase_name, "Positive", object_name, terminal_spec["positive_radial_side"])
         negative_sheet = _terminal_sheet_name(phase_name, "Negative", object_name, terminal_spec["negative_radial_side"])
         sheet_details.append(
-            _create_terminal_sheet(app, positive_sheet, object_name, terminal_spec["positive_radial_side"], phase_belts, logger)
+            _create_terminal_sheet(app, positive_sheet, object_name, terminal_spec["positive_radial_side"], angle_context, logger)
         )
         sheet_details.append(
-            _create_terminal_sheet(app, negative_sheet, object_name, terminal_spec["negative_radial_side"], phase_belts, logger)
+            _create_terminal_sheet(app, negative_sheet, object_name, terminal_spec["negative_radial_side"], angle_context, logger)
         )
         terminal_spec["positive_terminal_sheet"] = positive_sheet
         terminal_spec["negative_terminal_sheet"] = negative_sheet
@@ -576,6 +651,7 @@ def main():
     project_cfg = load_json(os.path.join(root, "config", "project.json"))
     artifact_json = os.path.join(root, "artifacts", "sector3d_excitation_assignment.json")
     artifact_md = os.path.join(root, "reports", "sector3d_excitation_assignment.md")
+    build_artifact_json = os.path.join(root, "artifacts", "sector3d_model_build.json")
 
     required_design_name = project_cfg["sector_3d"]["design_name"]
     manual_actions = []
@@ -591,6 +667,24 @@ def main():
     design_name = _normalize_design_name(_safe_call(lambda: oDesign.GetName(), ""))
     app = attach_maxwell3d(oDesktop, oProject, oDesign, logger)
     phase_belts = ensure_macro_phase_belts(app, oDesign, logger)
+    build_metadata = {}
+    if os.path.exists(build_artifact_json):
+        try:
+            build_metadata = load_json(build_artifact_json)
+        except Exception:
+            logger.log("Could not load Sector3D build artifact for phase-belt angle fallback")
+            logger.log(traceback.format_exc())
+    angle_context = _resolve_phase_belt_angle_context(phase_belts, build_metadata, project_cfg)
+    logger.log(
+        "Using phase-belt angle context source=%s start=%.6g belt=%.6g gap=%.6g segment=%.6g"
+        % (
+            angle_context["source"],
+            angle_context["sector_start_angle_deg"],
+            angle_context["phase_belt_angle_deg"],
+            angle_context["phase_belt_gap_deg"],
+            angle_context["phase_segment_angle_deg"],
+        )
+    )
     turns_per_phase = design_variable_number(oDesign, "turns_per_phase", 1.0)
     phase_inputs = []
     for phase_name in PHASE_NAMES:
@@ -618,7 +712,7 @@ def main():
                 app, phase_name, positive_objects, negative_objects
             )
             terminal_specs, sheet_details = _ensure_phase_terminal_sheets(
-                app, phase_name, terminal_specs, phase_belts, logger
+                app, phase_name, terminal_specs, phase_belts, angle_context, logger
             )
             phase_terminal_specs[phase_name] = terminal_specs
             source_sink_terminal_sheets.extend(sheet_details)
@@ -725,9 +819,11 @@ def main():
         "save_error": save_status.get("error", ""),
         "phase_belt_reused": bool(phase_belts.get("reused", False)),
         "phase_belt_segment_count": int(phase_belts.get("segment_count", 0)),
-        "phase_belt_angle_deg": phase_belts.get("phase_belt_angle_deg", ""),
-        "phase_belt_gap_deg": phase_belts.get("phase_belt_gap_deg", ""),
-        "phase_segment_angle_deg": phase_belts.get("phase_segment_angle_deg", ""),
+        "phase_belt_angle_deg": angle_context.get("phase_belt_angle_deg", ""),
+        "phase_belt_gap_deg": angle_context.get("phase_belt_gap_deg", ""),
+        "phase_segment_angle_deg": angle_context.get("phase_segment_angle_deg", ""),
+        "phase_belt_angle_source": angle_context.get("source", ""),
+        "sector_start_angle_deg": angle_context.get("sector_start_angle_deg", ""),
         "deleted_objects": phase_belts.get("deleted_objects", []),
         "created_objects": phase_belts.get("created_objects", []),
         "winding_results": winding_results,
