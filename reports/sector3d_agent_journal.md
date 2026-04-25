@@ -374,3 +374,27 @@ This file is the running journal for independent `Sector3D` iterations.
   - the remaining live host-state loss is still downstream of the excitation/save failure, not upstream project opening
 - next step:
   - investigate whether this `Transient` Maxwell 3D design requires a different excitation primitive for these segmented solids, or whether the conductor bodies must be rebuilt/flagged differently before `AssignCoilTerminal` / `AssignCurrent` will bind
+
+## Iteration 18
+
+- goal: rerun only `Queue-AssignSector3DExcitation.ps1` after another in-AEDT host restart and verify whether the cached terminal fallback can create direct-current boundaries after `AssignCoilTerminal` fails
+- changes made:
+  - no source-code changes this round
+  - re-read the active git/config/physics-contract/journal/coordination state and the current `scripts/assign_sector3d_excitation.py` before queueing the run
+  - confirmed the fresh host heartbeat at `2026-04-25T03:31:26Z` showed `active_project = sector3d_working`, `project_list = ["sector3d_working"]`, and `worker_state = idle`
+  - queued only `Queue-AssignSector3DExcitation.ps1` at `2026-04-25T03:31:42Z`; did not queue reports or solve
+- validation evidence:
+  - `runtime/last_result.json` for command `73531a530e3e43e0a4f444596fd2be19` finished at `2026-04-25T03:32:05Z` with `prepared = true`, `project_name = sector3d_working`, and `result = script_complete`
+  - `logs/assign_sector3d_excitation_2026-04-25T03-31-46Z.log` shows the same repeatable excitation failure signature:
+    - `PhaseA`: `AssignCoilTerminal` fails first, then fallback `AssignCurrent` fails on both `face=5602` and `object=Auto3D_PhaseA_Pos_Bottom_001`
+    - `PhaseB`: `AssignCoilTerminal` fails first, then fallback `AssignCurrent` fails on both `face=6038` and `object=Auto3D_PhaseB_Pos_Bottom_003`
+    - `PhaseC`: `AssignCoilTerminal` fails first, then fallback `AssignCurrent` fails on both `face=6474` and `object=Auto3D_PhaseC_Pos_Bottom_005`
+  - `artifacts/sector3d_excitation_assignment.json` at `2026-04-25T03:32:04Z` records `used_fallback_current_boundaries = true` for all three phases, but `current_excitations = []` and all phase `assigned` fields remain `false`
+  - the same run still ends with `save_ok = false`, `save_error = Failed to execute gRPC AEDT command: Save`
+  - post-run heartbeat again drops to `active_project = null` and `project_list = []`
+- interpretation:
+  - cached terminal fallback is executing consistently, but it still cannot land direct-current boundaries in this Maxwell 3D Transient design
+  - the failure is now repeatable across fresh host restarts and no longer depends on stale host startup state
+  - reports/solve should remain paused until the excitation primitive or conductor-body compatibility is corrected
+- next step:
+  - investigate Maxwell 3D Transient excitation compatibility for these generated flat-copper solids, especially whether the model needs a different excitation primitive, conductor body setup, or explicit source/sink sheet geometry before current can be applied
