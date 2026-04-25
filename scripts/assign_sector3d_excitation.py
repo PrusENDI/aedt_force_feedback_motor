@@ -498,6 +498,95 @@ def _assign_current_boundary_with_variants(
     raise RuntimeError("; ".join(failures))
 
 
+class _NativeWindingGroup(object):
+    def __init__(self, name, assignment_mode):
+        self.name = name
+        self.assignment_mode = assignment_mode
+
+
+def _native_winding_group_args(winding_name, current_expression, is_solid=True, include_phase=False):
+    args = [
+        "NAME:%s" % winding_name,
+        "Type:=", "Current",
+        "IsSolid:=", bool(is_solid),
+        "Current:=", current_expression,
+        "Resistance:=", "0ohm",
+        "Inductance:=", "0H",
+        "Voltage:=", "0V",
+        "ParallelBranchesNum:=", "1",
+    ]
+    if include_phase:
+        args.extend(["Phase:=", "0deg"])
+    return args
+
+
+def _assign_winding_group_native_first(app, winding_name, current_expression, logger):
+    failures = []
+    attempts = [
+        ("native_assign_winding_group_no_phase", _native_winding_group_args(winding_name, current_expression, True, False)),
+        ("native_assign_winding_group_with_phase", _native_winding_group_args(winding_name, current_expression, True, True)),
+    ]
+    for mode, args in attempts:
+        try:
+            app.oboundary.AssignWindingGroup(args)
+            logger.log("Created winding group %s via %s" % (winding_name, mode))
+            return _NativeWindingGroup(winding_name, mode)
+        except Exception as exc:
+            failures.append("%s (%s)" % (mode, exc))
+
+    try:
+        winding = app.assign_winding(
+            assignment=None,
+            winding_type="Current",
+            is_solid=True,
+            current=current_expression,
+            parallel_branches=1,
+            name=winding_name
+        )
+        if winding:
+            logger.log("Created winding group %s via pyaedt_assign_winding" % winding.name)
+            return _NativeWindingGroup(winding.name, "pyaedt_assign_winding")
+        failures.append("pyaedt_assign_winding (returned no boundary object)")
+    except Exception as exc:
+        failures.append("pyaedt_assign_winding (%s)" % exc)
+    raise RuntimeError("; ".join(failures))
+
+
+def _add_winding_terminals_native(app, winding_name, coil_terminal_names, logger):
+    failures = []
+    try:
+        app.oboundary.AddWindingTerminals(winding_name, coil_terminal_names)
+        return "native_add_winding_terminals_list"
+    except Exception as exc:
+        failures.append("native_list (%s)" % exc)
+
+    added = []
+    try:
+        for coil_terminal_name in coil_terminal_names:
+            app.oboundary.AddWindingTerminals(winding_name, [coil_terminal_name])
+            added.append(coil_terminal_name)
+        return "native_add_winding_terminals_one_item_lists"
+    except Exception as exc:
+        failures.append("native_one_item_lists after %s (%s)" % (len(added), exc))
+
+    added = []
+    try:
+        for coil_terminal_name in coil_terminal_names:
+            app.oboundary.AddWindingTerminals(winding_name, coil_terminal_name)
+            added.append(coil_terminal_name)
+        return "native_add_winding_terminals_strings"
+    except Exception as exc:
+        failures.append("native_strings after %s (%s)" % (len(added), exc))
+
+    try:
+        app.add_winding_coils(winding_name, coil_terminal_names)
+        return "pyaedt_add_winding_coils"
+    except Exception as exc:
+        failures.append("pyaedt_add_winding_coils (%s)" % exc)
+    logger.log("AddWindingTerminals failed for %s terminals: %s" % (winding_name, "; ".join(failures)))
+    raise RuntimeError("; ".join(failures))
+
+
 def _assign_phase_with_winding_group(app, phase_name, current_expression, positive_objects, negative_objects, turns_per_phase, logger, terminal_specs=None):
     boundary_names = _phase_boundary_name_prefix(phase_name)
     total_objects = len(positive_objects) + len(negative_objects)
@@ -510,6 +599,7 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
     if terminal_specs is None:
         terminal_specs = _collect_phase_terminal_specs(app, phase_name, positive_objects, negative_objects)
     face_assignments = list(terminal_specs)
+    winding = _assign_winding_group_native_first(app, _winding_name(phase_name), current_expression, logger)
     positive_index = 0
     negative_index = 0
     for terminal_spec in terminal_specs:
@@ -529,6 +619,7 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
                 % (terminal_spec["positive_face_id"], object_name, belt_polarity)
             )
         coil_terminal_names.append(terminal.name)
+        logger.log("Created coil terminal %s on %s" % (terminal.name, positive_assignment))
         negative_index += 1
         negative_assignment = terminal_spec.get("negative_terminal_sheet") or terminal_spec["negative_face_id"]
         terminal = app.assign_coil(
@@ -543,18 +634,12 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
                 % (terminal_spec["negative_face_id"], object_name, belt_polarity)
             )
         coil_terminal_names.append(terminal.name)
-    winding = app.assign_winding(
-        assignment=None,
-        winding_type="Current",
-        is_solid=True,
-        current=current_expression,
-        parallel_branches=1,
-        name=_winding_name(phase_name)
+        logger.log("Created coil terminal %s on %s" % (terminal.name, negative_assignment))
+    add_mode = _add_winding_terminals_native(app, winding.name, coil_terminal_names, logger)
+    logger.log(
+        "Assigned winding %s with current=%s using %s and %s"
+        % (winding.name, current_expression, winding.assignment_mode, add_mode)
     )
-    if not winding:
-        raise RuntimeError("Could not create winding group for %s" % phase_name)
-    app.add_winding_coils(winding.name, coil_terminal_names)
-    logger.log("Assigned winding %s with current=%s" % (winding.name, current_expression))
     return {
         "phase_name": phase_name,
         "assigned": True,
@@ -565,9 +650,11 @@ def _assign_phase_with_winding_group(app, phase_name, current_expression, positi
         "coil_terminal_names": coil_terminal_names,
         "face_assignments": face_assignments,
         "conductors_per_terminal": conductors_per_terminal,
+        "winding_assignment_mode": winding.assignment_mode,
+        "winding_terminal_add_mode": add_mode,
         "positive_object_count": len(positive_objects),
         "negative_object_count": len(negative_objects),
-        "details": "segmented radial macro-coil terminals assigned on explicit source/sink sheets at inner/outer conductor ends"
+        "details": "native winding group created before segmented source/sink sheet coil terminals, then terminals added to the group"
     }
 
 

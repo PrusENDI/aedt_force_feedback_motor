@@ -469,3 +469,34 @@ This file is the running journal for independent `Sector3D` iterations.
   - save still fails with `Failed to execute gRPC AEDT command: Save`, and post-run heartbeat again drops to `active_project = null`, `project_list = []`
 - next step:
   - investigate Maxwell 3D Transient winding creation order/native arguments: create the winding group before terminals or call native `AssignWindingGroup` with the exact argument form AEDT accepts, then add terminals to the existing group
+
+## Iteration 22
+
+- goal: test Maxwell 3D Transient winding creation order and native `AssignWindingGroup` arguments before touching reports or solve
+- investigation:
+  - installed PyAEDT creates winding groups through `AssignWindingGroup(["NAME:<winding>", "Type:=", "Current", "IsSolid:=", True, "Current:=", <expr>, "Resistance:=", "0ohm", "Inductance:=", "0H", "Voltage:=", "0V", "ParallelBranchesNum:=", "1", "Phase:=", "0deg"])`
+  - for the Sector3D time-domain three-phase expressions, the clean native form without `Phase:=0deg` is a better first attempt because phase is already embedded in each current waveform
+  - PyAEDT's Maxwell 3D `add_winding_coils(...)` delegates to native `AddWindingTerminals(winding_name, coil_terminal_names)`
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` so each phase creates the winding group before creating source/sink sheet coil terminals
+  - added a native `AssignWindingGroup` helper that first tries the no-`Phase` argument form, then the PyAEDT-like with-`Phase` form, then the old PyAEDT wrapper
+  - added `AddWindingTerminals` variants for the next fresh-host run: full terminal list, one-item lists, single terminal strings, and finally the PyAEDT wrapper fallback
+  - added logging of each created coil terminal before it is added to the winding group
+- regression and compile validation:
+  - focused red/green regression proved `_assign_phase_with_winding_group(...)` now calls `AssignWindingGroup` before `assign_coil(...)`
+  - focused native-args regression proved the default native winding args omit `Phase:=`
+  - focused add-terminal regression proved the helper falls through from rejected list forms to per-terminal string calls
+  - `py_compile scripts/assign_sector3d_excitation.py scripts/sector3d_scaffold.py scripts/build_sector3d_model.py scripts/winding_geometry.py` passed
+- live assign-only validation:
+  - fresh host heartbeat before queueing showed `active_project = sector3d_working`, `project_list = ["sector3d_working"]`, and `worker_state = idle`
+  - queued only `Queue-AssignSector3DExcitation.ps1` with command id `e6c84f62b4d944ada4554ccd4d730da8`; reports and solve were not queued
+  - `runtime/last_result.json` finished at `2026-04-25T04:07:46Z` with `prepared = true`, `project_name = sector3d_working`, and `result = script_complete`
+  - `logs/assign_sector3d_excitation_2026-04-25T04-07-12Z.log` shows PhaseA successfully created `PhaseA_Winding` via `native_assign_winding_group_no_phase`
+  - the first PhaseA blocker moved to `AddWindingTerminals`, not `AssignWindingGroup`, proving the native no-phase group creation path is accepted at least for the first phase
+- remaining limitation:
+  - no usable excitation was created: `current_excitations = []`, `winding_excitations = []`, and all phases remain `assigned = false`
+  - after PhaseA `AddWindingTerminals` failed, PhaseB/C winding-group creation failed through all current variants, likely because the host/design state was already degraded
+  - fallback direct-current assignment still fails for all phases
+  - save still fails with `Failed to execute gRPC AEDT command: Save`, and post-run heartbeat again drops to `active_project = null`, `project_list = []`
+- next step:
+  - restart the in-AEDT host and rerun only `Queue-AssignSector3DExcitation.ps1` to test the new `AddWindingTerminals` variants and inspect the logged coil-terminal names before attempting reports or solve
