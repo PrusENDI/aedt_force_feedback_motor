@@ -133,6 +133,31 @@ def _write_markdown(path, summary):
         handle.close()
 
 
+def _raise_if_sector3d_excitation_failed(summary):
+    reasons = []
+    winding_results = list(summary.get("winding_results", []) or [])
+    if not winding_results:
+        reasons.append("no phase winding results were recorded")
+    elif not all(item.get("assigned", False) for item in winding_results):
+        failed_phases = [
+            "%s: %s" % (item.get("phase_name", ""), item.get("details", ""))
+            for item in winding_results
+            if not item.get("assigned", False)
+        ]
+        reasons.append("one or more phases have no usable excitation (%s)" % "; ".join(failed_phases))
+
+    current_excitations = list(summary.get("current_excitations", []) or [])
+    winding_excitations = list(summary.get("winding_excitations", []) or [])
+    if (not current_excitations) and (not winding_excitations):
+        reasons.append("AEDT reports no Current or Winding Group excitations")
+
+    if not summary.get("save_ok", False):
+        reasons.append("project save failed: %s" % summary.get("save_error", ""))
+
+    if reasons:
+        raise RuntimeError("Sector3D excitation assignment failed: " + " | ".join(reasons))
+
+
 def _xy_radius(point):
     return math.sqrt((float(point[0]) ** 2) + (float(point[1]) ** 2))
 
@@ -922,6 +947,7 @@ def main():
     save_json(artifact_json, summary)
     _write_markdown(artifact_md, summary)
     logger.log("Wrote sector 3D excitation summary: %s" % artifact_json)
+    _raise_if_sector3d_excitation_failed(summary)
 
 
 if __name__ == "__main__":

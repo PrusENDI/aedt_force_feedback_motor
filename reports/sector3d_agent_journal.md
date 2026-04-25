@@ -500,3 +500,31 @@ This file is the running journal for independent `Sector3D` iterations.
   - save still fails with `Failed to execute gRPC AEDT command: Save`, and post-run heartbeat again drops to `active_project = null`, `project_list = []`
 - next step:
   - restart the in-AEDT host and rerun only `Queue-AssignSector3DExcitation.ps1` to test the new `AddWindingTerminals` variants and inspect the logged coil-terminal names before attempting reports or solve
+
+## Iteration 23
+
+- goal: validate the new `AddWindingTerminals` variants on a fresh host and make excitation/save failure propagate to the queue as a real failure
+- changes made:
+  - updated `scripts/assign_sector3d_excitation.py` so the script raises after writing JSON/Markdown artifacts when any phase has no usable excitation, when AEDT reports no Current/Winding Group excitations, or when project save fails
+  - kept reports/solve paused and queued only `Queue-AssignSector3DExcitation.ps1`
+- local validation:
+  - focused failure-exit regression proved a summary with no excitations and failed save raises `RuntimeError`
+  - focused passing-summary regression proved assigned phases plus winding excitations and `save_ok = true` do not raise
+  - `py_compile scripts/assign_sector3d_excitation.py scripts/sector3d_scaffold.py scripts/build_sector3d_model.py scripts/winding_geometry.py` passed
+- live assign-only validation:
+  - fresh host heartbeat at `2026-04-25T04:21:07Z` showed `active_project = sector3d_working`, `project_list = ["sector3d_working"]`, and `worker_state = idle`
+  - queued only `Queue-AssignSector3DExcitation.ps1` with command id `35a657fb4062469ab920f8ebdb5a455d`
+  - `runtime/last_result.json` now records `success = false` instead of `script_complete`, with the explicit error `Sector3D excitation assignment failed`
+  - `logs/assign_sector3d_excitation_2026-04-25T04-21-15Z.log` shows PhaseA created `PhaseA_Winding` via `native_assign_winding_group_no_phase`
+  - the same log shows all eight PhaseA coil terminals were created on the expected source/sink sheets before terminal-add:
+    - `PhaseA_Coil_Pos_Terminal_001` through `PhaseA_Coil_Neg_Terminal_004`
+  - all `AddWindingTerminals` variants failed before adding the first terminal: full list, one-item lists, single terminal strings, and PyAEDT wrapper
+- interpretation:
+  - the script-level queue semantics are now correct: no excitation or failed save is a failed command, not a false success
+  - PhaseA terminal creation is no longer the first blocker; the current blocker is attaching already-created Maxwell 3D coil terminals to `PhaseA_Winding`
+  - after the PhaseA add-terminal failure, the host/design state degrades and PhaseB/C group creation again fails through all winding-group variants
+- remaining limitation:
+  - no usable excitation was created: `current_excitations = []`, `winding_excitations = []`, and all phases remain `assigned = false`
+  - save still fails, and post-run heartbeat drops to `active_project = null`, `project_list = []`
+- next step:
+  - on the next fresh host, test the inverse ordering with native no-`Phase` group creation after terminal creation: create PhaseA terminals first, then create/recreate `PhaseA_Winding`, then call `AddWindingTerminals`
