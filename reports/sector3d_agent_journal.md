@@ -422,3 +422,26 @@ This file is the running journal for independent `Sector3D` iterations.
   - the turn/coil parameter model is still a segmented macro phase-belt calibration abstraction; it follows the repo physics contract, but it is not yet a paper-faithful manufacturable winding with explicit crossover/return/interconnect geometry
 - next step:
   - restart the in-AEDT host so it can see `sector3d_working`, then run only `Queue-AssignSector3DExcitation.ps1` and inspect whether `PhaseA_Coil_Pos_Terminal_001` is created from `Auto3D_SourceSink_PhaseA_Pos_Bottom_001_Inner` before attempting reports or solve
+
+## Iteration 20
+
+- goal: run only `Queue-AssignSector3DExcitation.ps1` on a fresh in-AEDT host and check whether explicit `Auto3D_SourceSink_*` sheets move the failure past `PhaseA_Coil_Pos_Terminal_001`
+- changes made:
+  - no source-code changes this round
+  - re-read the active git/config/physics-contract/journal/coordination state and the current assign/sector3d helper scripts before queueing
+  - confirmed fresh host heartbeat at `2026-04-25T03:47:18Z` showed `active_project = sector3d_working`, `project_list = ["sector3d_working"]`, and `worker_state = idle`
+  - queued only `Queue-AssignSector3DExcitation.ps1` with command id `97fd859c536d457aa5dc6948f3095a1e`; did not queue reports or solve
+- validation evidence:
+  - `runtime/last_result.json` finished at `2026-04-25T03:48:08Z` with `prepared = true`, `project_name = sector3d_working`, and `result = script_complete`
+  - `logs/assign_sector3d_excitation_2026-04-25T03-47-38Z.log` records 24 `Auto3D_SourceSink_*` sheet creations before boundary assignment
+  - PhaseA no longer fails at `PhaseA_Coil_Pos_Terminal_001`; the first PhaseA winding-path failure moved to `AssignWindingGroup PhaseA_Winding`, which indicates the source/sink sheet terminal path got past the prior first terminal blocker
+  - PhaseB and PhaseC still hit `CoilTerminal PhaseB_Coil_Pos_Terminal_001` / `PhaseC_Coil_Pos_Terminal_001`
+  - fallback direct current still fails for all phases, now with explicit `sheet -> face -> object` diagnostics
+  - `artifacts/sector3d_excitation_assignment.json` records `source_sink_terminal_sheets` count `24`, but `current_excitations = []`, `winding_excitations = []`, and all phases remain `assigned = false`
+  - save still fails with `Failed to execute gRPC AEDT command: Save`, and post-run heartbeat again drops to `active_project = null`, `project_list = []`
+- interpretation:
+  - explicit source/sink sheet geometry is a partial improvement: it changes the first PhaseA failure from terminal creation to winding-group creation
+  - the run exposes a new geometry metadata issue in reused models: `phase_belt_angle_deg`, `phase_belt_gap_deg`, and `phase_segment_angle_deg` were read back as `0.0`, so all generated source/sink sheets were placed at `-15deg`; the sheet-placement path must use artifact/config-derived sector geometry when design variables are expressions
+  - reports/solve remain blocked because no usable winding or current excitation exists
+- next step:
+  - fix source/sink sheet angular placement for reused expression-based models, then decide whether to create the winding group before terminals or use a native `AssignWindingGroup` argument form that Maxwell 3D Transient accepts before rerunning assign-only on another fresh host
