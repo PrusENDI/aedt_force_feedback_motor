@@ -13,6 +13,7 @@ The first validated model is an SSDR periodic-sector truth anchor: one central s
 - Manufacturing and assembly are low precision, nearly fully manual.
 - A practical tolerance envelope is `+-0.20 mm` or worse for air-gap and assembly errors.
 - Simple machining is available, such as turning, milling, and basic fixtures, but precision manufacturing is not assumed.
+- The maximum machinable part diameter is `100 mm`, so the motor outer diameter and any single circular rotor/stator/back-iron part must stay at or below `100 mm`.
 - The first prototype should be open and easy to debug, with external fan cooling favored over sealed packaging.
 - The winding route is hybrid: the PCB provides support, positioning, and interconnect; the main current path uses flat copper or relatively heavy copper wire.
 - Magnet material should be modeled as a heat-resistant NdFeB class, such as `N42SH` or `N35SH`.
@@ -42,6 +43,7 @@ The path from SSDR to final topology must be explicit. SSDR results cannot be sc
 
 - leakage and fringing changes;
 - shared rotor and stator magnetic paths;
+- the `100 mm` maximum part diameter constraint;
 - copper length and resistance changes;
 - thermal path changes;
 - air-gap tolerance accumulation;

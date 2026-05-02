@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a trusted SSDR Maxwell 3D engineering-validation path that can diagnose hand-built prototype risk and prepare a disciplined correlation path to the final `S1-R1-S2-R2-S3` four-air-gap machine.
+**Goal:** Build a trusted SSDR Maxwell 3D engineering-validation path that can diagnose hand-built prototype risk and prepare a disciplined correlation path to the final `S1-R1-S2-R2-S3` four-air-gap machine while keeping the maximum circular part diameter at or below `100 mm`.
 
 **Architecture:** Keep AEDT-facing geometry, excitation, setup, and report scripts in their current modules. Add small pure-Python helpers for engineering case generation, tolerance parsing, and derived metric/feasibility calculations so they can be tested without AEDT. The SSDR model remains the Stage 1 truth anchor; final `4 Nm @ 3 Arms` is assessed only in the final-topology feasibility report, not as a direct SSDR pass/fail.
 
@@ -77,6 +77,8 @@ class Sector3DEngineeringConfigTests(unittest.TestCase):
         self.assertFalse(ev["apply_stage2_torque_target_to_ssdr"])
         self.assertGreaterEqual(ev["manual_tolerance_envelope_mm"], 0.2)
         self.assertGreaterEqual(ev["recommended_nominal_airgap_mm_min"], 0.8)
+        self.assertEqual(ev["max_part_outer_diameter_mm"], 100.0)
+        self.assertLessEqual(project_cfg["machine_fixed"]["outer_diameter_mm"], ev["max_part_outer_diameter_mm"])
 
     def test_derived_report_names_are_configured(self):
         project_cfg = self.load_project()
@@ -112,6 +114,7 @@ Modify `config/project.json` under `sector_3d`:
   "stage2_target_torque_nm_at_3arms": 4.0,
   "apply_stage2_torque_target_to_ssdr": false,
   "manual_tolerance_envelope_mm": 0.2,
+  "max_part_outer_diameter_mm": 100.0,
   "recommended_nominal_airgap_mm_min": 0.8,
   "recommended_nominal_airgap_mm_max": 1.0,
   "hot_copper_temperature_c": 100.0,
@@ -232,6 +235,12 @@ class Sector3DEngineeringCaseGenerationTests(unittest.TestCase):
         for row in rows:
             self.assertEqual(row["stage2_target_torque_nm_at_3arms"], 4.0)
             self.assertEqual(row["apply_stage2_torque_target_to_ssdr"], "false")
+
+    def test_generated_cases_preserve_100mm_part_limit_metadata(self):
+        rows = build_engineering_cases(self.load_project(), self.load_search())
+        for row in rows:
+            self.assertEqual(float(row["max_part_outer_diameter_mm"]), 100.0)
+            self.assertLessEqual(float(row["outer_diameter_mm"]), 100.0)
 ```
 
 - [ ] **Step 2: Run the failing tests**
@@ -275,6 +284,7 @@ BASE_EXTRA_FIELDS = [
     "air_region_padding_multiplier",
     "stage2_target_torque_nm_at_3arms",
     "apply_stage2_torque_target_to_ssdr",
+    "max_part_outer_diameter_mm",
 ]
 
 
@@ -305,6 +315,7 @@ def _base_case(project_cfg, search_cfg):
             "air_region_padding_multiplier": 1.0,
             "stage2_target_torque_nm_at_3arms": ev["stage2_target_torque_nm_at_3arms"],
             "apply_stage2_torque_target_to_ssdr": "false",
+            "max_part_outer_diameter_mm": ev["max_part_outer_diameter_mm"],
         }
     )
     return row
@@ -322,6 +333,11 @@ def build_engineering_cases(project_cfg, search_cfg):
     ev = project_cfg["sector_3d"]["engineering_validation"]
     tol = float(ev["manual_tolerance_envelope_mm"])
     base = _base_case(project_cfg, search_cfg)
+    if float(project_cfg["machine_fixed"]["outer_diameter_mm"]) > float(ev["max_part_outer_diameter_mm"]):
+        raise ValueError(
+            "outer_diameter_mm %.6g exceeds max_part_outer_diameter_mm %.6g"
+            % (float(project_cfg["machine_fixed"]["outer_diameter_mm"]), float(ev["max_part_outer_diameter_mm"]))
+        )
     base["airgap_mm"] = max(float(base["airgap_mm"]), float(ev["recommended_nominal_airgap_mm_min"]))
     return [
         _with_case(base, "baseline_nominal", "Nominal SSDR engineering truth-anchor case"),
@@ -440,6 +456,7 @@ class Sector3DValidationMetadataTests(unittest.TestCase):
         self.assertIn("case_intent", names)
         self.assertIn("airgap_upper_delta_mm", names)
         self.assertIn("stage2_target_torque_nm_at_3arms", names)
+        self.assertIn("max_part_outer_diameter_mm", names)
         self.assertIn("ssdr_direct_target_fail", names)
 ```
 
@@ -474,6 +491,7 @@ ENGINEERING_CASE_FIELDS = [
     "air_region_padding_multiplier",
     "stage2_target_torque_nm_at_3arms",
     "apply_stage2_torque_target_to_ssdr",
+    "max_part_outer_diameter_mm",
     "ssdr_direct_target_fail",
     "final_topology_feasibility",
     "problem_analysis_flags",
@@ -498,6 +516,7 @@ Append these fields in `_fieldnames()` after `stage`:
         "air_region_padding_multiplier",
         "stage2_target_torque_nm_at_3arms",
         "apply_stage2_torque_target_to_ssdr",
+        "max_part_outer_diameter_mm",
         "ssdr_direct_target_fail",
         "final_topology_feasibility",
         "problem_analysis_flags",
@@ -848,7 +867,8 @@ def final_topology_feasibility(project_cfg, row):
     return (
         "SSDR torque %.6g Nm is a Stage 1 truth-anchor result and is not a direct pass/fail "
         "against the final four-air-gap target %.6g Nm @ 3 Arms. Correlate leakage, copper length, "
-        "thermal path, tolerance accumulation, and phase balance in the final %s topology. "
+        "thermal path, tolerance accumulation, phase balance, and the 100 mm maximum part-diameter "
+        "constraint in the final %s topology. "
         "Diagnostic flags: %s"
         % (ssdr_torque, target, ev["stage2_topology"], ", ".join(flags))
     )
@@ -1175,7 +1195,7 @@ Before restarting DOE ranking, use the SSDR engineering-validation path:
 6. Solve the nominal and tolerance cases.
 7. Review `reports/sector3d_engineering_assessment.md`.
 
-The SSDR model is a truth anchor, not the final machine signoff. The final `4 Nm @ 3 Arms` target belongs to the `S1-R1-S2-R2-S3` four-air-gap topology or to an explicitly correlated final-topology model.
+The SSDR model is a truth anchor, not the final machine signoff. The final `4 Nm @ 3 Arms` target belongs to the `S1-R1-S2-R2-S3` four-air-gap topology or to an explicitly correlated final-topology model. The motor outer diameter and any single circular rotor/stator/back-iron part must stay at or below `100 mm`.
 ```
 
 - [ ] **Step 2: Update the physics contract**
@@ -1187,7 +1207,7 @@ In `reports/sector3d_physics_contract.md`, add under `## Physical Contract`:
 
 The first engineering-validation stage assumes manual assembly with roughly `+-0.20 mm` or worse tolerance. The SSDR model must include tolerance cases for global air-gap increase, upper/lower air-gap imbalance, rotor runout, magnet angular placement error, magnet radial offset, magnet axial height error, hot copper resistance, peak-current demagnetization, and expanded air-region sensitivity.
 
-The SSDR stage must not be judged directly against the final `4 Nm @ 3 Arms` target. That target belongs to the final `S1-R1-S2-R2-S3` four-air-gap topology. SSDR evidence must instead state whether the final topology appears feasible after accounting for leakage, fringing, copper length, thermal path, air-gap tolerance accumulation, and phase-balance risk.
+The SSDR stage must not be judged directly against the final `4 Nm @ 3 Arms` target. That target belongs to the final `S1-R1-S2-R2-S3` four-air-gap topology. SSDR evidence must instead state whether the final topology appears feasible after accounting for leakage, fringing, copper length, thermal path, air-gap tolerance accumulation, phase-balance risk, and the `100 mm` maximum part-diameter constraint.
 ```
 
 - [ ] **Step 3: Run local verification**
@@ -1251,6 +1271,6 @@ If `Queue-AssignSector3DExcitation.ps1` still fails at `AddWindingTerminals`, st
 
 ## Self-Review Notes
 
-- Spec coverage: The plan covers the SSDR truth anchor, final-topology torque boundary, manual tolerance cases, hot copper loss, demagnetization check, report outputs, and the ordered problem-analysis path.
+- Spec coverage: The plan covers the SSDR truth anchor, final-topology torque boundary, `100 mm` maximum part-diameter constraint, manual tolerance cases, hot copper loss, demagnetization check, report outputs, and the ordered problem-analysis path.
 - Scope: This plan prepares the engineering-validation path. It does not solve the existing Maxwell `AddWindingTerminals` blocker directly; the live checkpoint turns that into the next focused plan if it remains.
 - Type consistency: Engineering case fields are defined once in the generator and mirrored in validation fieldnames. Derived metric keys use `kt_effective_nm_per_arms`, `hot_copper_loss_w`, and `copper_loss_hot_w` consistently.
