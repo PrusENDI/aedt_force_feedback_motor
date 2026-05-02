@@ -1,55 +1,137 @@
-# 3D Engineering Validation Implementation Plan
+# Sector3D Geometry-Valid Engineering Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a trusted SSDR Maxwell 3D engineering-validation path that can diagnose hand-built prototype risk and prepare a disciplined correlation path to the final `S1-R1-S2-R2-S3` four-air-gap machine while keeping the maximum circular part diameter at or below `100 mm`.
+**Goal:** Build a host-only Sector3D Geometry-valid generator for a `<=100 mm` SSDR axial-flux model with arc magnets and an `A-B-C-C-B-A` six-layer laminated copper phase-belt envelope, while making first-prototype manufacturing and thermal risks visible without overclaiming solve readiness.
 
-**Architecture:** Keep AEDT-facing geometry, excitation, setup, and report scripts in their current modules. Add small pure-Python helpers for engineering case generation, tolerance parsing, and derived metric/feasibility calculations so they can be tested without AEDT. The SSDR model remains the Stage 1 truth anchor; final `4 Nm @ 3 Arms` is assessed only in the final-topology feasibility report, not as a direct SSDR pass/fail.
+**Architecture:** Add a new `scripts/build_sector3d_geometry_ready.py` entry point instead of extending the older mixed-purpose `build_sector3d_model.py`. Reuse low-level helpers from `sector3d_scaffold.py` where they are still correct, but move the new manufacturing contract, coil stack checks, geometry gates, and artifact writing into focused pure-Python helpers that can be tested without AEDT. The script runs only inside the in-AEDT host against an already-open correct `sector3d_working` / `Sector3D` design.
 
-**Tech Stack:** Python 3.10, PyAEDT/AEDT native scripting, PowerShell launchers, JSON/CSV config, `unittest` for local pure-Python checks.
+**Tech Stack:** Python 3.10, AEDT native scripting through the in-AEDT host, JSON/CSV configuration, PowerShell queue launchers, `unittest` for pure-Python gates.
+
+---
+
+## Scope Reset
+
+This plan supersedes the earlier case-generation-first flow. The next implementation must first make the Sector3D engineering geometry trustworthy. Case generation, report creation, excitation assignment, and solve automation come after the Geometry-valid generator is stable.
+
+The first version must not try to solve every real engineering problem. It must instead separate requirements into three buckets:
+
+- **Hard Gate:** Must pass before the geometry can be called `geometry_ready`.
+- **Risk Gate:** Must be reported clearly, but does not block first geometry generation.
+- **Future Validation:** Must not be silently assumed solved.
+
+## Gap Check From Brainstorming
+
+The current plan had these gaps:
+
+- It still assumed a `rigid_pcb_flat_copper_hybrid` route, but the selected first prototype is now laminated thin copper sheet, no PCB carrier.
+- It treated `build_sector3d_model.py` as mostly usable, but the user needs a stricter host-only engineering generator.
+- It did not encode the `A-B-C-C-B-A` six-layer mirror stack.
+- It did not budget Z-axis expansion from insulation paint, PI film, glue, and press-cure residual thickness.
+- It did not make single-side mechanical clearance a hard gate.
+- It did not flag the C-layer thermal core as the likely stall-current bottleneck.
+- It did not mark busbar/contact resistance and parallel current imbalance as risk gates.
+- It did not prevent the bad strategy of running 10/20/40 kHz PWM directly in Maxwell 3D Transient.
+- It did not require a future frequency-domain AC-loss path for PWM ripple loss.
+
+## First-Version Modeling Contract
+
+### Fabrication Route
+
+- `fabrication.selected_route = laminated_copper_wave_winding`
+- No PCB carrier in the active stator.
+- Effective zone support is fiberglass/G10/FR4-style nonconductive skeleton, not loose independent strips.
+- Low-field inner and outer CNC aluminum pieces provide positioning and heat spreading, but their detailed CAD is a future validation item.
+
+### Magnet Geometry
+
+- First mode: `magnet_geometry_mode = arc_segment`
+- Magnets are sector/arc magnets fitted to the annulus.
+- The geometry must support pole arc ratio, thickness, segment count, axial magnet direction, and placement error metadata.
+
+### Coil Geometry
+
+- First mode: `coil_geometry_mode = phase_stacked_mirror_parallel`
+- Maxwell geometry uses active conductor envelope only: `active_conductor_geometry_mode = phase_belt_envelope`
+- Axial layer sequence: `A-B-C-C-B-A`
+- Each layer contains both polarities of its own phase, for example an A layer includes `A+` and `A-` active belts.
+- Same-phase layers are parallel:
+  - L1-A // L6-A
+  - L2-B // L5-B
+  - L3-C // L4-C
+- End busbar and return geometry are not modeled in Maxwell v1:
+  - `end_connection_geometry_mode = estimated_not_modeled`
+  - `terminal_busbar_geometry_present = false`
+  - `busbar_loss_estimated = true`
+
+### Hard Gates
+
+- Script is running inside the in-AEDT host.
+- Active project and design match the expected working project and `Sector3D` design.
+- The script does not create a project, create a design, or fall back to external COM/gRPC attach.
+- Only `Auto3D_*` objects are deleted during rebuild.
+- Required `Auto3D_*` objects exist after rebuild.
+- Motor outer diameter and any generated circular part diameter are `<= 100 mm`.
+- Copper layer stack includes copper, insulation/film, adhesive, and compressed residual glue thickness.
+- Single-side mechanical clearance after stack expansion and axial runout allowance is `>= 0.8 mm`.
+- Magnet, copper, back iron, support, region, periodic helper sheets, and motion-band geometry exist.
+- Functional solid materials are assigned explicitly: magnets use a permanent-magnet material, copper belts use copper, back iron uses steel, and support uses a nonconductive structural material. Air region, motion-band helper solids, and periodic helper sheets may use air/vacuum-class materials only when they are explicitly listed as helper geometry.
+
+### Risk Gates
+
+- C-layer core thermal bottleneck is reported.
+- A/B/C average Z position and layer-distance imbalance are reported.
+- Parallel bridge/contact resistance and current-sharing risk are reported.
+- Aluminum support eddy-current risk is reported as future validation if aluminum forms closed or near-closed conductive paths.
+- PWM ripple AC loss is reported as a frequency-domain future validation path, not as a 3D Transient PWM solve.
+
+### Future Validation
+
+- Detailed wave-winding copper path.
+- CNC fiberglass skeleton CAD with slots/ribs.
+- U-shaped 3D copper busbar/bridge geometry.
+- Complete radial thermal-resistance network for A/B/C layers.
+- Twin Builder/Simplorer or equivalent PWM circuit extraction.
+- Maxwell Eddy Current frequency-domain AC copper loss at PWM harmonic currents.
+- Final `S1-R1-S2-R2-S3` four-gap topology correlation.
 
 ---
 
 ## File Structure
 
-- Create: `scripts/sector3d_engineering_cases.py`
-  - Owns generation of the first engineering validation case table from `config/project.json` and `config/search_space.json`.
-  - Produces nominal, air-gap, runout, magnet-placement, hot-resistance, peak-demag, and expanded-air-region cases.
-- Create: `scripts/sector3d_engineering_metrics.py`
-  - Owns derived metrics that do not require AEDT report creation: hot copper loss, `Kt_Effective`, final-topology feasibility text, and problem-analysis flags.
-- Create: `tests/test_sector3d_engineering_cases.py`
-  - Tests case generation and the final-topology torque-target boundary.
-- Create: `tests/test_sector3d_engineering_metrics.py`
-  - Tests hot resistance, copper loss, `Kt_Effective`, and feasibility classification.
+- Create: `scripts/sector3d_geometry_contract.py`
+  - Pure-Python configuration normalization and validation for the new fabrication route, magnet mode, coil mode, stack-up, and hard/risk/future gates.
+- Create: `scripts/sector3d_thermal_risk.py`
+  - Pure-Python DC/hot resistance, contact margin, skin-depth, PWM-risk classification, and C-layer bottleneck flags.
+- Create: `scripts/build_sector3d_geometry_ready.py`
+  - Host-only AEDT entry point. Performs session gate, cleans `Auto3D_*`, builds geometry, runs gates, writes artifacts, and saves the working project.
+- Create: `launchers/Queue-BuildSector3DGeometryReady.ps1`
+  - Queues `scripts/build_sector3d_geometry_ready.py`.
+- Create: `tests/test_sector3d_geometry_contract.py`
+  - Tests the pure-Python geometry contract and hard/risk gate math.
+- Create: `tests/test_sector3d_thermal_risk.py`
+  - Tests skin-depth and thermal-risk calculations.
 - Modify: `config/project.json`
-  - Adds an explicit `sector_3d.engineering_validation` contract and derived report names.
-- Modify: `cases/validation_3d.csv`
-  - Replaces the single baseline row with the first engineering validation set.
+  - Changes the selected fabrication route and adds geometry-ready contract fields.
 - Modify: `scripts/sector3d_scaffold.py`
-  - Applies tolerance metadata to generated SSDR geometry variables and build artifacts.
-- Modify: `scripts/build_sector3d_model.py`
-  - Surfaces engineering-validation metadata in geometry sanity output and markdown.
-- Modify: `scripts/run_sector_3d_validate.py`
-  - Preserves engineering case metadata, exports all contract reports that exist, applies derived metrics, writes engineering assessment outputs, and prevents SSDR results from being judged against final `4 Nm @ 3 Arms`.
-- Modify: `scripts/create_sector3d_reports.py`
-  - Keeps AEDT report creation focused on AEDT-native quantities and records derived report names as non-AEDT metrics.
-- Modify: `launchers/Queue-GenerateSector3DEngineeringCases.ps1`
-  - Runs the pure-Python case generator from PowerShell without requiring a live AEDT session.
-- Modify: `README.md` and `reports/sector3d_physics_contract.md`
-  - Documents the Stage 1 SSDR engineering-validation path and Stage 2 final-topology correlation gate.
+  - Adds/reuses low-level geometry generation for `arc_segment` magnets and `A-B-C-C-B-A` phase-belt envelope layers.
+- Modify: `README.md`
+  - Documents the new Geometry-valid workflow.
+- Modify: `reports/sector3d_physics_contract.md`
+  - Records the new fabrication route, first-version limitations, and future validation path.
 
 ---
 
-### Task 1: Add Engineering Validation Config Contract
+### Task 1: Define The Geometry Contract And Manufacturing Gates
 
 **Files:**
+- Create: `tests/test_sector3d_geometry_contract.py`
+- Create: `scripts/sector3d_geometry_contract.py`
 - Modify: `config/project.json`
-- Modify: `config/search_space.json`
-- Test: `tests/test_sector3d_engineering_cases.py`
 
-- [ ] **Step 1: Write the failing config contract test**
+- [ ] **Step 1: Write the failing tests**
 
-Create `tests/test_sector3d_engineering_cases.py` with:
+Create `tests/test_sector3d_geometry_contract.py`:
 
 ```python
 import json
@@ -62,185 +144,50 @@ SCRIPTS = os.path.join(ROOT, "scripts")
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
+from sector3d_geometry_contract import build_geometry_contract
+from sector3d_geometry_contract import clearance_budget
+from sector3d_geometry_contract import layer_phase_statistics
+from sector3d_geometry_contract import validate_geometry_contract
 
-class Sector3DEngineeringConfigTests(unittest.TestCase):
+
+class Sector3DGeometryContractTests(unittest.TestCase):
     def load_project(self):
         with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
             return json.load(handle)
 
-    def test_engineering_validation_contract_is_explicit(self):
-        project_cfg = self.load_project()
-        ev = project_cfg["sector_3d"]["engineering_validation"]
-        self.assertEqual(ev["stage1_topology"], "SSDR")
-        self.assertEqual(ev["stage2_topology"], "S1-R1-S2-R2-S3")
-        self.assertEqual(ev["stage2_target_torque_nm_at_3arms"], 4.0)
-        self.assertFalse(ev["apply_stage2_torque_target_to_ssdr"])
-        self.assertGreaterEqual(ev["manual_tolerance_envelope_mm"], 0.2)
-        self.assertGreaterEqual(ev["recommended_nominal_airgap_mm_min"], 0.8)
-        self.assertEqual(ev["max_part_outer_diameter_mm"], 100.0)
-        self.assertLessEqual(project_cfg["machine_fixed"]["outer_diameter_mm"], ev["max_part_outer_diameter_mm"])
+    def test_geometry_contract_matches_selected_first_prototype(self):
+        contract = build_geometry_contract(self.load_project())
+        self.assertEqual(contract["fabrication_route"], "laminated_copper_wave_winding")
+        self.assertEqual(contract["magnet_geometry_mode"], "arc_segment")
+        self.assertEqual(contract["coil_geometry_mode"], "phase_stacked_mirror_parallel")
+        self.assertEqual(contract["active_conductor_geometry_mode"], "phase_belt_envelope")
+        self.assertEqual(contract["axial_layer_phase_sequence"], ["A", "B", "C", "C", "B", "A"])
+        self.assertTrue(contract["phase_layer_contains_both_polarities"])
+        self.assertFalse(contract["terminal_busbar_geometry_present"])
+        self.assertEqual(contract["max_part_outer_diameter_mm"], 100.0)
 
-    def test_derived_report_names_are_configured(self):
-        project_cfg = self.load_project()
-        reports = project_cfg["reports"]
-        self.assertEqual(reports["copper_loss_hot"], "CopperLoss_Hot")
-        self.assertEqual(reports["kt_effective"], "Kt_Effective")
+    def test_stack_expansion_and_clearance_budget_are_not_idealized(self):
+        contract = build_geometry_contract(self.load_project())
+        budget = clearance_budget(contract)
+        self.assertGreater(budget["non_copper_stack_allowance_mm"], 0.0)
+        self.assertGreaterEqual(budget["single_side_clearance_required_mm"], 0.8)
+        self.assertIn("mechanical_clearance_ok", budget)
 
+    def test_layer_statistics_mark_c_as_core_layer(self):
+        stats = layer_phase_statistics(["A", "B", "C", "C", "B", "A"])
+        self.assertEqual(stats["parallel_layers_per_phase"]["A"], 2)
+        self.assertEqual(stats["parallel_layers_per_phase"]["B"], 2)
+        self.assertEqual(stats["parallel_layers_per_phase"]["C"], 2)
+        self.assertEqual(stats["core_phase"], "C")
+        self.assertGreater(stats["c_layer_thermal_bottleneck_risk"], 0.0)
 
-if __name__ == "__main__":
-    unittest.main()
-```
-
-- [ ] **Step 2: Run the failing test**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: FAIL with `KeyError: 'engineering_validation'`.
-
-- [ ] **Step 3: Add the config contract**
-
-Modify `config/project.json` under `sector_3d`:
-
-```json
-"engineering_validation": {
-  "stage1_topology": "SSDR",
-  "stage1_active_gap_faces": 2,
-  "stage2_topology": "S1-R1-S2-R2-S3",
-  "stage2_active_gap_faces": 4,
-  "stage2_target_torque_nm_at_3arms": 4.0,
-  "apply_stage2_torque_target_to_ssdr": false,
-  "manual_tolerance_envelope_mm": 0.2,
-  "max_part_outer_diameter_mm": 100.0,
-  "recommended_nominal_airgap_mm_min": 0.8,
-  "recommended_nominal_airgap_mm_max": 1.0,
-  "hot_copper_temperature_c": 100.0,
-  "peak_demag_current_arms": 4.0,
-  "expanded_air_region_padding_multiplier": 1.5,
-  "required_case_ids": [
-    "baseline_nominal",
-    "airgap_plus_0p2mm",
-    "airgap_imbalance_0p2mm",
-    "rotor_runout_0p2mm",
-    "magnet_angle_error",
-    "magnet_radial_offset",
-    "magnet_axial_height_error",
-    "hot_resistance_case",
-    "peak_current_demag_case",
-    "expanded_air_region_check"
-  ]
-}
-```
-
-Modify `config/project.json` under `reports`:
-
-```json
-"copper_loss_hot": "CopperLoss_Hot",
-"kt_effective": "Kt_Effective"
-```
-
-Modify `config/search_space.json` so the baseline air gap is engineering-realistic:
-
-```json
-{
-  "name": "airgap_mm",
-  "type": "float",
-  "min": 0.7,
-  "max": 1.2,
-  "baseline": 0.9,
-  "decimals": 3
-}
-```
-
-- [ ] **Step 4: Verify the config contract test passes**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```powershell
-git add config/project.json config/search_space.json tests/test_sector3d_engineering_cases.py
-git commit -m "Add Sector3D engineering validation contract"
-```
-
----
-
-### Task 2: Generate The First Engineering Validation Case Set
-
-**Files:**
-- Create: `scripts/sector3d_engineering_cases.py`
-- Modify: `cases/validation_3d.csv`
-- Modify: `launchers/Queue-GenerateSector3DEngineeringCases.ps1`
-- Test: `tests/test_sector3d_engineering_cases.py`
-
-- [ ] **Step 1: Extend the failing case generation tests**
-
-Append to `tests/test_sector3d_engineering_cases.py`:
-
-```python
-from sector3d_engineering_cases import build_engineering_cases
-
-
-class Sector3DEngineeringCaseGenerationTests(unittest.TestCase):
-    def load_project(self):
-        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
-            return json.load(handle)
-
-    def load_search(self):
-        with open(os.path.join(ROOT, "config", "search_space.json"), "r") as handle:
-            return json.load(handle)
-
-    def test_builds_required_engineering_cases(self):
-        rows = build_engineering_cases(self.load_project(), self.load_search())
-        case_ids = [row["case_id"] for row in rows]
-        self.assertEqual(
-            case_ids,
-            [
-                "baseline_nominal",
-                "airgap_plus_0p2mm",
-                "airgap_imbalance_0p2mm",
-                "rotor_runout_0p2mm",
-                "magnet_angle_error",
-                "magnet_radial_offset",
-                "magnet_axial_height_error",
-                "hot_resistance_case",
-                "peak_current_demag_case",
-                "expanded_air_region_check",
-            ],
-        )
-        baseline = rows[0]
-        self.assertEqual(baseline["engineering_stage"], "ssdr_truth_anchor")
-        self.assertEqual(float(baseline["phase_current_rms"]), 3.0)
-        self.assertEqual(float(baseline["airgap_upper_delta_mm"]), 0.0)
-        self.assertEqual(float(baseline["airgap_lower_delta_mm"]), 0.0)
-
-    def test_airgap_imbalance_case_keeps_mean_gap_but_offsets_sides(self):
-        rows = build_engineering_cases(self.load_project(), self.load_search())
-        row = [item for item in rows if item["case_id"] == "airgap_imbalance_0p2mm"][0]
-        self.assertEqual(float(row["airgap_upper_delta_mm"]), 0.2)
-        self.assertEqual(float(row["airgap_lower_delta_mm"]), -0.2)
-        self.assertEqual(float(row["airgap_mm"]), 0.9)
-
-    def test_stage2_target_is_metadata_not_ssdr_constraint(self):
-        rows = build_engineering_cases(self.load_project(), self.load_search())
-        for row in rows:
-            self.assertEqual(row["stage2_target_torque_nm_at_3arms"], 4.0)
-            self.assertEqual(row["apply_stage2_torque_target_to_ssdr"], "false")
-
-    def test_generated_cases_preserve_100mm_part_limit_metadata(self):
-        rows = build_engineering_cases(self.load_project(), self.load_search())
-        for row in rows:
-            self.assertEqual(float(row["max_part_outer_diameter_mm"]), 100.0)
-            self.assertLessEqual(float(row["outer_diameter_mm"]), 100.0)
+    def test_contract_validation_reports_risk_gates_separately(self):
+        result = validate_geometry_contract(self.load_project())
+        self.assertIn("hard_gates", result)
+        self.assertIn("risk_gates", result)
+        self.assertIn("future_validation", result)
+        self.assertIn("pwm_ac_loss_requires_frequency_domain_check", result["risk_gates"])
+        self.assertIn("detailed_wave_winding_geometry", result["future_validation"])
 ```
 
 - [ ] **Step 2: Run the failing tests**
@@ -248,290 +195,162 @@ class Sector3DEngineeringCaseGenerationTests(unittest.TestCase):
 Run:
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError: No module named 'sector3d_engineering_cases'`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'sector3d_geometry_contract'`.
 
-- [ ] **Step 3: Create the case generator**
+- [ ] **Step 3: Add the geometry-ready config**
 
-Create `scripts/sector3d_engineering_cases.py`:
+Modify `config/project.json`:
+
+```json
+"fabrication": {
+  "selected_route": "laminated_copper_wave_winding",
+  "notes": "No PCB carrier in the active stator. Use laminated thin copper wave-winding sheets, fiberglass active-zone support, and aluminum support only in lower-field heat-spreading zones."
+}
+```
+
+Add under `sector_3d`:
+
+```json
+"geometry_ready": {
+  "host_only": true,
+  "strict_active_project": true,
+  "expected_project_name_contains": "sector3d_working",
+  "expected_design_name": "Sector3D",
+  "delete_generated_prefix": "Auto3D_",
+  "artifact_json": "artifacts/sector3d_geometry_ready.json",
+  "artifact_md": "reports/sector3d_geometry_ready.md",
+  "magnet_geometry_mode": "arc_segment",
+  "coil_geometry_mode": "phase_stacked_mirror_parallel",
+  "active_conductor_geometry_mode": "phase_belt_envelope",
+  "axial_layer_phase_sequence": ["A", "B", "C", "C", "B", "A"],
+  "phase_layer_contains_both_polarities": true,
+  "terminal_busbar_geometry_present": false,
+  "end_connection_geometry_mode": "estimated_not_modeled",
+  "busbar_loss_estimated": true,
+  "max_part_outer_diameter_mm": 100.0,
+  "single_side_clearance_required_mm": 0.8,
+  "copper_sheet_thickness_mm": 0.3,
+  "insulation_per_layer_mm": 0.03,
+  "adhesive_residual_per_interface_mm": 0.05,
+  "axial_runout_allowance_mm": 0.2,
+  "press_cure_required": true,
+  "support_strategy": "fiberglass_active_zone_aluminum_low_field_heat_spreader"
+}
+```
+
+- [ ] **Step 4: Implement the pure-Python contract module**
+
+Create `scripts/sector3d_geometry_contract.py`:
 
 ```python
 from __future__ import print_function
 
-import os
 
-from aedt_native_common import config_paths
-from aedt_native_common import load_json
-from aedt_native_common import repo_root
-from aedt_native_common import write_csv_rows
-
-
-BASE_EXTRA_FIELDS = [
-    "engineering_stage",
-    "case_intent",
-    "phase_current_rms",
-    "speed_rpm",
-    "current_angle_deg",
-    "airgap_upper_delta_mm",
-    "airgap_lower_delta_mm",
-    "rotor_runout_mm",
-    "magnet_angle_error_deg",
-    "magnet_radial_offset_mm",
-    "magnet_axial_offset_mm",
-    "copper_temperature_c",
-    "air_region_padding_multiplier",
-    "stage2_target_torque_nm_at_3arms",
-    "apply_stage2_torque_target_to_ssdr",
-    "max_part_outer_diameter_mm",
-]
+def _float(value, default_value=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return default_value
 
 
-def _baseline_from_search(search_cfg):
-    row = {}
-    for spec in search_cfg["variables"]:
-        row[spec["name"]] = spec["baseline"]
-    return row
-
-
-def _base_case(project_cfg, search_cfg):
+def build_geometry_contract(project_cfg):
     fixed = project_cfg["machine_fixed"]
-    ev = project_cfg["sector_3d"]["engineering_validation"]
-    row = _baseline_from_search(search_cfg)
-    row.update(
-        {
-            "engineering_stage": "ssdr_truth_anchor",
-            "phase_current_rms": fixed["continuous_phase_current_arms"],
-            "speed_rpm": fixed["max_speed_rpm"],
-            "current_angle_deg": project_cfg["sector_3d"]["winding"].get("current_angle_deg", 0.0),
-            "airgap_upper_delta_mm": 0.0,
-            "airgap_lower_delta_mm": 0.0,
-            "rotor_runout_mm": 0.0,
-            "magnet_angle_error_deg": 0.0,
-            "magnet_radial_offset_mm": 0.0,
-            "magnet_axial_offset_mm": 0.0,
-            "copper_temperature_c": ev["hot_copper_temperature_c"],
-            "air_region_padding_multiplier": 1.0,
-            "stage2_target_torque_nm_at_3arms": ev["stage2_target_torque_nm_at_3arms"],
-            "apply_stage2_torque_target_to_ssdr": "false",
-            "max_part_outer_diameter_mm": ev["max_part_outer_diameter_mm"],
-        }
+    geometry_cfg = project_cfg["sector_3d"]["geometry_ready"]
+    return {
+        "fabrication_route": project_cfg["fabrication"]["selected_route"],
+        "magnet_geometry_mode": geometry_cfg["magnet_geometry_mode"],
+        "coil_geometry_mode": geometry_cfg["coil_geometry_mode"],
+        "active_conductor_geometry_mode": geometry_cfg["active_conductor_geometry_mode"],
+        "axial_layer_phase_sequence": list(geometry_cfg["axial_layer_phase_sequence"]),
+        "phase_layer_contains_both_polarities": bool(geometry_cfg["phase_layer_contains_both_polarities"]),
+        "terminal_busbar_geometry_present": bool(geometry_cfg["terminal_busbar_geometry_present"]),
+        "end_connection_geometry_mode": geometry_cfg["end_connection_geometry_mode"],
+        "busbar_loss_estimated": bool(geometry_cfg["busbar_loss_estimated"]),
+        "max_part_outer_diameter_mm": _float(geometry_cfg["max_part_outer_diameter_mm"]),
+        "outer_diameter_mm": _float(fixed["outer_diameter_mm"]),
+        "single_side_clearance_required_mm": _float(geometry_cfg["single_side_clearance_required_mm"]),
+        "copper_sheet_thickness_mm": _float(geometry_cfg["copper_sheet_thickness_mm"]),
+        "insulation_per_layer_mm": _float(geometry_cfg["insulation_per_layer_mm"]),
+        "adhesive_residual_per_interface_mm": _float(geometry_cfg["adhesive_residual_per_interface_mm"]),
+        "axial_runout_allowance_mm": _float(geometry_cfg["axial_runout_allowance_mm"]),
+        "support_strategy": geometry_cfg["support_strategy"],
+        "press_cure_required": bool(geometry_cfg["press_cure_required"]),
+    }
+
+
+def layer_phase_statistics(sequence):
+    counts = {}
+    z_sum = {}
+    for index, phase in enumerate(sequence):
+        counts[phase] = counts.get(phase, 0) + 1
+        z_sum[phase] = z_sum.get(phase, 0.0) + float(index)
+    average_index = {}
+    for phase, count in counts.items():
+        average_index[phase] = z_sum[phase] / float(count)
+    middle = (len(sequence) - 1.0) / 2.0
+    core_phase = min(average_index.keys(), key=lambda phase: abs(average_index[phase] - middle))
+    return {
+        "parallel_layers_per_phase": counts,
+        "average_layer_index": average_index,
+        "core_phase": core_phase,
+        "c_layer_thermal_bottleneck_risk": 1.0 if core_phase == "C" else 0.5,
+    }
+
+
+def clearance_budget(contract):
+    layer_count = len(contract["axial_layer_phase_sequence"])
+    interface_count = layer_count + 1
+    copper_stack = layer_count * contract["copper_sheet_thickness_mm"]
+    non_copper = (
+        layer_count * contract["insulation_per_layer_mm"]
+        + interface_count * contract["adhesive_residual_per_interface_mm"]
     )
-    return row
+    expanded_stator_stack = copper_stack + non_copper
+    required_total_gap_allowance = (
+        2.0 * contract["single_side_clearance_required_mm"]
+        + contract["axial_runout_allowance_mm"]
+    )
+    return {
+        "copper_stack_mm": copper_stack,
+        "non_copper_stack_allowance_mm": non_copper,
+        "expanded_stator_stack_mm": expanded_stator_stack,
+        "single_side_clearance_required_mm": contract["single_side_clearance_required_mm"],
+        "axial_runout_allowance_mm": contract["axial_runout_allowance_mm"],
+        "required_total_gap_allowance_mm": required_total_gap_allowance,
+        "mechanical_clearance_ok": contract["single_side_clearance_required_mm"] >= 0.8,
+    }
 
 
-def _with_case(base, case_id, intent, **updates):
-    row = dict(base)
-    row["case_id"] = case_id
-    row["case_intent"] = intent
-    row.update(updates)
-    return row
-
-
-def build_engineering_cases(project_cfg, search_cfg):
-    ev = project_cfg["sector_3d"]["engineering_validation"]
-    tol = float(ev["manual_tolerance_envelope_mm"])
-    base = _base_case(project_cfg, search_cfg)
-    if float(project_cfg["machine_fixed"]["outer_diameter_mm"]) > float(ev["max_part_outer_diameter_mm"]):
-        raise ValueError(
-            "outer_diameter_mm %.6g exceeds max_part_outer_diameter_mm %.6g"
-            % (float(project_cfg["machine_fixed"]["outer_diameter_mm"]), float(ev["max_part_outer_diameter_mm"]))
-        )
-    base["airgap_mm"] = max(float(base["airgap_mm"]), float(ev["recommended_nominal_airgap_mm_min"]))
-    return [
-        _with_case(base, "baseline_nominal", "Nominal SSDR engineering truth-anchor case"),
-        _with_case(base, "airgap_plus_0p2mm", "Global air gap enlarged by manual-build tolerance", airgap_mm=float(base["airgap_mm"]) + tol),
-        _with_case(base, "airgap_imbalance_0p2mm", "Upper and lower gaps imbalanced while nominal mean gap is preserved", airgap_upper_delta_mm=tol, airgap_lower_delta_mm=-tol),
-        _with_case(base, "rotor_runout_0p2mm", "Equivalent axial rotor runout tolerance", rotor_runout_mm=tol),
-        _with_case(base, "magnet_angle_error", "Magnet placement angular error", magnet_angle_error_deg=2.0),
-        _with_case(base, "magnet_radial_offset", "Magnet radial placement offset", magnet_radial_offset_mm=tol),
-        _with_case(base, "magnet_axial_height_error", "Magnet height or glue-line axial placement error", magnet_axial_offset_mm=tol),
-        _with_case(base, "hot_resistance_case", "Long continuous operation at hot copper resistance", copper_temperature_c=ev["hot_copper_temperature_c"]),
-        _with_case(base, "peak_current_demag_case", "High-temperature peak-current demagnetization check", phase_current_rms=ev["peak_demag_current_arms"]),
-        _with_case(base, "expanded_air_region_check", "Expanded air region boundary sensitivity check", air_region_padding_multiplier=ev["expanded_air_region_padding_multiplier"]),
+def validate_geometry_contract(project_cfg):
+    contract = build_geometry_contract(project_cfg)
+    hard = {}
+    hard["outer_diameter_within_100mm"] = contract["outer_diameter_mm"] <= contract["max_part_outer_diameter_mm"]
+    hard["six_layer_sequence"] = contract["axial_layer_phase_sequence"] == ["A", "B", "C", "C", "B", "A"]
+    hard["mechanical_clearance_ok"] = clearance_budget(contract)["mechanical_clearance_ok"]
+    hard["no_terminal_busbar_geometry_in_v1"] = not contract["terminal_busbar_geometry_present"]
+    risk = [
+        "c_layer_thermal_bottleneck",
+        "parallel_bridge_balance_risk",
+        "aluminum_eddy_current_risk",
+        "pwm_ac_loss_requires_frequency_domain_check",
     ]
-
-
-def fieldnames(search_cfg):
-    names = ["case_id"]
-    for spec in search_cfg["variables"]:
-        names.append(spec["name"])
-    names.extend(BASE_EXTRA_FIELDS)
-    return names
-
-
-def main():
-    root = repo_root()
-    project_cfg = load_json(os.path.join(root, "config", "project.json"))
-    search_cfg = load_json(os.path.join(root, "config", "search_space.json"))
-    paths = config_paths(root, project_cfg)
-    rows = build_engineering_cases(project_cfg, search_cfg)
-    write_csv_rows(paths["validation_cases_csv"], rows, fieldnames(search_cfg))
-    print("Wrote %d Sector3D engineering validation cases to %s" % (len(rows), paths["validation_cases_csv"]))
-
-
-if __name__ == "__main__":
-    main()
-```
-
-- [ ] **Step 4: Create the launcher**
-
-Create `launchers/Queue-GenerateSector3DEngineeringCases.ps1`:
-
-```powershell
-$ErrorActionPreference = "Stop"
-$Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$Python = "C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe"
-& $Python (Join-Path $Root "scripts\sector3d_engineering_cases.py")
-```
-
-- [ ] **Step 5: Generate the case CSV**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' scripts\sector3d_engineering_cases.py
-```
-
-Expected: `Wrote 10 Sector3D engineering validation cases to ...cases\validation_3d.csv`.
-
-- [ ] **Step 6: Verify tests pass**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: PASS.
-
-- [ ] **Step 7: Commit**
-
-```powershell
-git add scripts/sector3d_engineering_cases.py launchers/Queue-GenerateSector3DEngineeringCases.ps1 cases/validation_3d.csv tests/test_sector3d_engineering_cases.py
-git commit -m "Generate Sector3D engineering validation cases"
-```
-
----
-
-### Task 3: Preserve Engineering Case Metadata Through Validation
-
-**Files:**
-- Modify: `scripts/run_sector_3d_validate.py`
-- Test: `tests/test_sector3d_engineering_cases.py`
-
-- [ ] **Step 1: Write the failing metadata preservation test**
-
-Append to `tests/test_sector3d_engineering_cases.py`:
-
-```python
-from run_sector_3d_validate import _fieldnames
-from run_sector_3d_validate import _validate_case_row
-
-
-class Sector3DValidationMetadataTests(unittest.TestCase):
-    def load_project(self):
-        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
-            return json.load(handle)
-
-    def load_search(self):
-        with open(os.path.join(ROOT, "config", "search_space.json"), "r") as handle:
-            return json.load(handle)
-
-    def test_validation_accepts_engineering_metadata_columns(self):
-        project_cfg = self.load_project()
-        search_cfg = self.load_search()
-        raw = build_engineering_cases(project_cfg, search_cfg)[2]
-        parsed, errors = _validate_case_row(raw, search_cfg, project_cfg, {})
-        self.assertEqual(errors, [])
-        self.assertEqual(parsed["case_id"], "airgap_imbalance_0p2mm")
-        self.assertEqual(parsed["engineering_stage"], "ssdr_truth_anchor")
-        self.assertEqual(float(parsed["airgap_upper_delta_mm"]), 0.2)
-        self.assertEqual(float(parsed["airgap_lower_delta_mm"]), -0.2)
-
-    def test_summary_fieldnames_include_engineering_metadata(self):
-        names = _fieldnames()
-        self.assertIn("engineering_stage", names)
-        self.assertIn("case_intent", names)
-        self.assertIn("airgap_upper_delta_mm", names)
-        self.assertIn("stage2_target_torque_nm_at_3arms", names)
-        self.assertIn("max_part_outer_diameter_mm", names)
-        self.assertIn("ssdr_direct_target_fail", names)
-```
-
-- [ ] **Step 2: Run the failing tests**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: FAIL because `_validate_case_row` drops unknown metadata and `_fieldnames()` lacks engineering fields.
-
-- [ ] **Step 3: Extend summary and failure fieldnames**
-
-In `scripts/run_sector_3d_validate.py`, add:
-
-```python
-ENGINEERING_CASE_FIELDS = [
-    "engineering_stage",
-    "case_intent",
-    "phase_current_rms",
-    "speed_rpm",
-    "current_angle_deg",
-    "airgap_upper_delta_mm",
-    "airgap_lower_delta_mm",
-    "rotor_runout_mm",
-    "magnet_angle_error_deg",
-    "magnet_radial_offset_mm",
-    "magnet_axial_offset_mm",
-    "copper_temperature_c",
-    "air_region_padding_multiplier",
-    "stage2_target_torque_nm_at_3arms",
-    "apply_stage2_torque_target_to_ssdr",
-    "max_part_outer_diameter_mm",
-    "ssdr_direct_target_fail",
-    "final_topology_feasibility",
-    "problem_analysis_flags",
-]
-```
-
-Append these fields in `_fieldnames()` after `stage`:
-
-```python
-        "engineering_stage",
-        "case_intent",
-        "phase_current_rms",
-        "speed_rpm",
-        "current_angle_deg",
-        "airgap_upper_delta_mm",
-        "airgap_lower_delta_mm",
-        "rotor_runout_mm",
-        "magnet_angle_error_deg",
-        "magnet_radial_offset_mm",
-        "magnet_axial_offset_mm",
-        "copper_temperature_c",
-        "air_region_padding_multiplier",
-        "stage2_target_torque_nm_at_3arms",
-        "apply_stage2_torque_target_to_ssdr",
-        "max_part_outer_diameter_mm",
-        "ssdr_direct_target_fail",
-        "final_topology_feasibility",
-        "problem_analysis_flags",
-```
-
-Append the non-derived engineering fields in `_failure_fieldnames()` after `failed_at`.
-
-- [ ] **Step 4: Preserve metadata during validation**
-
-In `_validate_case_row`, after parsing search variables and before returning, add:
-
-```python
-    for name in ENGINEERING_CASE_FIELDS:
-        if name in raw_case and name not in ["ssdr_direct_target_fail", "final_topology_feasibility", "problem_analysis_flags"]:
-            parsed[name] = raw_case.get(name, "")
+    future = [
+        "detailed_wave_winding_geometry",
+        "fiberglass_skeleton_cad",
+        "u_shaped_busbar_geometry",
+        "full_layer_thermal_resistance_network",
+        "frequency_domain_eddy_current_ac_loss",
+        "final_four_gap_topology_correlation",
+    ]
+    return {
+        "geometry_ready_contract_ok": all(hard.values()),
+        "hard_gates": hard,
+        "risk_gates": risk,
+        "future_validation": future,
+    }
 ```
 
 - [ ] **Step 5: Verify tests pass**
@@ -539,209 +358,32 @@ In `_validate_case_row`, after parsing search variables and before returning, ad
 Run:
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
-
-```powershell
-git add scripts/run_sector_3d_validate.py tests/test_sector3d_engineering_cases.py
-git commit -m "Preserve Sector3D engineering case metadata"
-```
-
----
-
-### Task 4: Apply SSDR Tolerance Metadata To Geometry Variables
-
-**Files:**
-- Modify: `scripts/sector3d_scaffold.py`
-- Modify: `scripts/build_sector3d_model.py`
-- Test: `tests/test_sector3d_engineering_cases.py`
-
-- [ ] **Step 1: Write the failing tolerance-variable test**
-
-Append to `tests/test_sector3d_engineering_cases.py`:
-
-```python
-from sector3d_scaffold import scaffold_variables
-from sector3d_scaffold import tolerance_metadata
-
-
-class Sector3DToleranceGeometryTests(unittest.TestCase):
-    def load_project(self):
-        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
-            return json.load(handle)
-
-    def load_search(self):
-        with open(os.path.join(ROOT, "config", "search_space.json"), "r") as handle:
-            return json.load(handle)
-
-    def test_scaffold_defines_tolerance_variables(self):
-        variables = scaffold_variables(self.load_project())
-        self.assertIn("airgap_upper_delta_mm", variables)
-        self.assertIn("airgap_lower_delta_mm", variables)
-        self.assertIn("rotor_runout_mm", variables)
-        self.assertIn("magnet_angle_error_deg", variables)
-        self.assertIn("magnet_radial_offset_mm", variables)
-        self.assertIn("magnet_axial_offset_mm", variables)
-
-    def test_tolerance_metadata_reads_engineering_case(self):
-        project_cfg = self.load_project()
-        search_cfg = self.load_search()
-        row = [item for item in build_engineering_cases(project_cfg, search_cfg) if item["case_id"] == "rotor_runout_0p2mm"][0]
-        meta = tolerance_metadata(row)
-        self.assertEqual(meta["rotor_runout_mm"], 0.2)
-        self.assertEqual(meta["airgap_upper_delta_mm"], 0.0)
-        self.assertEqual(meta["airgap_lower_delta_mm"], 0.0)
-```
-
-- [ ] **Step 2: Run the failing tests**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-```
-
-Expected: FAIL with `ImportError` or missing tolerance variable assertions.
-
-- [ ] **Step 3: Add tolerance parsing to `sector3d_scaffold.py`**
-
-Add near `_case_int`:
-
-```python
-def tolerance_metadata(case_row):
-    return {
-        "airgap_upper_delta_mm": _case_float(case_row, "airgap_upper_delta_mm", 0.0),
-        "airgap_lower_delta_mm": _case_float(case_row, "airgap_lower_delta_mm", 0.0),
-        "rotor_runout_mm": _case_float(case_row, "rotor_runout_mm", 0.0),
-        "magnet_angle_error_deg": _case_float(case_row, "magnet_angle_error_deg", 0.0),
-        "magnet_radial_offset_mm": _case_float(case_row, "magnet_radial_offset_mm", 0.0),
-        "magnet_axial_offset_mm": _case_float(case_row, "magnet_axial_offset_mm", 0.0),
-        "air_region_padding_multiplier": _case_float(case_row, "air_region_padding_multiplier", 1.0),
-    }
-```
-
-Add these default design variables in `scaffold_variables()`:
-
-```python
-        "airgap_upper_delta_mm": "0mm",
-        "airgap_lower_delta_mm": "0mm",
-        "rotor_runout_mm": "0mm",
-        "magnet_angle_error_deg": "0deg",
-        "magnet_radial_offset_mm": "0mm",
-        "magnet_axial_offset_mm": "0mm",
-        "air_region_padding_multiplier": "1",
-        "airgap_lower_effective_mm": "airgap_mm + airgap_lower_delta_mm",
-        "airgap_upper_effective_mm": "airgap_mm + airgap_upper_delta_mm",
-```
-
-- [ ] **Step 4: Apply per-case tolerance variables before geometry creation**
-
-In `build_sector_3d_scaffold()`, after `scaffold_vars = scaffold_variables(project_cfg)`, add:
-
-```python
-    tol_meta = tolerance_metadata(case_row)
-    scaffold_vars.update(
-        {
-            "airgap_upper_delta_mm": "%.6gmm" % tol_meta["airgap_upper_delta_mm"],
-            "airgap_lower_delta_mm": "%.6gmm" % tol_meta["airgap_lower_delta_mm"],
-            "rotor_runout_mm": "%.6gmm" % tol_meta["rotor_runout_mm"],
-            "magnet_angle_error_deg": "%.6gdeg" % tol_meta["magnet_angle_error_deg"],
-            "magnet_radial_offset_mm": "%.6gmm" % tol_meta["magnet_radial_offset_mm"],
-            "magnet_axial_offset_mm": "%.6gmm" % tol_meta["magnet_axial_offset_mm"],
-            "air_region_padding_multiplier": "%.6g" % tol_meta["air_region_padding_multiplier"],
-        }
-    )
-```
-
-Change the relevant z expressions in `scaffold_variables()`:
-
-```python
-        "auto3d_z_lower_flat_copper_mm": "backiron_thickness_mm + magnet_thickness_mm + airgap_lower_effective_mm",
-        "auto3d_z_top_magnet_mm": "auto3d_z_upper_airgap_mm + airgap_upper_effective_mm + rotor_runout_mm",
-        "auto3d_region_padding_mm": "(%.6gmm + %.6g*airgap_mm)*air_region_padding_multiplier" % (padding_mm, padding_airgap_multiplier),
-```
-
-Change magnet definitions in `_magnet_pole_objects_definition()` so angle/radial/axial offsets affect the generated magnets. Add this line after `magnet_arc_deg = pole_pitch_deg * pole_arc_ratio`:
-
-```python
-    tol_meta = tolerance_metadata(case_row)
-```
-
-Then change both bottom and top magnet dictionaries:
-
-```python
-                "outer_radius": "outer_radius_mm + magnet_radial_offset_mm",
-                "inner_radius": "inner_radius_mm + magnet_radial_offset_mm",
-                "start_angle_deg": start_angle_deg + tol_meta["magnet_angle_error_deg"],
-```
-
-For the bottom magnet dictionary, use:
-
-```python
-                "z_start": "auto3d_z_bottom_magnet_mm + magnet_axial_offset_mm",
-```
-
-For the top magnet dictionary, use:
-
-```python
-                "z_start": "auto3d_z_top_magnet_mm + magnet_axial_offset_mm",
-```
-
-- [ ] **Step 5: Include tolerance metadata in the build artifact**
-
-In the returned dictionary from `build_sector_3d_scaffold()`, add:
-
-```python
-        "tolerance_metadata": tol_meta,
-```
-
-In `scripts/build_sector3d_model.py`, add `tolerance_metadata` to the markdown under a new `## Engineering Tolerance Metadata` section:
-
-```python
-    lines.append("## Engineering Tolerance Metadata")
-    lines.append("")
-    for key, value in summary.get("tolerance_metadata", {}).items():
-        lines.append("- %s: `%s`" % (key, value))
-    lines.append("")
-```
-
-- [ ] **Step 6: Verify tests and compile**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_cases -v
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_scaffold.py scripts\build_sector3d_model.py
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_geometry_contract.py
 ```
 
 Expected: PASS and no py_compile output.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```powershell
-git add scripts/sector3d_scaffold.py scripts/build_sector3d_model.py tests/test_sector3d_engineering_cases.py
-git commit -m "Apply Sector3D engineering tolerances to scaffold"
+git add config/project.json scripts/sector3d_geometry_contract.py tests/test_sector3d_geometry_contract.py
+git commit -m "Define Sector3D geometry-ready manufacturing contract"
 ```
 
 ---
 
-### Task 5: Add Derived Engineering Metrics And Final-Topology Feasibility
+### Task 2: Add Thermal And PWM Risk Screening
 
 **Files:**
-- Create: `scripts/sector3d_engineering_metrics.py`
-- Modify: `scripts/run_sector_3d_validate.py`
-- Test: `tests/test_sector3d_engineering_metrics.py`
+- Create: `tests/test_sector3d_thermal_risk.py`
+- Create: `scripts/sector3d_thermal_risk.py`
 
-- [ ] **Step 1: Write the failing metric tests**
+- [ ] **Step 1: Write the failing tests**
 
-Create `tests/test_sector3d_engineering_metrics.py`:
+Create `tests/test_sector3d_thermal_risk.py`:
 
 ```python
-import json
 import os
 import sys
 import unittest
@@ -751,62 +393,34 @@ SCRIPTS = os.path.join(ROOT, "scripts")
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
-from sector3d_engineering_metrics import add_engineering_metrics
-from sector3d_engineering_metrics import final_topology_feasibility
-from sector3d_engineering_metrics import problem_analysis_flags
+from sector3d_thermal_risk import copper_skin_depth_mm
+from sector3d_thermal_risk import classify_pwm_risk
+from sector3d_thermal_risk import hot_resistance
+from sector3d_thermal_risk import layer_thermal_risk_summary
 
 
-class Sector3DEngineeringMetricsTests(unittest.TestCase):
-    def load_project(self):
-        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
-            return json.load(handle)
+class Sector3DThermalRiskTests(unittest.TestCase):
+    def test_skin_depth_decreases_with_frequency(self):
+        d10 = copper_skin_depth_mm(10000.0)
+        d20 = copper_skin_depth_mm(20000.0)
+        d40 = copper_skin_depth_mm(40000.0)
+        self.assertGreater(d10, d20)
+        self.assertGreater(d20, d40)
 
-    def test_adds_hot_loss_and_kt_without_ssdr_target_fail(self):
-        project_cfg = self.load_project()
-        row = {
-            "case_id": "baseline_nominal",
-            "torque_avg_nm": 1.7,
-            "torque_loaded_p2p": 0.2,
-            "phase_current_rms": 3.0,
-            "phase_resistance_ohm_20c": 0.55,
-            "copper_temperature_c": 100.0,
-            "stage2_target_torque_nm_at_3arms": 4.0,
-            "apply_stage2_torque_target_to_ssdr": "false",
-        }
-        out = add_engineering_metrics(project_cfg, row)
-        self.assertAlmostEqual(out["kt_effective_nm_per_arms"], 1.7 / 3.0)
-        self.assertGreater(out["phase_resistance_ohm_hot"], out["phase_resistance_ohm_20c"])
-        self.assertGreater(out["hot_copper_loss_w"], 0.0)
-        self.assertEqual(out["ssdr_direct_target_fail"], "false")
+    def test_pwm_risk_classification_uses_thickness_to_skin_depth(self):
+        low = classify_pwm_risk(0.05, 20000.0)
+        high = classify_pwm_risk(1.0, 40000.0)
+        self.assertEqual(low["risk"], "low")
+        self.assertEqual(high["risk"], "high")
 
-    def test_final_topology_feasibility_is_not_blind_times_two(self):
-        project_cfg = self.load_project()
-        row = {
-            "torque_avg_nm": 1.8,
-            "hot_copper_loss_w": 28.0,
-            "torque_ripple_pct": 7.0,
-            "cogging_peak_nm": 0.03,
-            "back_emf_margin_v": 4.0,
-            "stage2_target_torque_nm_at_3arms": 4.0,
-        }
-        text = final_topology_feasibility(project_cfg, row)
-        self.assertIn("SSDR", text)
-        self.assertIn("four-air-gap", text)
-        self.assertIn("not a direct pass/fail", text)
+    def test_hot_resistance_increases_with_temperature_and_contact_margin(self):
+        out = hot_resistance(0.5, 100.0, contact_resistance_ohm=0.01)
+        self.assertGreater(out, 0.5)
 
-    def test_problem_flags_are_ordered_by_diagnostic_path(self):
-        row = {
-            "torque_avg_nm": 0.1,
-            "torque_ripple_pct": 80.0,
-            "hot_copper_loss_w": 90.0,
-            "back_emf_margin_v": -2.0,
-            "bmax_backiron_t": 1.9,
-            "magnet_demag_margin": -0.1,
-        }
-        flags = problem_analysis_flags(row)
-        self.assertEqual(flags[0], "geometry_or_excitation_suspect")
-        self.assertIn("thermal_copper_loss_high", flags)
-        self.assertIn("magnet_demag_margin_low", flags)
+    def test_c_layer_is_reported_as_thermal_bottleneck(self):
+        summary = layer_thermal_risk_summary(["A", "B", "C", "C", "B", "A"])
+        self.assertEqual(summary["core_phase"], "C")
+        self.assertIn("C layer is the likely stall-current bottleneck", summary["risk_note"])
 ```
 
 - [ ] **Step 2: Run the failing tests**
@@ -814,350 +428,82 @@ class Sector3DEngineeringMetricsTests(unittest.TestCase):
 Run:
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_thermal_risk -v
 ```
 
-Expected: FAIL with `ModuleNotFoundError`.
+Expected: FAIL with `ModuleNotFoundError: No module named 'sector3d_thermal_risk'`.
 
-- [ ] **Step 3: Create the metrics module**
+- [ ] **Step 3: Implement the thermal risk helper**
 
-Create `scripts/sector3d_engineering_metrics.py`:
+Create `scripts/sector3d_thermal_risk.py`:
 
 ```python
 from __future__ import print_function
 
-
-def _float(row, key, default_value=0.0):
-    try:
-        return float(row.get(key, default_value))
-    except Exception:
-        return default_value
+import math
 
 
-def _bool_text(value):
-    return str(value).strip().lower() in ["1", "true", "yes"]
+COPPER_RESISTIVITY_20C_OHM_M = 1.724e-8
+COPPER_RELATIVE_PERMEABILITY = 1.0
+MU0 = 4.0 * math.pi * 1.0e-7
+COPPER_TEMPCO_PER_C = 0.00393
 
 
-def hot_resistance(phase_resistance_20c, copper_temperature_c, tempco):
-    return phase_resistance_20c * (1.0 + tempco * (copper_temperature_c - 20.0))
+def copper_skin_depth_mm(frequency_hz):
+    frequency = max(float(frequency_hz), 1.0)
+    omega = 2.0 * math.pi * frequency
+    depth_m = math.sqrt(2.0 * COPPER_RESISTIVITY_20C_OHM_M / (omega * MU0 * COPPER_RELATIVE_PERMEABILITY))
+    return depth_m * 1000.0
 
 
-def problem_analysis_flags(row):
-    flags = []
-    if abs(_float(row, "torque_avg_nm")) < 0.2 or _float(row, "torque_ripple_pct") > 50.0:
-        flags.append("geometry_or_excitation_suspect")
-    if _float(row, "hot_copper_loss_w") > 35.0:
-        flags.append("thermal_copper_loss_high")
-    if _float(row, "magnet_demag_margin", 1.0) <= 0.0:
-        flags.append("magnet_demag_margin_low")
-    if _float(row, "bmax_backiron_t") > 1.6:
-        flags.append("backiron_saturation_risk")
-    if _float(row, "back_emf_margin_v") < 2.0:
-        flags.append("back_emf_bus_margin_low")
-    if not flags:
-        flags.append("no_primary_flags")
-    return flags
-
-
-def final_topology_feasibility(project_cfg, row):
-    ev = project_cfg["sector_3d"]["engineering_validation"]
-    target = _float(row, "stage2_target_torque_nm_at_3arms", ev["stage2_target_torque_nm_at_3arms"])
-    ssdr_torque = _float(row, "torque_avg_nm")
-    flags = problem_analysis_flags(row)
-    return (
-        "SSDR torque %.6g Nm is a Stage 1 truth-anchor result and is not a direct pass/fail "
-        "against the final four-air-gap target %.6g Nm @ 3 Arms. Correlate leakage, copper length, "
-        "thermal path, tolerance accumulation, phase balance, and the 100 mm maximum part-diameter "
-        "constraint in the final %s topology. "
-        "Diagnostic flags: %s"
-        % (ssdr_torque, target, ev["stage2_topology"], ", ".join(flags))
-    )
-
-
-def add_engineering_metrics(project_cfg, row):
-    out = dict(row)
-    fixed = project_cfg["machine_fixed"]
-    proxy = project_cfg["proxy_models"]
-    ev = project_cfg["sector_3d"]["engineering_validation"]
-    current = _float(out, "phase_current_rms", fixed["continuous_phase_current_arms"])
-    if current <= 0.0:
-        current = fixed["continuous_phase_current_arms"]
-    out["phase_current_rms"] = current
-    torque = _float(out, "torque_avg_nm", _float(out, "torque_loaded_avg", 0.0))
-    out["kt_effective_nm_per_arms"] = torque / max(current, 1.0e-9)
-    phase_r_20c = _float(out, "phase_resistance_ohm_20c")
-    copper_temp = _float(out, "copper_temperature_c", ev["hot_copper_temperature_c"])
-    phase_r_hot = hot_resistance(phase_r_20c, copper_temp, proxy["copper_tempco_per_c"])
-    out["phase_resistance_ohm_hot"] = phase_r_hot
-    out["hot_copper_loss_w"] = 3.0 * (current ** 2) * phase_r_hot
-    out["copper_loss_hot_w"] = out["hot_copper_loss_w"]
-    out["ssdr_direct_target_fail"] = "true" if _bool_text(out.get("apply_stage2_torque_target_to_ssdr", "false")) and torque < ev["stage2_target_torque_nm_at_3arms"] else "false"
-    out["problem_analysis_flags"] = " | ".join(problem_analysis_flags(out))
-    out["final_topology_feasibility"] = final_topology_feasibility(project_cfg, out)
-    return out
-```
-
-- [ ] **Step 4: Integrate metrics into validation runner**
-
-In `scripts/run_sector_3d_validate.py`, add:
-
-```python
-from sector3d_engineering_metrics import add_engineering_metrics
-```
-
-After `summary = dict(case_row)` and after AEDT metrics have been merged, add:
-
-```python
-            summary = add_engineering_metrics(project_cfg, summary)
-```
-
-Ensure `_fieldnames()` includes:
-
-```python
-        "kt_effective_nm_per_arms",
-        "copper_loss_hot_w",
-```
-
-- [ ] **Step 5: Verify tests and compile**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_engineering_metrics.py scripts\run_sector_3d_validate.py
-```
-
-Expected: PASS and no py_compile output.
-
-- [ ] **Step 6: Commit**
-
-```powershell
-git add scripts/sector3d_engineering_metrics.py scripts/run_sector_3d_validate.py tests/test_sector3d_engineering_metrics.py
-git commit -m "Add Sector3D engineering derived metrics"
-```
-
----
-
-### Task 6: Export All Contract Reports And Handle Derived Report Names
-
-**Files:**
-- Modify: `scripts/run_sector_3d_validate.py`
-- Modify: `scripts/create_sector3d_reports.py`
-- Test: `tests/test_sector3d_engineering_metrics.py`
-
-- [ ] **Step 1: Write the failing report mapping test**
-
-Append to `tests/test_sector3d_engineering_metrics.py`:
-
-```python
-from run_sector_3d_validate import _case_report_mapping
-from create_sector3d_reports import DERIVED_REPORT_KEYS
-
-
-class Sector3DReportContractTests(unittest.TestCase):
-    def test_validation_exports_all_aedt_contract_reports(self):
-        mapping = _case_report_mapping()
-        self.assertIn("torque_loaded", mapping)
-        self.assertIn("torque_cogging", mapping)
-        self.assertIn("flux_linkage_a", mapping)
-        self.assertIn("back_emf_ll", mapping)
-        self.assertIn("bmax_backiron", mapping)
-        self.assertIn("inductance_phase_a", mapping)
-        self.assertIn("magnet_demag_margin", mapping)
-
-    def test_derived_reports_are_not_created_as_aedt_reports(self):
-        self.assertEqual(DERIVED_REPORT_KEYS, ["copper_loss_hot", "kt_effective"])
-```
-
-- [ ] **Step 2: Run the failing tests**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
-```
-
-Expected: FAIL because `_case_report_mapping` and `DERIVED_REPORT_KEYS` do not exist.
-
-- [ ] **Step 3: Add explicit report mapping**
-
-In `scripts/run_sector_3d_validate.py`, add:
-
-```python
-def _case_report_mapping():
+def classify_pwm_risk(copper_thickness_mm, frequency_hz):
+    depth = copper_skin_depth_mm(frequency_hz)
+    ratio = float(copper_thickness_mm) / max(depth, 1.0e-9)
+    if ratio < 0.3:
+        risk = "low"
+    elif ratio <= 1.0:
+        risk = "medium"
+    else:
+        risk = "high"
     return {
-        "torque_loaded": "torque_loaded.csv",
-        "torque_cogging": "torque_cogging.csv",
-        "flux_linkage_a": "flux_linkage_a.csv",
-        "back_emf_ll": "back_emf_ll.csv",
-        "bmax_backiron": "bmax_backiron.csv",
-        "inductance_phase_a": "inductance_phase_a.csv",
-        "magnet_demag_margin": "magnet_demag_margin.csv",
+        "frequency_hz": float(frequency_hz),
+        "skin_depth_mm": depth,
+        "thickness_to_skin_depth": ratio,
+        "risk": risk,
+    }
+
+
+def hot_resistance(resistance_20c_ohm, copper_temperature_c, contact_resistance_ohm=0.0):
+    return float(resistance_20c_ohm) * (1.0 + COPPER_TEMPCO_PER_C * (float(copper_temperature_c) - 20.0)) + float(contact_resistance_ohm)
+
+
+def pwm_sweep(copper_thickness_mm, frequencies_hz):
+    return [classify_pwm_risk(copper_thickness_mm, frequency) for frequency in frequencies_hz]
+
+
+def layer_thermal_risk_summary(sequence):
+    middle = (len(sequence) - 1.0) / 2.0
+    phase_distances = {}
+    for index, phase in enumerate(sequence):
+        phase_distances.setdefault(phase, []).append(abs(float(index) - middle))
+    avg_distance = {}
+    for phase, values in phase_distances.items():
+        avg_distance[phase] = sum(values) / float(len(values))
+    core_phase = min(avg_distance.keys(), key=lambda phase: avg_distance[phase])
+    return {
+        "core_phase": core_phase,
+        "average_distance_from_midplane": avg_distance,
+        "risk_note": "%s layer is the likely stall-current bottleneck; compute continuous current from this layer first." % core_phase,
     }
 ```
 
-Change `_export_case_reports()` to use it:
-
-```python
-    mapping = _case_report_mapping()
-```
-
-Update `_metrics_from_exports()` so optional reports add metrics when present:
-
-```python
-    if "flux_linkage_a" in export_paths:
-        stats = waveform_stats(export_paths["flux_linkage_a"])
-        row["flux_linkage_a_avg_wb"] = stats.get("avg", 0.0)
-    if "inductance_phase_a" in export_paths:
-        stats = waveform_stats(export_paths["inductance_phase_a"])
-        row["inductance_phase_a_h"] = stats.get("avg", 0.0)
-    if "magnet_demag_margin" in export_paths:
-        stats = waveform_stats(export_paths["magnet_demag_margin"])
-        row["magnet_demag_margin"] = stats.get("min", 0.0)
-```
-
-- [ ] **Step 4: Mark derived report keys in report creation**
-
-In `scripts/create_sector3d_reports.py`, add near constants:
-
-```python
-DERIVED_REPORT_KEYS = ["copper_loss_hot", "kt_effective"]
-```
-
-In the loop over report keys, skip derived report keys with a manual action:
-
-```python
-        if report_key in DERIVED_REPORT_KEYS:
-            manual_actions.append("%s (%s) is derived after CSV export and is not created as an AEDT-native report." % (report_key, report_name))
-            continue
-```
-
-- [ ] **Step 5: Verify tests and compile**
+- [ ] **Step 4: Verify tests pass**
 
 Run:
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\run_sector_3d_validate.py scripts\create_sector3d_reports.py
-```
-
-Expected: PASS and no py_compile output.
-
-- [ ] **Step 6: Commit**
-
-```powershell
-git add scripts/run_sector_3d_validate.py scripts/create_sector3d_reports.py tests/test_sector3d_engineering_metrics.py
-git commit -m "Export Sector3D engineering report contract"
-```
-
----
-
-### Task 7: Write Engineering Assessment Artifacts
-
-**Files:**
-- Modify: `scripts/run_sector_3d_validate.py`
-- Test: `tests/test_sector3d_engineering_metrics.py`
-
-- [ ] **Step 1: Write the failing assessment writer test**
-
-Append to `tests/test_sector3d_engineering_metrics.py`:
-
-```python
-from run_sector_3d_validate import _engineering_assessment_markdown
-
-
-class Sector3DEngineeringAssessmentTests(unittest.TestCase):
-    def test_assessment_states_ssdr_boundary_and_problem_path(self):
-        text = _engineering_assessment_markdown(
-            [
-                {
-                    "case_id": "baseline_nominal",
-                    "torque_avg_nm": 1.8,
-                    "hot_copper_loss_w": 28.0,
-                    "problem_analysis_flags": "no_primary_flags",
-                    "final_topology_feasibility": "SSDR result is not a direct pass/fail against the final four-air-gap target.",
-                }
-            ]
-        )
-        self.assertIn("SSDR Engineering Assessment", text)
-        self.assertIn("not a direct pass/fail", text)
-        self.assertIn("Problem Analysis Path", text)
-        self.assertIn("geometry and motion", text)
-```
-
-- [ ] **Step 2: Run the failing tests**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
-```
-
-Expected: FAIL because `_engineering_assessment_markdown` does not exist.
-
-- [ ] **Step 3: Add assessment paths and writer**
-
-In `_artifact_paths(root)` add:
-
-```python
-        "engineering_assessment_md": os.path.join(root, "reports", "sector3d_engineering_assessment.md"),
-```
-
-Add:
-
-```python
-def _engineering_assessment_markdown(rows):
-    lines = []
-    lines.append("# Sector3D SSDR Engineering Assessment")
-    lines.append("")
-    lines.append("This report summarizes Stage 1 SSDR evidence. It is not a direct pass/fail against the final four-air-gap `4 Nm @ 3 Arms` target.")
-    lines.append("")
-    lines.append("## Case Summary")
-    lines.append("")
-    for row in rows:
-        lines.append("- `%s`: torque_avg_nm=`%s`, hot_copper_loss_w=`%s`, flags=`%s`" % (
-            row.get("case_id", ""),
-            row.get("torque_avg_nm", ""),
-            row.get("hot_copper_loss_w", ""),
-            row.get("problem_analysis_flags", ""),
-        ))
-    lines.append("")
-    lines.append("## Final Topology Feasibility")
-    lines.append("")
-    for row in rows:
-        if row.get("final_topology_feasibility"):
-            lines.append("- `%s`: %s" % (row.get("case_id", ""), row.get("final_topology_feasibility", "")))
-    lines.append("")
-    lines.append("## Problem Analysis Path")
-    lines.append("")
-    lines.append("1. Check geometry and motion: air gap, rotating band, sector cuts, and air-region size.")
-    lines.append("2. Check excitation: phase order, winding polarity, current angle, and current amplitude.")
-    lines.append("3. Check copper and heat: resistance, end connections, parallel paths, and hot copper loss.")
-    lines.append("4. Check magnets: high-temperature coercivity and demagnetization margin.")
-    lines.append("5. Check magnetic circuit: back-iron saturation, leakage, fringing, and boundary sensitivity.")
-    lines.append("6. Check manufacturing tolerance: air-gap imbalance, runout, magnet placement, and winding position.")
-    lines.append("7. Check SSDR-to-final-topology correlation before drawing hardware conclusions.")
-    return "\n".join(lines) + "\n"
-```
-
-After `_write_recommendation(paths["recommendation_md"], ranked_rows)` at the end of `main()`, write:
-
-```python
-    assessment_text = _engineering_assessment_markdown(ranked_rows)
-    handle = open(artifact_paths["engineering_assessment_md"], "w")
-    try:
-        handle.write(assessment_text)
-    finally:
-        handle.close()
-```
-
-- [ ] **Step 4: Verify tests and compile**
-
-Run:
-
-```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_engineering_metrics -v
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\run_sector_3d_validate.py
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_thermal_risk -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_thermal_risk.py
 ```
 
 Expected: PASS and no py_compile output.
@@ -1165,112 +511,571 @@ Expected: PASS and no py_compile output.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add scripts/run_sector_3d_validate.py tests/test_sector3d_engineering_metrics.py
-git commit -m "Write Sector3D engineering assessment report"
+git add scripts/sector3d_thermal_risk.py tests/test_sector3d_thermal_risk.py
+git commit -m "Add Sector3D thermal and PWM risk screening"
 ```
 
 ---
 
-### Task 8: Document And Smoke-Test The Engineering Validation Workflow
+### Task 3: Build Host-Only Geometry-Ready Entry Point
+
+**Files:**
+- Create: `scripts/build_sector3d_geometry_ready.py`
+- Create: `launchers/Queue-BuildSector3DGeometryReady.ps1`
+- Test: `tests/test_sector3d_geometry_contract.py`
+
+- [ ] **Step 1: Add pure-Python artifact tests**
+
+Append to `tests/test_sector3d_geometry_contract.py`:
+
+```python
+from build_sector3d_geometry_ready import geometry_ready_summary
+
+
+class Sector3DGeometryReadySummaryTests(unittest.TestCase):
+    def load_project(self):
+        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
+            return json.load(handle)
+
+    def test_summary_does_not_claim_solve_ready(self):
+        summary = geometry_ready_summary(
+            self.load_project(),
+            session_gate={"ok": True, "active_project": "sector3d_working", "active_design": "Sector3D"},
+            object_gate={"ok": True, "created_count": 20, "deleted_count": 10, "missing_objects": []},
+            material_gate={"ok": True, "vacuum_objects": []},
+        )
+        self.assertTrue(summary["geometry_ready"])
+        self.assertFalse(summary["solve_ready"])
+        self.assertIn("pwm_ac_loss_requires_frequency_domain_check", summary["risk_gates"])
+```
+
+- [ ] **Step 2: Run the failing test**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+```
+
+Expected: FAIL with `ModuleNotFoundError: No module named 'build_sector3d_geometry_ready'`.
+
+- [ ] **Step 3: Implement the entry point skeleton**
+
+Create `scripts/build_sector3d_geometry_ready.py`:
+
+```python
+from __future__ import print_function
+
+import os
+
+from aedt_native_common import Logger
+from aedt_native_common import ensure_workspace_dirs
+from aedt_native_common import load_json
+from aedt_native_common import repo_root
+from aedt_native_common import save_json
+from aedt_native_common import save_project
+from aedt_native_common import timestamp_string
+from sector3d_geometry_contract import validate_geometry_contract
+
+
+def _host_mode():
+    return bool(globals().get("__agent_host_mode", False))
+
+
+def _active_project_name():
+    project = globals().get("oProject")
+    if project:
+        try:
+            return project.GetName()
+        except Exception:
+            return ""
+    return ""
+
+
+def _active_design_name():
+    design = globals().get("oDesign")
+    if design:
+        try:
+            return design.GetName()
+        except Exception:
+            return ""
+    return ""
+
+
+def session_gate(project_cfg):
+    geometry_cfg = project_cfg["sector_3d"]["geometry_ready"]
+    active_project = _active_project_name()
+    active_design = _active_design_name()
+    ok = (
+        _host_mode()
+        and geometry_cfg["expected_project_name_contains"].lower() in active_project.lower()
+        and active_design == geometry_cfg["expected_design_name"]
+    )
+    return {
+        "ok": ok,
+        "host_mode": _host_mode(),
+        "active_project": active_project,
+        "active_design": active_design,
+        "expected_project_name_contains": geometry_cfg["expected_project_name_contains"],
+        "expected_design": geometry_cfg["expected_design_name"],
+    }
+
+
+def geometry_ready_summary(project_cfg, session_gate, object_gate, material_gate):
+    contract = validate_geometry_contract(project_cfg)
+    geometry_ready = bool(session_gate.get("ok")) and bool(object_gate.get("ok")) and bool(material_gate.get("ok")) and bool(contract["geometry_ready_contract_ok"])
+    return {
+        "timestamp": timestamp_string(),
+        "geometry_ready": geometry_ready,
+        "solve_ready": False,
+        "session_gate": session_gate,
+        "object_gate": object_gate,
+        "material_gate": material_gate,
+        "hard_gates": contract["hard_gates"],
+        "risk_gates": contract["risk_gates"],
+        "future_validation": contract["future_validation"],
+    }
+
+
+def write_markdown(path, summary):
+    lines = []
+    lines.append("# Sector3D Geometry Ready Summary")
+    lines.append("")
+    lines.append("- timestamp: `%s`" % summary.get("timestamp", ""))
+    lines.append("- geometry_ready: `%s`" % summary.get("geometry_ready", False))
+    lines.append("- solve_ready: `%s`" % summary.get("solve_ready", False))
+    lines.append("")
+    lines.append("## Session Gate")
+    lines.append("")
+    for key, value in summary.get("session_gate", {}).items():
+        lines.append("- %s: `%s`" % (key, value))
+    lines.append("")
+    lines.append("## Hard Gates")
+    lines.append("")
+    for key, value in summary.get("hard_gates", {}).items():
+        lines.append("- %s: `%s`" % (key, value))
+    lines.append("")
+    lines.append("## Risk Gates")
+    lines.append("")
+    for item in summary.get("risk_gates", []):
+        lines.append("- %s" % item)
+    lines.append("")
+    lines.append("## Future Validation")
+    lines.append("")
+    for item in summary.get("future_validation", []):
+        lines.append("- %s" % item)
+    handle = open(path, "w")
+    try:
+        handle.write("\n".join(lines) + "\n")
+    finally:
+        handle.close()
+
+
+def main():
+    root = repo_root()
+    ensure_workspace_dirs(root)
+    logger = Logger(os.path.join(root, "logs", "build_sector3d_geometry_ready_%s.log" % timestamp_string()))
+    project_cfg = load_json(os.path.join(root, "config", "project.json"))
+    gate = session_gate(project_cfg)
+    if not gate["ok"]:
+        summary = geometry_ready_summary(project_cfg, gate, {"ok": False, "created_count": 0, "deleted_count": 0}, {"ok": False})
+        artifact_json = os.path.join(root, project_cfg["sector_3d"]["geometry_ready"]["artifact_json"])
+        artifact_md = os.path.join(root, project_cfg["sector_3d"]["geometry_ready"]["artifact_md"])
+        save_json(artifact_json, summary)
+        write_markdown(artifact_md, summary)
+        raise RuntimeError("Sector3D geometry-ready session gate failed; see %s" % artifact_md)
+    raise RuntimeError("Geometry build body is implemented in the next task; session gate passed.")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+- [ ] **Step 4: Add the launcher**
+
+Create `launchers/Queue-BuildSector3DGeometryReady.ps1`:
+
+```powershell
+& (Join-Path $PSScriptRoot 'Queue-Command.ps1') -Action run_script -ScriptPath scripts/build_sector3d_geometry_ready.py
+```
+
+- [ ] **Step 5: Verify tests and compile**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\build_sector3d_geometry_ready.py
+```
+
+Expected: PASS and no py_compile output.
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git add scripts/build_sector3d_geometry_ready.py launchers/Queue-BuildSector3DGeometryReady.ps1 tests/test_sector3d_geometry_contract.py
+git commit -m "Add host-only Sector3D geometry-ready entry point"
+```
+
+---
+
+### Task 4: Generate Arc Magnets And Six-Layer Phase-Belt Envelope Geometry
+
+**Files:**
+- Modify: `scripts/sector3d_scaffold.py`
+- Modify: `scripts/build_sector3d_geometry_ready.py`
+- Test: `tests/test_sector3d_geometry_contract.py`
+
+- [ ] **Step 1: Add geometry-definition tests**
+
+Append to `tests/test_sector3d_geometry_contract.py`:
+
+```python
+from sector3d_scaffold import _magnet_pole_objects_definition
+from sector3d_scaffold import _phase_belt_objects_definition
+from sector3d_scaffold import _sector_geometry_metadata
+
+
+class Sector3DLayeredGeometryDefinitionTests(unittest.TestCase):
+    def load_project(self):
+        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
+            return json.load(handle)
+
+    def baseline_case(self):
+        return {
+            "pole_count": 24,
+            "pole_arc_ratio": 0.72,
+            "airgap_mm": 0.9,
+            "coil_mean_radius_mm": 39.5,
+            "coil_radial_span_mm": 12.5,
+            "conductor_thickness_mm": 0.3,
+        }
+
+    def test_arc_segment_magnets_remain_first_mode(self):
+        project_cfg = self.load_project()
+        sector_meta = _sector_geometry_metadata(project_cfg, self.baseline_case())
+        magnets = _magnet_pole_objects_definition(project_cfg, self.baseline_case(), sector_meta)
+        self.assertGreaterEqual(len(magnets), 4)
+        self.assertTrue(all(item["name"].startswith("Auto3D_Magnet_") for item in magnets))
+
+    def test_phase_belts_follow_abc_cba_layers_and_polarities(self):
+        project_cfg = self.load_project()
+        sector_meta = _sector_geometry_metadata(project_cfg, self.baseline_case())
+        belts = _phase_belt_objects_definition(project_cfg, self.baseline_case(), sector_meta)
+        layers = belts["axial_layers"]
+        self.assertEqual([item["phase"] for item in layers], ["A", "B", "C", "C", "B", "A"])
+        for layer in layers:
+            self.assertEqual(sorted(layer["polarities"]), ["Negative", "Positive"])
+        self.assertEqual(belts["geometry_mode"], "phase_stacked_mirror_parallel")
+```
+
+- [ ] **Step 2: Run the failing tests**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+```
+
+Expected: FAIL because `_phase_belt_objects_definition()` still represents the old per-face phase-belt model.
+
+- [ ] **Step 3: Update the scaffold phase-belt definition**
+
+Modify `_phase_belt_objects_definition(project_cfg, case_row, sector_meta=None)` to read:
+
+```python
+geometry_ready_cfg = project_cfg.get("sector_3d", {}).get("geometry_ready", {})
+layer_sequence = list(geometry_ready_cfg.get("axial_layer_phase_sequence", []))
+```
+
+When `coil_geometry_mode == "phase_stacked_mirror_parallel"`, create axial layer definitions:
+
+```python
+layer_pitch_expr = "copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm"
+for layer_index, phase_letter in enumerate(layer_sequence):
+    phase_name = "Phase%s" % phase_letter
+    z_expr = "auto3d_z_lower_flat_copper_mm + %d*(%s)" % (layer_index, layer_pitch_expr)
+    create only the positive and negative angular belts belonging to phase_name.
+```
+
+The returned dictionary must include:
+
+```python
+"geometry_mode": "phase_stacked_mirror_parallel",
+"axial_layers": [
+  {"index": 1, "phase": "A", "z_start": "auto3d_z_lower_flat_copper_mm + 0*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]},
+  {"index": 2, "phase": "B", "z_start": "auto3d_z_lower_flat_copper_mm + 1*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]},
+  {"index": 3, "phase": "C", "z_start": "auto3d_z_lower_flat_copper_mm + 2*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]},
+  {"index": 4, "phase": "C", "z_start": "auto3d_z_lower_flat_copper_mm + 3*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]},
+  {"index": 5, "phase": "B", "z_start": "auto3d_z_lower_flat_copper_mm + 4*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]},
+  {"index": 6, "phase": "A", "z_start": "auto3d_z_lower_flat_copper_mm + 5*(copper_sheet_thickness_mm + insulation_per_layer_mm + adhesive_residual_per_interface_mm)", "polarities": ["Positive", "Negative"]}
+]
+```
+
+Use object names that preserve the generated prefix and layer identity:
+
+```python
+Auto3D_PhaseA_L01_Pos_001
+Auto3D_PhaseA_L01_Neg_001
+Auto3D_PhaseC_L03_Pos_001
+```
+
+- [ ] **Step 4: Update geometry-ready build body**
+
+In `build_sector3d_geometry_ready.py`, after the session gate passes:
+
+```python
+from sector3d_scaffold import build_sector_3d_scaffold
+```
+
+Call the existing scaffold in cleanup mode:
+
+```python
+FUNCTIONAL_NONVACUUM_PREFIXES = (
+    "Auto3D_Magnet_",
+    "Auto3D_Phase",
+    "Auto3D_BottomBackIron",
+    "Auto3D_TopBackIron",
+    "Auto3D_StatorSupport",
+)
+
+
+def created_vacuum_functional_objects(created_objects):
+    vacuum_objects = []
+    for item in created_objects:
+        name = str(item.get("name", ""))
+        material = str(item.get("material", "")).strip().lower()
+        requires_functional_material = any(name.startswith(prefix) for prefix in FUNCTIONAL_NONVACUUM_PREFIXES)
+        if requires_functional_material and material in ("", "vacuum"):
+            vacuum_objects.append({"name": name, "material": material})
+    return vacuum_objects
+
+
+result = build_sector_3d_scaffold(oProject, oDesign, project_cfg, {}, logger, cleanup_first=True)
+vacuum_functional_objects = created_vacuum_functional_objects(result.get("created_objects", []))
+object_gate = {
+    "ok": not bool(result.get("blocking_issues")),
+    "created_count": len(result.get("created_objects", [])),
+    "deleted_count": len(result.get("deleted_objects", [])),
+    "missing_objects": result.get("blocking_issues", []),
+}
+material_gate = {
+    "ok": not bool(vacuum_functional_objects),
+    "vacuum_functional_objects": vacuum_functional_objects,
+    "helper_air_vacuum_allowed": ["Auto3D_Region", "Auto3D_RotatingBand", "Auto3D_Periodic_Master", "Auto3D_Periodic_Slave"],
+}
+summary = geometry_ready_summary(project_cfg, gate, object_gate, material_gate)
+```
+
+Save JSON/Markdown and `save_project(oProject, logger)`.
+
+- [ ] **Step 5: Verify tests and compile**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_scaffold.py scripts\build_sector3d_geometry_ready.py
+```
+
+Expected: PASS and no py_compile output.
+
+- [ ] **Step 6: Commit**
+
+```powershell
+git add scripts/sector3d_scaffold.py scripts/build_sector3d_geometry_ready.py tests/test_sector3d_geometry_contract.py
+git commit -m "Generate six-layer Sector3D geometry-ready envelope"
+```
+
+---
+
+### Task 5: Emit Dedicated Geometry-Ready Artifacts
+
+**Files:**
+- Modify: `scripts/build_sector3d_geometry_ready.py`
+- Test: `tests/test_sector3d_geometry_contract.py`
+
+- [ ] **Step 1: Add artifact content tests**
+
+Append to `tests/test_sector3d_geometry_contract.py`:
+
+```python
+class Sector3DGeometryArtifactContentTests(unittest.TestCase):
+    def load_project(self):
+        with open(os.path.join(ROOT, "config", "project.json"), "r") as handle:
+            return json.load(handle)
+
+    def test_markdown_mentions_limits_and_non_goals(self):
+        summary = geometry_ready_summary(
+            self.load_project(),
+            session_gate={"ok": True, "active_project": "sector3d_working", "active_design": "Sector3D"},
+            object_gate={"ok": True, "created_count": 20, "deleted_count": 10, "missing_objects": []},
+            material_gate={"ok": True, "vacuum_objects": []},
+        )
+        from build_sector3d_geometry_ready import markdown_text
+        text = markdown_text(summary)
+        self.assertIn("Geometry Ready Summary", text)
+        self.assertIn("A-B-C-C-B-A", text)
+        self.assertIn("100 mm", text)
+        self.assertIn("not solve-ready", text)
+        self.assertIn("PWM", text)
+```
+
+- [ ] **Step 2: Run the failing test**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+```
+
+Expected: FAIL because `markdown_text()` does not exist.
+
+- [ ] **Step 3: Refactor markdown writer**
+
+In `build_sector3d_geometry_ready.py`, extract markdown content:
+
+```python
+def markdown_text(summary):
+    lines = []
+    lines.append("# Sector3D Geometry Ready Summary")
+    lines.append("")
+    lines.append("This artifact proves geometry validity only. It is not solve-ready.")
+    lines.append("")
+    lines.append("- layer_sequence: `A-B-C-C-B-A`")
+    lines.append("- max_part_outer_diameter_mm: `100 mm`")
+    lines.append("- pwm_loss_strategy: `frequency-domain future validation, not 3D Transient PWM`")
+    lines.append("")
+    lines.append("## Gates")
+    lines.append("")
+    lines.append("- geometry_ready: `%s`" % summary.get("geometry_ready", False))
+    lines.append("- solve_ready: `%s`" % summary.get("solve_ready", False))
+    lines.append("- session_gate_ok: `%s`" % summary.get("session_gate", {}).get("ok", False))
+    lines.append("- object_gate_ok: `%s`" % summary.get("object_gate", {}).get("ok", False))
+    lines.append("- material_gate_ok: `%s`" % summary.get("material_gate", {}).get("ok", False))
+    lines.append("")
+    lines.append("## Risk Gates")
+    lines.append("")
+    for item in summary.get("risk_gates", []):
+        lines.append("- %s" % item)
+    lines.append("")
+    lines.append("## Future Validation")
+    lines.append("")
+    for item in summary.get("future_validation", []):
+        lines.append("- %s" % item)
+    return "\n".join(lines) + "\n"
+```
+
+Make `write_markdown()` call `markdown_text(summary)`.
+
+- [ ] **Step 4: Verify tests pass**
+
+Run:
+
+```powershell
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest tests.test_sector3d_geometry_contract -v
+& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\build_sector3d_geometry_ready.py
+```
+
+Expected: PASS and no py_compile output.
+
+- [ ] **Step 5: Commit**
+
+```powershell
+git add scripts/build_sector3d_geometry_ready.py tests/test_sector3d_geometry_contract.py
+git commit -m "Write Sector3D geometry-ready artifacts"
+```
+
+---
+
+### Task 6: Document The Revised Workflow
 
 **Files:**
 - Modify: `README.md`
 - Modify: `reports/sector3d_physics_contract.md`
-- Test: local compile and unit test suite
 
-- [ ] **Step 1: Update README workflow**
+- [ ] **Step 1: Update README**
 
-In `README.md`, add a short section after the Sector3D launcher list:
+Add a section:
 
 ```markdown
-## Sector3D Engineering Validation Path
+## Sector3D Geometry-Valid Workflow
 
-Before restarting DOE ranking, use the SSDR engineering-validation path:
+The first Sector3D stage is now geometry validity, not solve readiness.
 
-1. Generate the first engineering case set with `launchers\Queue-GenerateSector3DEngineeringCases.ps1`.
-2. Build or refresh the SSDR Sector3D model.
-3. Assign three-phase winding excitation.
-4. Apply transient motion setup.
-5. Create AEDT-native reports.
-6. Solve the nominal and tolerance cases.
-7. Review `reports/sector3d_engineering_assessment.md`.
+Use:
 
-The SSDR model is a truth anchor, not the final machine signoff. The final `4 Nm @ 3 Arms` target belongs to the `S1-R1-S2-R2-S3` four-air-gap topology or to an explicitly correlated final-topology model. The motor outer diameter and any single circular rotor/stator/back-iron part must stay at or below `100 mm`.
+- `launchers\Queue-BuildSector3DGeometryReady.ps1`
+
+This command must run through the in-AEDT host. It expects the correct `sector3d_working` project and `Sector3D` design to already be open. It deletes only `Auto3D_*` objects, rebuilds the SSDR geometry, and writes:
+
+- `artifacts/sector3d_geometry_ready.json`
+- `reports/sector3d_geometry_ready.md`
+
+The first coil model is an active-zone envelope for a six-layer laminated copper stack with `A-B-C-C-B-A` axial order. It does not include detailed busbar, real wave-winding end turns, or PWM AC loss.
 ```
 
 - [ ] **Step 2: Update the physics contract**
 
-In `reports/sector3d_physics_contract.md`, add under `## Physical Contract`:
+Add:
 
 ```markdown
-### Manual-Build Engineering Validation
+### Laminated Copper Geometry-Ready Stage
 
-The first engineering-validation stage assumes manual assembly with roughly `+-0.20 mm` or worse tolerance. The SSDR model must include tolerance cases for global air-gap increase, upper/lower air-gap imbalance, rotor runout, magnet angular placement error, magnet radial offset, magnet axial height error, hot copper resistance, peak-current demagnetization, and expanded air-region sensitivity.
+The first geometry-valid model uses laminated thin copper sheets, not a PCB carrier. The active conductor envelope follows an `A-B-C-C-B-A` six-layer mirror stack. Each layer contains both positive and negative active belts for its own phase. Same-phase layers are parallel.
 
-The SSDR stage must not be judged directly against the final `4 Nm @ 3 Arms` target. That target belongs to the final `S1-R1-S2-R2-S3` four-air-gap topology. SSDR evidence must instead state whether the final topology appears feasible after accounting for leakage, fringing, copper length, thermal path, air-gap tolerance accumulation, phase-balance risk, and the `100 mm` maximum part-diameter constraint.
+The first version must include Z-axis expansion from insulation and adhesive, and it must enforce a single-side mechanical clearance of at least `0.8 mm`. The C-layer core thermal bottleneck, busbar current-sharing risk, aluminum eddy-current risk, and PWM AC-loss path are risk gates. They must be reported, but they are not solved by the geometry-ready stage.
+
+Do not run 10/20/40 kHz PWM directly in Maxwell 3D Transient. Use a decoupled path: low-frequency transient for torque/flux linkage, matrix or energy extraction for L/R, circuit simulation for PWM ripple current, FFT for harmonic current amplitudes, and Maxwell Eddy Current frequency-domain solves for AC copper loss on shortlisted designs.
 ```
 
-- [ ] **Step 3: Run local verification**
+- [ ] **Step 3: Verify docs mention required terms**
 
 Run:
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m unittest discover -s tests -v
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' -m py_compile scripts\sector3d_engineering_cases.py scripts\sector3d_engineering_metrics.py scripts\sector3d_scaffold.py scripts\build_sector3d_model.py scripts\run_sector_3d_validate.py scripts\create_sector3d_reports.py
+rg -n "Geometry-valid|A-B-C-C-B-A|0.8 mm|PWM|Eddy Current|sector3d_geometry_ready" README.md reports\sector3d_physics_contract.md
 ```
 
-Expected: PASS and no py_compile output.
+Expected: all terms appear.
 
-- [ ] **Step 4: Generate cases and inspect the CSV**
-
-Run:
+- [ ] **Step 4: Commit**
 
 ```powershell
-& 'C:\Users\fjcy\AppData\Roaming\.pyaedt_env\3_10\Scripts\python.exe' scripts\sector3d_engineering_cases.py
-Get-Content cases\validation_3d.csv
-```
-
-Expected: 10 rows with `baseline_nominal`, `airgap_plus_0p2mm`, `airgap_imbalance_0p2mm`, `rotor_runout_0p2mm`, `magnet_angle_error`, `magnet_radial_offset`, `magnet_axial_height_error`, `hot_resistance_case`, `peak_current_demag_case`, and `expanded_air_region_check`.
-
-- [ ] **Step 5: Commit**
-
-```powershell
-git add README.md reports/sector3d_physics_contract.md cases/validation_3d.csv
-git commit -m "Document Sector3D engineering validation workflow"
+git add README.md reports/sector3d_physics_contract.md
+git commit -m "Document Sector3D geometry-valid workflow"
 ```
 
 ---
 
 ## Live AEDT Validation Checkpoint
 
-After Tasks 1-8 pass locally, run the AEDT host workflow in this order:
+After Tasks 1-6 pass locally, run:
 
 ```powershell
 launchers\Run-Launcher.cmd Start-AEDTHost.ps1
-launchers\Run-Launcher.cmd Queue-GenerateSector3DEngineeringCases.ps1
-launchers\Run-Launcher.cmd Queue-BuildSector3DModel.ps1
-launchers\Run-Launcher.cmd Queue-AssignSector3DExcitation.ps1
-launchers\Run-Launcher.cmd Queue-ApplySector3DTransientSetup.ps1
-launchers\Run-Launcher.cmd Queue-CreateSector3DReports.ps1
-launchers\Run-Launcher.cmd Queue-SolveSector3DSetup.ps1
+launchers\Run-Launcher.cmd Queue-BuildSector3DGeometryReady.ps1
 launchers\Run-Launcher.cmd Get-AgentStatus.ps1
 ```
 
-Expected live result:
+Expected:
 
-- `artifacts/sector3d_model_build.json` includes `tolerance_metadata`.
-- `reports/sector3d_model_build.md` includes engineering tolerance metadata.
-- `reports/sector3d_excitation_assignment.md` shows whether the winding API blocker is resolved or still blocks solve readiness.
-- `reports/sector3d_reports_creation.md` records AEDT-native reports and skips derived metrics as expected.
-- `reports/sector3d_solve_status.md` exports available report CSVs.
-- `reports/sector3d_engineering_assessment.md` states SSDR evidence and final-topology feasibility without direct SSDR pass/fail against `4 Nm @ 3 Arms`.
+- The script refuses to run unless the in-AEDT host is active and the expected working project/design are active.
+- Old generated `Auto3D_*` objects are deleted; non-`Auto3D_*` objects are preserved.
+- `artifacts/sector3d_geometry_ready.json` exists.
+- `reports/sector3d_geometry_ready.md` exists.
+- The report says `geometry_ready = true` only when all hard gates pass.
+- The report says `solve_ready = false`.
+- The report lists C-layer thermal risk, busbar/current-sharing risk, aluminum eddy-current risk, and PWM frequency-domain AC-loss validation as unresolved risk/future items.
 
-If `Queue-AssignSector3DExcitation.ps1` still fails at `AddWindingTerminals`, stop the live run there and treat excitation compatibility as the next focused implementation plan.
+If the geometry-ready live run fails before object creation, fix session/project/design gating first. If it fails after object creation, inspect object/material/gate diagnostics before moving to excitation, reports, or solve planning.
 
 ---
 
 ## Self-Review Notes
 
-- Spec coverage: The plan covers the SSDR truth anchor, final-topology torque boundary, `100 mm` maximum part-diameter constraint, manual tolerance cases, hot copper loss, demagnetization check, report outputs, and the ordered problem-analysis path.
-- Scope: This plan prepares the engineering-validation path. It does not solve the existing Maxwell `AddWindingTerminals` blocker directly; the live checkpoint turns that into the next focused plan if it remains.
-- Type consistency: Engineering case fields are defined once in the generator and mirrored in validation fieldnames. Derived metric keys use `kt_effective_nm_per_arms`, `hot_copper_loss_w`, and `copper_loss_hot_w` consistently.
+- This revised plan avoids making first version too heavy: it enforces only geometry/manufacturing hard gates and reports deeper risks without solving them.
+- It removes PCB-carrier assumptions from the first geometry target.
+- It keeps `build_sector3d_model.py` intact and creates a clearer `build_sector3d_geometry_ready.py` entry point.
+- It explicitly prevents the expensive and misleading strategy of running PWM square waves directly in Maxwell 3D Transient.
+- It preserves the final `4 Nm @ 3 Arms` boundary: the SSDR geometry-valid stage does not judge final four-gap machine performance.
