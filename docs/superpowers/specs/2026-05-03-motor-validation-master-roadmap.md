@@ -9,7 +9,7 @@ The project goal is to validate whether a low-cost, manually manufacturable axia
 The final deliverables are not only simulation screenshots. The project must converge to:
 
 - a credible Maxwell 3D electromagnetic validation model;
-- traceable reports for torque, back-EMF, losses, demagnetization, thermal risk, and axial attractive force;
+- traceable reports for torque, zero-speed/stall behavior, back-EMF, losses, demagnetization, thermal risk, and axial attractive force;
 - manufacturable laminated stator copper geometry;
 - DXF files that can be used to cut usable copper stator layers;
 - rotor, magnet, back-iron, air-gap, and assembly constraints that match the low-cost prototype route.
@@ -83,6 +83,7 @@ Required outcomes:
 - Define the SSDR axial-flux truth-anchor model: central stator, two rotors, two magnet layers, two active air gaps.
 - Preserve the distinction between SSDR validation and final `S1-R1-S2-R2-S3` topology.
 - Track torque, back-EMF, cogging, flux linkage, magnetic density, losses, demagnetization margin, and axial attractive force as eventual outputs.
+- Treat zero-speed / stall torque as a mandatory validation case because force-feedback steering-wheel operation can demand torque at little or no rotor speed.
 - Keep the `4 Nm @ 3 Arms` target associated with the final topology, not blindly imposed on the first SSDR checkpoint.
 
 Exit gate:
@@ -174,7 +175,9 @@ Required outcomes:
 - Add rotor, magnets, back iron, motion setup, and material definitions.
 - Assign winding excitation through winding groups and coil terminals.
 - Define open-circuit, loaded, and diagnostic cases.
+- Define a mandatory zero-speed / stall case at fixed rotor position for force-feedback operation.
 - Export named reports for torque, back-EMF, flux linkage, magnetic density, losses, and axial attractive force.
+- Export named stall-case reports for torque, current, copper loss, demagnetization margin, thermal-risk inputs, and axial attractive force.
 - Block solve-ready status when boundary, motion, mesh, or winding assignment is not valid.
 - Do not physically short same-phase parallel layers in the model or external circuit until circulating-current risk has been evaluated from per-layer open-circuit back-EMF.
 
@@ -189,6 +192,7 @@ Goal: test whether the model survives realistic prototype risks.
 Required outcomes:
 
 - Air-gap tolerance cases.
+- Zero-speed / stall torque and heat-risk cases across representative rotor electrical angles.
 - Unequal upper/lower gap cases.
 - Rotor runout or axial wobble approximation.
 - Magnet demagnetization margin at elevated temperature and peak current.

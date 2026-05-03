@@ -124,6 +124,7 @@ Required capabilities:
 - Winding Group -> Coil Terminals -> Add to Winding flow for transient winding excitation.
 - No fallback to direct current assignment on arbitrary solids or sheets for transient winding validation.
 - Open-circuit, loaded, and basic diagnostic setups.
+- Mandatory zero-speed / stall validation case for force-feedback steering-wheel use, including torque production, copper loss, thermal risk, demagnetization margin, and axial attractive force at fixed rotor position.
 - Per-layer open-circuit back-EMF magnitude and phase reporting for same-phase parallel layer risk.
 - Circulating-current risk must be evaluated before same-phase parallel layers are physically shorted in the external circuit.
 - Extraction plan for dual-rotor axial Maxwell attractive force.
@@ -155,6 +156,7 @@ The final 3D model is production-ready only when all of the following are true:
 - The electromagnetic setup uses valid coil terminal and winding group assignments.
 - Boundary conditions are geometrically valid for the chosen model scope.
 - Motion, torque, back-EMF, copper loss, and axial attractive force outputs are extractable and named.
+- Zero-speed / stall torque, loss, thermal-risk, demagnetization, and axial-force outputs are part of the required validation set for force-feedback operation.
 - Per-layer same-phase voltage magnitude and phase are monitored before accepting parallel connection.
 - Same-phase parallel layers are not accepted as physically shorted until circulating-current risk is evaluated from per-layer open-circuit back-EMF.
 - Reports do not mix legacy top/bottom PCB or phase-belt envelope language with laminated copper wave winding.
