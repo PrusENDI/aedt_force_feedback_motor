@@ -16,7 +16,8 @@ V1 proves the minimum viable chain:
 2. Validate that the outline is closed, non-self-intersecting, and manufacturable under initial feature rules.
 3. Create an AEDT sheet from that same 2D geometry.
 4. Thicken the sheet to a `0.3 mm` copper solid.
-5. Assign simple terminals or current excitation for a low-risk electromagnetic sanity check.
+5. Assign two terminal faces for a DC Conduction sanity check.
+6. Verify current density continuity through the copper body, terminal pads, corners, and wave turns.
 
 V1 is not a complete six-layer stator, not a complete three-phase winding, and not the final Sector3D production model.
 
@@ -29,9 +30,12 @@ V1 is not a complete six-layer stator, not a complete three-phase winding, and n
 - Motor intent is computed by project code: radius, angle, phase, layer, terminal location, and winding path.
 - 2D polygon operations should use a geometry library such as Shapely for offset, union, difference, validity, and clearance checks.
 - DXF export should use a dedicated DXF layer, such as ezdxf, once export becomes part of the stage.
+- AEDT geometry must be instantiated from the 2D geometry by a declared handshake: either import the generated DXF or create the AEDT sheet from the exact exported point/polyline data.
+- V1 may use exact point/polyline sheet creation before final DXF export exists, but it must not rebuild or reinterpret the copper shape with AEDT-only booleans.
 - V1 does not include six-layer `A-B-C-C-B-A`, full three-phase geometry, support skeletons, PI/adhesive solids, or detailed transient winding setup.
 - The V1 copper layer is allowed to float in air to avoid support boolean and thin-layer meshing risks.
 - Terminal regions must be part of the copper geometry definition, not ad-hoc AEDT patches added after the fact.
+- The `0.3 mm` copper solid must receive length-based or layered mesh controls so thin-solid aspect ratio does not cause avoidable tetrahedral distortion or mesh explosion.
 - Reports must distinguish `envelope_geometry_ready`, `dxf_compatible_copper_ready`, and `solve_ready`.
 - V1 must not claim production Sector3D geometry readiness.
 
@@ -47,6 +51,7 @@ These are default contract fields, not final manufacturing promises:
 - Kerf or tool compensation: represented as a parameter, even if not applied in V1.
 - Terminal pad size and location: explicit geometry fields.
 - Layer registration references: optional in V1, required before final manufacturing DXF.
+- Mesh defense: maximum element length and/or layered mesh settings must be parameterized for the `0.3 mm` solid.
 
 If a cutting process is selected later, these values must be replaced by process-specific constraints.
 
@@ -56,7 +61,9 @@ If a cutting process is selected later, these values must be replaced by process
 - The generated 2D copper geometry is closed and valid.
 - The geometry report includes minimum width, minimum clearance, bounding diameter, and terminal region checks.
 - AEDT can create and retain the `0.3 mm` thick copper solid.
-- The model can run at least a basic magnetostatic or equivalent low-risk sanity check.
+- AEDT applies a mesh control appropriate for the `0.3 mm` copper thickness.
+- The V1 electrical sanity check is DC Conduction, with one terminal driven and the other used as return/ground.
+- The DC Conduction report shows continuous current density through the copper path without terminal singularities, unexpected disconnected regions, or current-blocking geometry defects.
 - The report clearly states that full six-layer Sector3D geometry remains incomplete.
 
 ## V2 Goal: Single-Layer Geometry Chain
@@ -68,6 +75,7 @@ Required capabilities:
 - Parameterized Phase A copper path generation from motor design parameters.
 - Stable 2D geometry model with explicit centerline, outline, terminal pads, and metadata.
 - Repeatable AEDT sheet creation and thickening from the same outline.
+- A documented 2D-to-3D handshake that preserves parity between the geometry source, optional DXF export, and AEDT sheet creation.
 - Optional DXF preview/export for this one layer.
 - Automated geometry checks for closure, self-intersection, minimum feature size, and bounding diameter.
 - Regression tests that prove changing the path parameters changes the copper shape, not only report fields.
@@ -117,6 +125,7 @@ Required capabilities:
 - No fallback to direct current assignment on arbitrary solids or sheets for transient winding validation.
 - Open-circuit, loaded, and basic diagnostic setups.
 - Per-layer open-circuit back-EMF magnitude and phase reporting for same-phase parallel layer risk.
+- Circulating-current risk must be evaluated before same-phase parallel layers are physically shorted in the external circuit.
 - Extraction plan for dual-rotor axial Maxwell attractive force.
 - Mesh and boundary checks that block solve-ready status when geometry is not suitable.
 
@@ -147,6 +156,7 @@ The final 3D model is production-ready only when all of the following are true:
 - Boundary conditions are geometrically valid for the chosen model scope.
 - Motion, torque, back-EMF, copper loss, and axial attractive force outputs are extractable and named.
 - Per-layer same-phase voltage magnitude and phase are monitored before accepting parallel connection.
+- Same-phase parallel layers are not accepted as physically shorted until circulating-current risk is evaluated from per-layer open-circuit back-EMF.
 - Reports do not mix legacy top/bottom PCB or phase-belt envelope language with laminated copper wave winding.
 - Geometry-ready, solve-ready, and manufacturing-ready are separate status fields.
 - Manufacturing DXF export and AEDT geometry can be traced back to the same parameters and geometry artifacts.

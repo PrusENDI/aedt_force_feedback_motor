@@ -28,10 +28,11 @@ Detailed milestone specs and plans may exist in separate files, but they must no
 - The copper stator route is laminated copper, not a purely simulated macro coil.
 - Final copper geometry must be compatible with real DXF output.
 - AEDT 3D copper solids and final DXF files must trace back to the same 2D copper geometry source.
+- The 2D-to-3D handshake must be explicit: import generated DXF or create AEDT sheets from the exact exported point/polyline data.
 - Six-layer laminated copper stack order is `A-B-C-C-B-A`.
 - Copper layers remain independent; same-phase neighboring layers must not be merged into thick blocks.
 - C phase thermal-core identification is based on average absolute distance from the stack center index.
-- Same-phase parallel layers require per-layer open-circuit back-EMF magnitude and phase checks before accepting parallel connection.
+- Same-phase parallel layers require per-layer open-circuit back-EMF magnitude and phase checks before accepting parallel connection or physical shorting.
 - The final electromagnetic validation must support extraction of dual-rotor axial Maxwell attractive force.
 - Transient winding excitation must follow `Winding Group -> Coil Terminals -> Add to Winding`; do not fall back to assigning current directly to arbitrary solids or sheets for the final winding model.
 - Geometry-ready, solve-ready, and manufacturing-ready are separate states.
@@ -96,15 +97,18 @@ Required outcomes:
 
 - Generate one real 2D copper outline for a single Phase A layer.
 - Use this outline as the source for AEDT sheet creation and `0.3 mm` thickened copper.
+- Instantiate AEDT geometry through a declared 2D-to-3D handshake, not AEDT-only reconstruction.
 - Include terminal regions in the geometry definition.
 - Apply initial checks for closed geometry, self-intersection, bounding diameter, minimum feature size, and terminal presence.
+- Apply length-based or layered mesh controls for the `0.3 mm` copper solid.
 - Allow the copper layer to float in air; no support skeleton, adhesive, PI, or FR4 solids are required.
-- Run only a low-risk sanity electromagnetic check.
+- Run only a DC Conduction sanity check to verify electrical connectivity and current density continuity.
 
 Exit gate:
 
 - GUI inspection shows a real path-derived copper plate, not a sector envelope block.
 - The same 2D geometry source can plausibly feed future DXF export.
+- DC Conduction shows continuous current density through the copper path without disconnected regions or terminal singularities.
 
 Current active node:
 
@@ -120,6 +124,7 @@ Required outcomes:
 - Represent motor intent separately from 2D polygon geometry.
 - Compute path geometry from radius, angle, phase, layer, terminal, and winding parameters.
 - Use a robust 2D geometry library for offset, union, validity, and clearance checks.
+- Preserve the same point/polyline or DXF geometry source when creating AEDT sheets.
 - Add optional single-layer DXF preview/export.
 - Add regression tests proving geometry changes when design parameters change.
 
@@ -171,6 +176,7 @@ Required outcomes:
 - Define open-circuit, loaded, and diagnostic cases.
 - Export named reports for torque, back-EMF, flux linkage, magnetic density, losses, and axial attractive force.
 - Block solve-ready status when boundary, motion, mesh, or winding assignment is not valid.
+- Do not physically short same-phase parallel layers in the model or external circuit until circulating-current risk has been evaluated from per-layer open-circuit back-EMF.
 
 Exit gate:
 
@@ -236,4 +242,3 @@ At the start of each implementation session, the agent should:
 5. Refuse to claim a later readiness state unless the current milestone gate is satisfied.
 
 For the current project state, the active target is Milestone 2: DXF-Compatible 3D Copper MVP.
-
