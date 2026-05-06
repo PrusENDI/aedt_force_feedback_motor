@@ -400,6 +400,12 @@ def solution_type_matches(actual_value, expected_value):
         return True
     if actual == expected:
         return True
+    electric_dc_aliases = set([
+        "electrodcconduction",
+        "electricdcconduction",
+    ])
+    if actual in electric_dc_aliases and expected in electric_dc_aliases:
+        return True
     if ("transient" in actual) and ("transient" in expected):
         return True
     return False
@@ -457,18 +463,17 @@ def _rename_design_internal(oProject, oDesign, new_name, logger):
 
 def _set_design_solution_type(oDesign, solution_type, logger):
     attempts = []
-    if solution_type:
-        text = str(solution_type)
+    for text in _set_solution_type_values(solution_type):
         if text.endswith("XY"):
             attempts.append(
-                ("SetSolutionType(base, XY)", lambda: oDesign.SetSolutionType(text[:-2], "XY"))
+                ("SetSolutionType(base, XY)", lambda value=text: oDesign.SetSolutionType(value[:-2], "XY"))
             )
         elif text.endswith("Z"):
             attempts.append(
-                ("SetSolutionType(base, about Z)", lambda: oDesign.SetSolutionType(text[:-1], "about Z"))
+                ("SetSolutionType(base, about Z)", lambda value=text: oDesign.SetSolutionType(value[:-1], "about Z"))
             )
-        attempts.append(("SetSolutionType(solution, empty)", lambda: oDesign.SetSolutionType(text, "")))
-        attempts.append(("SetSolutionType(solution)", lambda: oDesign.SetSolutionType(text)))
+        attempts.append(("SetSolutionType(solution, empty)", lambda value=text: oDesign.SetSolutionType(value, "")))
+        attempts.append(("SetSolutionType(solution)", lambda value=text: oDesign.SetSolutionType(value)))
     for label, action in attempts:
         try:
             action()
@@ -480,17 +485,50 @@ def _set_design_solution_type(oDesign, solution_type, logger):
     return False
 
 
+def _set_solution_type_values(solution_type):
+    if not solution_type:
+        return []
+    values = [str(solution_type)]
+    normalized = _normalize_solution_type_name(solution_type)
+    if normalized in set(["electrodcconduction", "electricdcconduction"]):
+        values.extend(["ElectroDCConduction", "Electric DC Conduction"])
+    unique = []
+    for value in values:
+        if value not in unique:
+            unique.append(value)
+    return unique
+
+
+def _design_creation_solution_attempts(design_type, solution_type):
+    normalized_design = str(design_type or "").lower().replace(" ", "")
+    normalized_solution = _normalize_solution_type_name(solution_type)
+    attempts = []
+    if normalized_design == "maxwell3d" and normalized_solution in set(["electrodcconduction", "electricdcconduction"]):
+        attempts.append(("default_maxwell3d", "Magnetostatic"))
+    attempts.append(("requested", solution_type))
+    attempts.append(
+        ("base_transient", "Transient" if "transient" in normalized_solution else solution_type)
+    )
+    attempts.append(("blank_magnetostatic", "Magnetostatic"))
+    attempts.append(("blank_magnetostatic_xy", "MagnetostaticXY"))
+    unique = []
+    seen = set()
+    for label, value in attempts:
+        if not value:
+            continue
+        if value in seen:
+            continue
+        seen.add(value)
+        unique.append((label, value))
+    return unique
+
+
 def _legacy_design_name(base_name):
     return "%s_legacy_%s" % (base_name, datetime.datetime.utcnow().strftime("%H%M%S"))
 
 
 def _create_design_with_fallbacks(oProject, design_name, design_type, solution_type, logger):
-    create_attempts = [
-        ("requested", solution_type),
-        ("base_transient", "Transient" if "transient" in _normalize_solution_type_name(solution_type) else solution_type),
-        ("blank_magnetostatic", "Magnetostatic"),
-        ("blank_magnetostatic_xy", "MagnetostaticXY")
-    ]
+    create_attempts = _design_creation_solution_attempts(design_type, solution_type)
     attempted = []
     for label, create_solution in create_attempts:
         if not create_solution:

@@ -29,6 +29,36 @@ def _fresh_runtime_module():
     return agent_runtime_module
 
 
+def _safe_call(callback, default_value=None):
+    try:
+        return callback()
+    except Exception:
+        return default_value
+
+
+def _inject_active_project_design(shared, oDesktop, preparation=None, logger=None):
+    oProject = _safe_call(lambda: oDesktop.GetActiveProject())
+    oDesign = _safe_call(lambda: oProject.GetActiveDesign()) if oProject else None
+    if oProject:
+        shared["oProject"] = oProject
+    if oDesign:
+        shared["oDesign"] = oDesign
+    project_name = _safe_call(lambda: oProject.GetName(), "") if oProject else ""
+    design_name = _safe_call(lambda: oDesign.GetName(), "") if oDesign else ""
+    if logger:
+        logger.log(
+            "Injected active AEDT globals for script: project=%s design=%s"
+            % (project_name or "unknown", design_name or "unknown")
+        )
+    if preparation and preparation.get("prepared") and (not oProject or not oDesign):
+        raise RuntimeError(
+            "Host preparation completed but active project/design could not be injected "
+            "into script globals: project=%s design=%s"
+            % (project_name or "", design_name or "")
+        )
+    return {"project_name": project_name, "design_name": design_name}
+
+
 def _dispatch_command(command, running_path, oDesktop, context, logger):
     runtime_module = _fresh_runtime_module()
     action = command["action"]
@@ -49,6 +79,7 @@ def _dispatch_command(command, running_path, oDesktop, context, logger):
     if action == "run_2d_screen":
         progress_callback("prepare_host", "Preparing active 2D project/design for queued work")
         preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
+        _inject_active_project_design(shared, oDesktop, preparation, logger)
         progress_callback("run_2d_screen", "Starting queued 2D screening batch")
         runtime_module.run_relative_workspace_script(context, os.path.join("scripts", "run_linear_2d_screen.py"), shared)
         return {
@@ -60,6 +91,7 @@ def _dispatch_command(command, running_path, oDesktop, context, logger):
     if action == "run_3d_validation":
         progress_callback("prepare_host", "Preparing active 3D project/design for queued work")
         preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
+        _inject_active_project_design(shared, oDesktop, preparation, logger)
         progress_callback("run_3d_validation", "Starting queued 3D validation batch")
         runtime_module.run_relative_workspace_script(context, os.path.join("scripts", "run_sector_3d_validate.py"), shared)
         return {
@@ -74,6 +106,7 @@ def _dispatch_command(command, running_path, oDesktop, context, logger):
             raise ValueError("run_script requires payload.script_path")
         progress_callback("prepare_host", "Preparing active project/design for queued script", {"script_path": script_path})
         preparation = runtime_module.ensure_host_design_ready(oDesktop, context, command, logger)
+        _inject_active_project_design(shared, oDesktop, preparation, logger)
         progress_callback("run_script", "Executing custom workspace script", {"script_path": script_path})
         runtime_module.run_relative_workspace_script(context, script_path, shared)
         return {

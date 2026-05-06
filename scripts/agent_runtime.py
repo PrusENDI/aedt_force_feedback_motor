@@ -19,6 +19,7 @@ from aedt_native_common import open_or_create_project
 from aedt_native_common import repo_root
 from aedt_native_common import save_json
 from aedt_native_common import timestamp_string
+from aedt_native_common import _normalize_solution_type_name
 
 
 def runtime_context(root=None):
@@ -313,6 +314,14 @@ def failure_payload(command, exc):
 
 def _script_stage(script_path):
     text = str(script_path or "").replace("\\", "/").lower()
+    compact = "".join([char for char in text if char.isalnum()])
+    if (
+        "dxf_copper" in text
+        or "dxf-copper" in text
+        or "dxfcopper" in compact
+        or ("v1" in compact and "copper" in compact and "mvp" in compact)
+    ):
+        return "dxf_copper_mvp"
     if "linear2d" in text or "linear_2d" in text:
         return "linear_2d"
     if "sector3d" in text or "sector_3d" in text:
@@ -354,6 +363,20 @@ def resolve_host_target(context, command):
             "template_path": paths.get("sector_3d_template", ""),
             "working_path": paths.get("sector_3d_working", "")
         }
+    if stage_key == "dxf_copper_mvp":
+        stage_cfg = project_cfg.get("dxf_copper_mvp", {})
+        solution_type = stage_cfg.get("solution_type", "ElectroDCConduction")
+        if _normalize_solution_type_name(solution_type) == "dcconduction":
+            solution_type = "ElectroDCConduction"
+        return {
+            "stage_key": stage_key,
+            "project_mode": stage_cfg.get("host_project_mode", "active_project"),
+            "design_name": stage_cfg.get("design_name", "DxfCopperMvp"),
+            "design_type": stage_cfg.get("design_type", "Maxwell 3D"),
+            "solution_type": solution_type,
+            "template_path": "",
+            "working_path": ""
+        }
     return None
 
 
@@ -376,6 +399,11 @@ def ensure_host_design_ready(oDesktop, context, command, logger):
         oProject = open_or_create_project(oDesktop, working_path, logger)
     else:
         oProject = oDesktop.GetActiveProject()
+        if not oProject:
+            project_list = safe_call(lambda: list(oDesktop.GetProjectList()), []) or []
+            if len(project_list) == 1:
+                oProject = oDesktop.SetActiveProject(str(project_list[0]))
+                logger.log("Selected the only open project for stage %s: %s" % (target["stage_key"], project_list[0]))
     if not oProject:
         raise RuntimeError("Could not open or create the host project for stage %s" % target["stage_key"])
 
