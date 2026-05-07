@@ -37,6 +37,7 @@
     "linear_2d_working": "aedt_projects/linear2d_working.aedt",
     "sector_3d_template": "templates/sector3d_template.aedt",
     "sector_3d_working": "aedt_projects/sector3d_working.aedt",
+    "dxf_copper_v2_working": "aedt_projects/dxf_copper_v2_single_layer.aedt",
     "screening_cases_csv": "cases/screening_2d.csv",
     "validation_cases_csv": "cases/validation_3d.csv",
     "screening_summary_csv": "reports/2d_screening_summary.csv",
@@ -234,6 +235,17 @@
       "tolerance_cases": ["airgap_imbalance", "stator_offset", "rotor_runout", "magnet_placement_error"],
       "include_peak_current_check": true
     }
+  },
+  "dxf_copper_v2": {
+    "design_name": "DxfCopperV2SingleLayer",
+    "design_type": "Maxwell 3D",
+    "solution_type": "ElectroDCConduction",
+    "analysis_setup_name": "AutoDxfCopperV2_DC",
+    "object_name": "AutoDxfCopperV2_PhaseA_L01",
+    "project_mode": "working_project",
+    "working_path": "aedt_projects/dxf_copper_v2_single_layer.aedt",
+    "template_path": "",
+    "purpose": "Milestone 3 V2 clean single-layer parameterized copper geometry chain."
   },
   "proxy_models": {
     "copper_resistivity_20c_ohm_m": 1.724e-8,

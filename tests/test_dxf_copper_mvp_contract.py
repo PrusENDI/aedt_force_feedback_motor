@@ -31,6 +31,19 @@ class DxfCopperMvpContractTests(unittest.TestCase):
         self.assertTrue(summary["mesh_defense_required"])
         self.assertIn(summary["aedt_handshake_mode"], ("polyline_points", "import_dxf"))
 
+    def test_v2_contract_does_not_relabel_v1_mvp_artifacts(self):
+        module = self.load_module()
+        summary = module.build_v1_mvp_summary(host_mode=False)
+
+        self.assertEqual(summary["milestone"], "Milestone 2: DXF-Compatible 3D Copper MVP")
+        self.assertIn("dxf_compatible_copper_ready", summary)
+        self.assertNotEqual(summary.get("geometry_contract_version"), "dxf-copper-v2")
+        self.assertNotEqual(summary.get("geometry", {}).get("geometry_contract_version"), "dxf-copper-v2")
+        self.assertNotIn("single_layer_geometry_source_ready", summary)
+        for field in ("project_name", "design_name", "design"):
+            self.assertNotEqual(summary.get(field), "DxfCopperV2SingleLayer")
+        self.assertNotEqual(summary.get("aedt_build", {}).get("design_name"), "DxfCopperV2SingleLayer")
+
     def test_build_summary_records_mesh_defense_as_blocking_until_assigned(self):
         module = self.load_module()
         summary = module.build_v1_mvp_summary(host_mode=False)

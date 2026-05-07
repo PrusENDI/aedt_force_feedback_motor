@@ -315,6 +315,8 @@ def failure_payload(command, exc):
 def _script_stage(script_path):
     text = str(script_path or "").replace("\\", "/").lower()
     compact = "".join([char for char in text if char.isalnum()])
+    if "build_dxf_copper_v2.py" in text or "dxf_copper_v2" in text:
+        return "dxf_copper_v2"
     if (
         "dxf_copper" in text
         or "dxf-copper" in text
@@ -376,6 +378,27 @@ def resolve_host_target(context, command):
             "solution_type": solution_type,
             "template_path": "",
             "working_path": ""
+        }
+    if stage_key == "dxf_copper_v2":
+        stage_cfg = project_cfg.get("dxf_copper_v2", {})
+        solution_type = stage_cfg.get("solution_type", "ElectroDCConduction")
+        if _normalize_solution_type_name(solution_type) == "dcconduction":
+            solution_type = "ElectroDCConduction"
+        working_path = stage_cfg.get("working_path", paths.get("dxf_copper_v2_working", ""))
+        template_path = stage_cfg.get("template_path", "")
+        root = context.get("root") or repo_root()
+        if working_path and not os.path.isabs(working_path):
+            working_path = os.path.join(root, working_path)
+        if template_path and not os.path.isabs(template_path):
+            template_path = os.path.join(root, template_path)
+        return {
+            "stage_key": stage_key,
+            "project_mode": stage_cfg.get("project_mode", "working_project"),
+            "design_name": stage_cfg.get("design_name", "DxfCopperV2SingleLayer"),
+            "design_type": stage_cfg.get("design_type", "Maxwell 3D"),
+            "solution_type": solution_type,
+            "template_path": template_path,
+            "working_path": working_path
         }
     return None
 
