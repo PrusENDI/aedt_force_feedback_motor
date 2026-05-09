@@ -133,6 +133,26 @@ Exit gate:
 
 - A Phase A layer can be regenerated repeatably from parameters and inspected in both 2D and AEDT 3D form.
 
+## Milestone 3.5: Phase A Full-Layer Geometry Precursor
+
+Goal: generate a complete, dense, single-layer Phase A 2D geometry source that Milestone 4 can directly rotate/offset into Phase B and Phase C candidates.
+
+Required outcomes:
+
+- Produce a full `360 deg` Phase A layer, not a sparse topology smoke pattern or a representative segment.
+- Preserve an ordered `segments[]` array for macro tile/debug identity, while exposing a top-level Phase A full-layer geometry source.
+- Use dense serpentine/slot-turn primitives inside each macro segment so path length, copper area, radial fill, and angular occupancy are useful for Milestone 4 spacing checks.
+- Validate segment IDs, sequence order, self-overlap, segment-to-segment clearance, bounding diameter, copper fill metrics, terminal keepouts, and AEDT naming/polyline preflight in pure Python.
+- Provide Phase A geometry in a form that can be angularly transformed into Phase B/C during Milestone 4 without reinterpreting the copper path.
+- Generate JSON, Markdown, and SVG preview artifacts.
+- Explicitly mark Phase B/C generation, physical terminal escape geometry, AEDT sheet creation, DC conduction, solve readiness, and manufacturing DXF readiness as not evaluated.
+
+Exit gate:
+
+- `v35_full_layer_passed=True` in the Milestone 3.5 Phase A full-layer report, with no blocking issues.
+- SVG review shows a dense complete Phase A layer around the full circle, not six sparse isolated blocks.
+- Existing V1/V2 tests continue to pass.
+
 ## Milestone 4: Three-Phase Single-Layer Geometry
 
 Goal: generate A/B/C copper for one physical layer.
